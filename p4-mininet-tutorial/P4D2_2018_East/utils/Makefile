@@ -24,10 +24,10 @@ endif
 all: run
 
 run: build
-	sudo python $(RUN_SCRIPT) -t $(TOPO) $(run_args)
+	sudo LD_LIBRARY_PATH=/usr/local/ python $(RUN_SCRIPT) -t $(TOPO) $(run_args)
 
 stop:
-	sudo mn -c
+	sudo LD_LIBRARY_PATH=/usr/local/ mn -c
 
 build: dirs $(compiled_json)
 

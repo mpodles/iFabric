@@ -371,8 +371,8 @@ def get_args():
 
 
 if __name__ == '__main__':
-    # from mininet.log import setLogLevel
-    # setLogLevel("info")
+    from mininet.log import setLogLevel
+    setLogLevel("info")
 
     args = get_args()
     exercise = ExerciseRunner(args.topo, args.log_dir, args.pcap_dir,

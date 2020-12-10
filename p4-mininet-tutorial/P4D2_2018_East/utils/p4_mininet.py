@@ -142,7 +142,7 @@ class P4Switch(Switch):
             pid = int(f.read())
         debug("P4 switch {} PID is {}.\n".format(self.name, pid))
         if not self.check_switch_started(pid):
-            error("P4 switch {} did not start correctly.\n".format(self.name))
+            error("P4 switch {} did not start correctly1.\n".format(self.name))
             exit(1)
         info("P4 switch {} has been started.\n".format(self.name))
 

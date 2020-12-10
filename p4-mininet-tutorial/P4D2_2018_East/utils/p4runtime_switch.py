@@ -86,7 +86,7 @@ class P4RuntimeSwitch(P4Switch):
 
     def start(self, controllers):
         info("Starting P4 switch {}.\n".format(self.name))
-        args = [self.sw_path]
+        args = ["sudo LD_LIBRARY_PATH=/usr/local/lib " + self.sw_path]
         for port, intf in self.intfs.items():
             if not intf.IP():
                 args.extend(['-i', str(port) + "@" + intf.name])
@@ -116,7 +116,7 @@ class P4RuntimeSwitch(P4Switch):
             pid = int(f.read())
         debug("P4 switch {} PID is {}.\n".format(self.name, pid))
         if not self.check_switch_started(pid):
-            error("P4 switch {} did not start correctly.\n".format(self.name))
+            error("P4 switch {} did not start correctly2.\n".format(self.name))
             exit(1)
         info("P4 switch {} has been started.\n".format(self.name))
 
