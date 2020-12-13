@@ -5,13 +5,11 @@
 *~
 
 # Compiled JSON
-*.json
+
 !*p4app.json
 
 *.pcap
 
-# Extracted solutions
-solution*/
 
 # Build folders
 build*/
