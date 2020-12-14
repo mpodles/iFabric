@@ -13,3 +13,5 @@
 
 # Build folders
 build*/
+
+.vscode

@@ -108,7 +108,7 @@ control MyIngress(inout headers hdr,
     counter(MAX_TUNNEL_ID, CounterType.packets_and_bytes) egressTunnelCounter;
 
     action drop() {
-        mark_to_drop(standard_metadata);
+        mark_to_drop();
     }
     
     action ipv4_forward(macAddr_t dstAddr, egressSpec_t port) {
