@@ -181,3 +181,45 @@ class P4InfoHelper(object):
                     for field_name, value in action_params.iteritems()
                 ])
         return table_entry
+
+    # def buildTableEntry(self,
+    #                     table_name,
+    #                     match_fields=None,
+    #                     default_action=False,
+    #                     action_name=None,
+    #                     action_params=None,
+    #                     priority=None):
+    #     table_entry = p4runtime_pb2.TableEntry()
+    #     table_entry.table_id = self.get_tables_id(table_name)
+
+    #     if priority is not None:
+    #         table_entry.priority = priority
+
+    #     if match_fields:
+    #         table_entry.match.extend([
+    #             self.get_match_field_pb(table_name, match_field_name, value)
+    #             for match_field_name, value in match_fields.iteritems()
+    #         ])
+
+    #     if default_action:
+    #         table_entry.is_default_action = True
+
+    #     if action_name:
+    #         action = table_entry.action.action
+    #         action.action_id = self.get_actions_id(action_name)
+    #         if action_params:
+    #             action.params.extend([
+    #                 self.get_action_param_pb(action_name, field_name, value)
+    #                 for field_name, value in action_params.iteritems()
+    #             ])
+    #     return table_entry
+
+    def buildMulticastGroupEntry(self, multicast_group_id, replicas):
+        mc_entry = p4runtime_pb2.PacketReplicationEngineEntry()
+        mc_entry.multicast_group_entry.multicast_group_id = multicast_group_id
+        for replica in replicas:
+            r = p4runtime_pb2.Replica()
+            r.egress_port = replica['egress_port']
+            r.instance = replica['instance']
+            mc_entry.multicast_group_entry.replicas.extend([r])
+        return mc_entry

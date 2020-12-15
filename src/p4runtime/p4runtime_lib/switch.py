@@ -86,3 +86,15 @@ class SwitchConnection(object):
         else:
             for response in self.client_stub.Read(request):
                 yield response
+
+    def WritePREEntry(self, pre_entry, dry_run=False):
+        request = p4runtime_pb2.WriteRequest()
+        request.device_id = self.device_id
+        request.election_id.low = 1
+        update = request.updates.add()
+        update.type = p4runtime_pb2.Update.INSERT
+        update.entity.packet_replication_engine_entry.CopyFrom(pre_entry)
+        if dry_run:
+            print "P4Runtime Write:", request
+        else:
+            self.client_stub.Write(request)
