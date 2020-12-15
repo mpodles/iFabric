@@ -6,6 +6,7 @@ from time import sleep
 # NOTE: Appending to the PYTHON_PATH is only required in the `solution` directory.
 #       It is not required for mycontroller.py in the top-level directory.
 import sys
+import json
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import p4runtime_lib.bmv2
@@ -13,6 +14,137 @@ import p4runtime_lib.helper
 
 SWITCH_TO_HOST_PORT = 1
 SWITCH_TO_SWITCH_PORT = 2
+
+
+
+def parseRules():
+    with open("./rules.json", 'r') as sw_conf_file:
+        sw_conf_json = json.loads(sw_conf_file)
+    return sw_conf_json
+
+def insertMulticastGroupEntry(sw, rule, p4info_helper):
+    mc_entry = p4info_helper.buildMulticastGroupEntry(rule["multicast_group_id"], rule['replicas'])
+    sw.WritePREEntry(mc_entry)
+
+def insertTableEntry(sw, flow, p4info_helper):
+    table_name = flow['table']
+    match_fields = flow.get('match') # None if not found
+    action_name = flow['action_name']
+    default_action = flow.get('default_action') # None if not found
+    action_params = flow['action_params']
+    priority = flow.get('priority')  # None if not found
+
+    table_entry = p4info_helper.buildTableEntry(
+        table_name=table_name,
+        match_fields=match_fields,
+        default_action=default_action,
+        action_name=action_name,
+        action_params=action_params,
+        priority=priority)
+
+    sw.WriteTableEntry(table_entry)
+
+
+def tableEntryToString(flow):
+    if 'match' in flow:
+        match_str = ['%s=%s' % (match_name, str(flow['match'][match_name])) for match_name in
+                     flow['match']]
+        match_str = ', '.join(match_str)
+    elif 'default_action' in flow and flow['default_action']:
+        match_str = '(default action)'
+    else:
+        match_str = '(any)'
+    params = ['%s=%s' % (param_name, str(flow['action_params'][param_name])) for param_name in
+              flow['action_params']]
+    params = ', '.join(params)
+    return "%s: %s => %s(%s)" % (
+        flow['table'], match_str, flow['action_name'], params)
+
+def groupEntryToString(rule):
+    group_id = rule["multicast_group_id"]
+    replicas = ['%d' % replica["egress_port"] for replica in rule['replicas']]
+    ports_str = ', '.join(replicas)
+    return 'Group {0} => ({1})'.format(group_id, ports_str)
+
+
+# def writeTunnelRules_old(p4info_helper, ingress_sw, egress_sw, tunnel_id,
+#                      dst_eth_addr, dst_ip_addr):
+#     '''
+#     Installs three rules:
+#     1) An tunnel ingress rule on the ingress switch in the ipv4_lpm table that
+#        encapsulates traffic into a tunnel with the specified ID
+#     2) A transit rule on the ingress switch that forwards traffic based on
+#        the specified ID
+#     3) An tunnel egress rule on the egress switch that decapsulates traffic
+#        with the specified ID and sends it to the host
+
+#     :param p4info_helper: the P4Info helper
+#     :param ingress_sw: the ingress switch connection
+#     :param egress_sw: the egress switch connection
+#     :param tunnel_id: the specified tunnel ID
+#     :param dst_eth_addr: the destination IP to match in the ingress rule
+#     :param dst_ip_addr: the destination Ethernet address to write in the
+#                         egress rule
+#     '''
+#     # 1) Tunnel Ingress Rule
+#     table_entry = p4info_helper.buildTableEntry(
+#         table_name="MyIngress.ipv4_lpm",
+#         match_fields={
+#             "hdr.ipv4.dstAddr": (dst_ip_addr, 32)
+#         },
+#         action_name="MyIngress.myTunnel_ingress",
+#         action_params={
+#             "dst_id": tunnel_id,
+#         })
+#     ingress_sw.WriteTableEntry(table_entry)
+#     print "Installed ingress tunnel rule on %s" % ingress_sw.name
+
+#     # 2) Tunnel Transit Rule
+#     # The rule will need to be added to the myTunnel_exact table and match on
+#     # the tunnel ID (hdr.myTunnel.dst_id). Traffic will need to be forwarded
+#     # using the myTunnel_forward action on the port connected to the next switch.
+#     #
+#     # For our simple topology, switch 1 and switch 2 are connected using a
+#     # link attached to port 2 on both switches. We have defined a variable at
+#     # the top of the file, SWITCH_TO_SWITCH_PORT, that you can use as the output
+#     # port for this action.
+#     #
+#     # We will only need a transit rule on the ingress switch because we are
+#     # using a simple topology. In general, you'll need on transit rule for
+#     # each switch in the path (except the last switch, which has the egress rule),
+#     # and you will need to select the port dynamically for each switch based on
+#     # your topology.
+
+#     table_entry = p4info_helper.buildTableEntry(
+#         table_name="MyIngress.myTunnel_exact",
+#         match_fields={
+#             "hdr.myTunnel.dst_id": tunnel_id
+#         },
+#         action_name="MyIngress.myTunnel_forward",
+#         action_params={
+#             "port": SWITCH_TO_SWITCH_PORT
+#         })
+#     ingress_sw.WriteTableEntry(table_entry)
+#     print "Installed transit tunnel rule on %s" % ingress_sw.name
+
+#     # 3) Tunnel Egress Rule
+#     # For our simple topology, the host will always be located on the
+#     # SWITCH_TO_HOST_PORT (port 1).
+#     # In general, you will need to keep track of which port the host is
+#     # connected to.
+#     table_entry = p4info_helper.buildTableEntry(
+#         table_name="MyIngress.myTunnel_exact",
+#         match_fields={
+#             "hdr.myTunnel.dst_id": tunnel_id
+#         },
+#         action_name="MyIngress.myTunnel_egress",
+#         action_params={
+#             "dstAddr": dst_eth_addr,
+#             "port": SWITCH_TO_HOST_PORT
+#         })
+#     egress_sw.WriteTableEntry(table_entry)
+#     print "Installed egress tunnel rule on %s" % egress_sw.name
+
 
 def writeTunnelRules(p4info_helper, ingress_sw, egress_sw, tunnel_id,
                      dst_eth_addr, dst_ip_addr):
@@ -33,6 +165,8 @@ def writeTunnelRules(p4info_helper, ingress_sw, egress_sw, tunnel_id,
     :param dst_ip_addr: the destination Ethernet address to write in the
                         egress rule
     '''
+    sw_configs_json = parseRules()
+
     # 1) Tunnel Ingress Rule
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.ipv4_lpm",
@@ -91,6 +225,7 @@ def writeTunnelRules(p4info_helper, ingress_sw, egress_sw, tunnel_id,
         })
     egress_sw.WriteTableEntry(table_entry)
     print "Installed egress tunnel rule on %s" % egress_sw.name
+
 
 def readTableRules(p4info_helper, sw):
     '''
