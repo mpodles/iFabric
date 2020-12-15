@@ -28,6 +28,7 @@ from mininet.net import Mininet
 from mininet.topo import Topo
 from mininet.link import TCLink
 from mininet.cli import CLI
+from p4runtime_lib import simple_controller
 
 from p4runtime_switch import P4RuntimeSwitch
 
@@ -300,7 +301,7 @@ class ExerciseRunner:
         self.logger('Configuring switch %s using P4Runtime with file %s' % (sw_name, runtime_json))
         with open(runtime_json, 'r') as sw_conf_file:
             outfile = '%s/%s-p4runtime-requests.txt' %(self.log_dir, sw_name)
-            p4runtime_lib.simple_controller.program_switch(
+            simple_controller.program_switch(
                 addr='127.0.0.1:%d' % grpc_port,
                 device_id=device_id,
                 sw_conf_file=sw_conf_file,

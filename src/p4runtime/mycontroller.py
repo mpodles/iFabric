@@ -15,11 +15,15 @@ import p4runtime_lib.helper
 SWITCH_TO_HOST_PORT = 1
 SWITCH_TO_SWITCH_PORT = 2
 
+def error(msg):
+    print >> sys.stderr, ' - ERROR! ' + msg
 
+def info(msg):
+    print >> sys.stdout, ' - ' + msg
 
 def parseRules():
     with open("./rules.json", 'r') as sw_conf_file:
-        sw_conf_json = json.loads(sw_conf_file)
+        sw_conf_json = json.loads(sw_conf_file.read())
     return sw_conf_json
 
 def insertMulticastGroupEntry(sw, rule, p4info_helper):
@@ -166,6 +170,13 @@ def writeTunnelRules(p4info_helper, ingress_sw, egress_sw, tunnel_id,
                         egress rule
     '''
     sw_configs_json = parseRules()
+
+    if 'multicast_group_entries' in sw_configs_json:
+        group_entries = sw_configs_json['multicast_group_entries']
+        info("Inserting %d group entries..." % len(group_entries))
+        for entry in group_entries:
+            info(groupEntryToString(entry))
+            insertMulticastGroupEntry(ingress_sw, entry, p4info_helper)
 
     # 1) Tunnel Ingress Rule
     table_entry = p4info_helper.buildTableEntry(
