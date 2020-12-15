@@ -265,29 +265,75 @@ class ExerciseRunner:
                       controller = None)
 
 
-    def program_switches(self):
-        """ If any command files were provided for the switches,
-            this method will start up the CLI on each switch and use the
-            contents of the command files as input.
+    # def program_switches_old(self):
+    #     """ If any command files were provided for the switches,
+    #         this method will start up the CLI on each switch and use the
+    #         contents of the command files as input.
 
-            Assumes:
-                - A mininet instance is stored as self.net and self.net.start() has
-                  been called.
+    #         Assumes:
+    #             - A mininet instance is stored as self.net and self.net.start() has
+    #               been called.
+    #     """
+    #     cli = 'simple_switch_CLI'
+    #     for sw_name, sw_dict in self.switches.iteritems():
+    #         if 'cli_input' not in sw_dict: continue
+    #         # get the port for this particular switch's thrift server
+    #         sw_obj = self.net.get(sw_name)
+    #         thrift_port = sw_obj.thrift_port
+
+    #         cli_input_commands = sw_dict['cli_input']
+    #         self.logger('Configuring switch %s with file %s' % (sw_name, cli_input_commands))
+    #         with open(cli_input_commands, 'r') as fin:
+    #             cli_outfile = '%s/%s_cli_output.log'%(self.log_dir, sw_name)
+    #             with open(cli_outfile, 'w') as fout:
+    #                 subprocess.Popen([cli, '--thrift-port', str(thrift_port)],
+    #                                  stdin=fin, stdout=fout)
+
+    def program_switch_p4runtime(self, sw_name, sw_dict):
+        """ This method will use P4Runtime to program the switch using the
+            content of the runtime JSON file as input.
+        """
+        sw_obj = self.net.get(sw_name)
+        grpc_port = sw_obj.grpc_port
+        device_id = sw_obj.device_id
+        runtime_json = sw_dict['runtime_json']
+        self.logger('Configuring switch %s using P4Runtime with file %s' % (sw_name, runtime_json))
+        with open(runtime_json, 'r') as sw_conf_file:
+            outfile = '%s/%s-p4runtime-requests.txt' %(self.log_dir, sw_name)
+            p4runtime_lib.simple_controller.program_switch(
+                addr='127.0.0.1:%d' % grpc_port,
+                device_id=device_id,
+                sw_conf_file=sw_conf_file,
+                workdir=os.getcwd(),
+                proto_dump_fpath=outfile)
+
+    def program_switch_cli(self, sw_name, sw_dict):
+        """ This method will start up the CLI and use the contents of the
+            command files as input.
         """
         cli = 'simple_switch_CLI'
-        for sw_name, sw_dict in self.switches.iteritems():
-            if 'cli_input' not in sw_dict: continue
-            # get the port for this particular switch's thrift server
-            sw_obj = self.net.get(sw_name)
-            thrift_port = sw_obj.thrift_port
+        # get the port for this particular switch's thrift server
+        sw_obj = self.net.get(sw_name)
+        thrift_port = sw_obj.thrift_port
 
-            cli_input_commands = sw_dict['cli_input']
-            self.logger('Configuring switch %s with file %s' % (sw_name, cli_input_commands))
-            with open(cli_input_commands, 'r') as fin:
-                cli_outfile = '%s/%s_cli_output.log'%(self.log_dir, sw_name)
-                with open(cli_outfile, 'w') as fout:
-                    subprocess.Popen([cli, '--thrift-port', str(thrift_port)],
-                                     stdin=fin, stdout=fout)
+        cli_input_commands = sw_dict['cli_input']
+        self.logger('Configuring switch %s with file %s' % (sw_name, cli_input_commands))
+        with open(cli_input_commands, 'r') as fin:
+            cli_outfile = '%s/%s_cli_output.log'%(self.log_dir, sw_name)
+            with open(cli_outfile, 'w') as fout:
+                subprocess.Popen([cli, '--thrift-port', str(thrift_port)],
+                                 stdin=fin, stdout=fout)
+
+    def program_switches(self):
+        """ This method will program each switch using the BMv2 CLI and/or
+            P4Runtime, depending if any command or runtime JSON files were
+            provided for the switches.
+        """
+        for sw_name, sw_dict in self.switches.iteritems():
+            if 'cli_input' in sw_dict:
+                self.program_switch_cli(sw_name, sw_dict)
+            if 'runtime_json' in sw_dict:
+                self.program_switch_p4runtime(sw_name, sw_dict)
 
     def program_hosts(self):
         """ Adds static ARP entries and default routes to each mininet host.
