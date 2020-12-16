@@ -201,6 +201,8 @@ class ExerciseRunner:
         # wait for that to finish. Not sure how to do this better
         sleep(1)
 
+        self.simulate_traffic()
+
         self.do_net_cli()
         # stop right after the CLI is exited
         self.net.stop()
@@ -312,6 +314,11 @@ class ExerciseRunner:
                 for cmd in host_info["commands"]:
                     h.cmd(cmd)
 
+
+    def simulate_traffic(self):
+        for host_name, host_info in self.hosts.items():
+            h = self.net.get(host_name)
+            h.cmd("python2 receive.py")
 
     def do_net_cli(self):
         """ Starts up the mininet CLI and prints some helpful output.
