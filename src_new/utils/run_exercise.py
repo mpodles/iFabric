@@ -201,7 +201,7 @@ class ExerciseRunner:
         # wait for that to finish. Not sure how to do this better
         sleep(1)
 
-        self.simulate_traffic()
+        #self.simulate_traffic()
 
         self.do_net_cli()
         # stop right after the CLI is exited
