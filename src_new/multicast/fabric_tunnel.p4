@@ -121,7 +121,7 @@ control MyIngress(inout headers hdr,
     //     hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
     //     hdr.ethernet.dstAddr = dstAddr;
     //     hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
-    }
+    //}
 
     action append_myTunnel_header(
         bit<16> flow_id,
@@ -136,7 +136,7 @@ control MyIngress(inout headers hdr,
         ingressTunnelCounter.count((bit<32>) hdr.myTunnel.flow_id);
     }
 
-    action assign_multicast(bit<8> multicast_group){
+    action assign_multicast(bit<16> multicast_group){
         standard_metadata.mcast_grp = multicast_group;
     }
 
@@ -155,7 +155,7 @@ control MyIngress(inout headers hdr,
 
     table flow_classifier {
         key = {
-            hdr.ipv4.dstAddr lpm;
+            hdr.ipv4.dstAddr: lpm;
         }
         actions = {
             append_myTunnel_header;
@@ -199,7 +199,7 @@ control MyIngress(inout headers hdr,
         }
 
         if (hdr.myTunnel.isValid()){
-            myTunnel_operate.apply()
+            myTunnel_operate.apply();
         }
     }
 }
@@ -224,7 +224,7 @@ control MyEgress(inout headers hdr,
     
     table port_checker {
         key = {
-            standard_metadata.egress_port exact;
+            standard_metadata.egress_port: exact;
         }
         actions = {
             strip_header;
@@ -235,7 +235,8 @@ control MyEgress(inout headers hdr,
     }
 
     apply {
-        port_checker.apply()
+        port_checker.apply();
+        count_packets();
     }
 }
 
