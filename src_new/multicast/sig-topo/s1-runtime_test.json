@@ -8,11 +8,9 @@
         "match": {
           "hdr.ipv4.dstAddr": "10.0.0.2"
         },
-        "action_name": "MyIngress.append_myTunnel_header",
+        "action_name": "MyIngress.assign_multicast",
         "action_params": {
-          "flow_id": 1,
-          "node_id": 1,
-          "group_id": 1
+          "multicast_group": 1
         }
       },
       {
@@ -24,14 +22,6 @@
         "action_params": {
           "multicast_group": 1
         }
-      },
-      {
-        "table": "MyEgress.port_checker",
-        "match": {
-          "standard_metadata.egress_port": 2
-        },
-        "action_name": "MyEgress.strip",
-        "action_params": { }
       }
     ],
     "multicast_group_entries" : [
