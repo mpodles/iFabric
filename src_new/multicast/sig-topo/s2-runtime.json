@@ -24,6 +24,14 @@
         "action_params": {
           "multicast_group": 1
         }
+      },
+      {
+        "table": "MyEgress.port_checker",
+        "match": {
+          "standard_metadata.egress_port": 48
+        },
+        "action_name": "MyEgress.strip_header",
+        "action_params": { }
       }
     ],
     "multicast_group_entries" : [
@@ -31,7 +39,11 @@
         "multicast_group_id" : 1,
         "replicas" : [
           {
-            "egress_port" : 2,
+            "egress_port" : 48,
+            "instance" : 1
+          },
+          {
+            "egress_port" : 5,
             "instance" : 1
           }
         ]
