@@ -67,7 +67,8 @@ parser MyParser(packet_in packet,
         transition select(packet.lookahead<myTunnel_t>().header_type) {
             TYPE_MYTUNNEL              : parse_myTunnel;
             default                    : parse_ethernet;
-        }       
+        }     
+        //transition parse_ethernet;  
     }
 
     state parse_myTunnel {
@@ -139,7 +140,7 @@ control MyIngress(inout headers hdr,
     action assign_multicast(bit<16> multicast_group){
         standard_metadata.mcast_grp = multicast_group;
     }
-
+    
 
     // action myTunnel_forward(egressSpec_t port) {
     //     standard_metadata.egress_spec = port;
@@ -155,10 +156,11 @@ control MyIngress(inout headers hdr,
 
     table flow_classifier {
         key = {
-            hdr.ipv4.dstAddr: lpm;
+            hdr.ipv4.dstAddr: exact;
         }
         actions = {
             append_myTunnel_header;
+            assign_multicast;
             drop;
             NoAction;
         }
