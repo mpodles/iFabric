@@ -7,15 +7,15 @@ import struct
 
 from scapy.all import sendp, send, get_if_list, get_if_hwaddr
 from scapy.all import Packet
-from scapy.all import Ether, IP, UDP, TCP
+from scapy.layers.inet import Ether, IP, UDP, TCP
 
 def get_if():
     ifs=get_if_list()
     iface=None # "h1-eth0"
-    for i in get_if_list():
+    for i in ifs:
         if "eth0" in i:
             iface=i
-            break;
+            break
     if not iface:
         print "Cannot find eth0 interface"
         exit(1)
