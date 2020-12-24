@@ -14,6 +14,7 @@ const bit<32> MAX_TUNNEL_ID = 1 << 16;
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
+typedef bit<48> time_t;
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -24,7 +25,7 @@ header ethernet_t {
 header myTunnel_t {
     bit<16> header_type;
     bit<16> next_protocol;
-    bit<16> flow_id;
+    bit<32> flow_id;
     bit<16> node_id;
     bit<16> group_id;
 }
@@ -111,7 +112,9 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
-    counter(MAX_TUNNEL_ID, CounterType.packets_and_bytes) ingressTunnelCounter;
+    register<bit<32>>(MAX_TUNNEL_ID) ingress_byte_cnt_reg;
+    // remember the time of the last probe
+    register<time_t>(MAX_TUNNEL_ID) ingress_last_time_reg;
 
     action drop() {
         mark_to_drop(standard_metadata);
@@ -125,7 +128,7 @@ control MyIngress(inout headers hdr,
     //}
 
     action append_myTunnel_header(
-        bit<16> flow_id,
+        bit<32> flow_id,
         bit<16> node_id,
         bit<16> group_id) {
         hdr.myTunnel.setValid();
@@ -134,7 +137,6 @@ control MyIngress(inout headers hdr,
         hdr.myTunnel.flow_id = flow_id;
         hdr.myTunnel.node_id = node_id;
         hdr.myTunnel.group_id = group_id;
-        ingressTunnelCounter.count((bit<32>) hdr.myTunnel.flow_id);
     }
 
     action assign_multicast(bit<16> multicast_group){
@@ -165,7 +167,7 @@ control MyIngress(inout headers hdr,
             NoAction;
         }
         size = 1024;
-        default_action = NoAction();
+        default_action = append_myTunnel_header(MAX_TUNNEL_ID, 404, 404);
     }
 
     // table ipv4_lpm {
@@ -198,8 +200,19 @@ control MyIngress(inout headers hdr,
         if (!hdr.myTunnel.isValid()) {
             // Process only non-tunneled IPv4 packets.
             flow_classifier.apply();
+        bit<32> byte_cnt;
+        bit<32> new_byte_cnt;
+        time_t last_time;
+        time_t cur_time = standard_metadata.ingress_global_timestamp;
+        // increment byte cnt for this packet's port
+        ingress_byte_cnt_reg.read(byte_cnt, (bit<32>)hdr.myTunnel.flow_id);
+        new_byte_cnt = byte_cnt + standard_metadata.packet_length;
+        // reset the byte count when a probe packet passes through
+        ingress_byte_cnt_reg.write((bit<32>)hdr.myTunnel.flow_id, new_byte_cnt);
+        ingress_last_time_reg.write((bit<32>)hdr.myTunnel.flow_id, cur_time);
         }
 
+        
         if (hdr.myTunnel.isValid()){
             myTunnel_operate.apply();
         }
@@ -214,14 +227,25 @@ control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
 
-    counter(MAX_TUNNEL_ID, CounterType.packets_and_bytes) egressTunnelCounter;
+    register<bit<32>>(MAX_TUNNEL_ID) egress_byte_cnt_reg;
+    // remember the time of the last probe
+    register<time_t>(MAX_TUNNEL_ID) egress_last_time_reg;
     
     action strip_header(){
         hdr.myTunnel.setInvalid();
     }
 
     action count_packets(){
-        egressTunnelCounter.count((bit<32>) hdr.myTunnel.flow_id);
+        bit<32> byte_cnt;
+        bit<32> new_byte_cnt;
+        time_t last_time;
+        time_t cur_time = standard_metadata.egress_global_timestamp;
+        // increment byte cnt for this packet's port
+        egress_byte_cnt_reg.read(byte_cnt, (bit<32>)hdr.myTunnel.flow_id);
+        new_byte_cnt = byte_cnt + standard_metadata.packet_length;
+        // reset the byte count when a probe packet passes through
+        egress_byte_cnt_reg.write((bit<32>)hdr.myTunnel.flow_id, new_byte_cnt);
+        egress_last_time_reg.write((bit<32>)hdr.myTunnel.flow_id, cur_time);
     }
     
     table port_checker {
@@ -237,8 +261,9 @@ control MyEgress(inout headers hdr,
     }
 
     apply {
-        port_checker.apply();
         count_packets();
+        port_checker.apply();
+        
     }
 }
 
