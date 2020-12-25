@@ -196,7 +196,8 @@ class ExerciseRunner:
 
         # some programming that must happen after the net has started
         self.program_hosts()
-        self.program_switches()
+        #self.program_switches()
+        self.prepare_switches_file()
 
         # wait for that to finish. Not sure how to do this better
         sleep(1)
@@ -276,6 +277,32 @@ class ExerciseRunner:
                 sw_conf_file=sw_conf_file,
                 workdir=os.getcwd(),
                 proto_dump_fpath=outfile)
+
+    def prepare_switches_file(self):
+        """ This method will use switches dictionary to prepare file 
+        with device id and grpc ports for P4Runtime controller
+        """
+        result_dictionary = {}        
+        for sw_name, sw_dict in self.switches.iteritems():
+            result_dictionary[sw_name] = self.prepare_switch_dictionary(sw_name, sw_dict)
+        result_string = json.dumps(result_dictionary)
+
+        with open("./build/switches_vars.json", "w") as f:
+            f.write(result_string)
+
+
+
+    def prepare_switch_dictionary(self, sw_name, sw_dict):
+        switch_dictionary = {}
+        sw_obj = self.net.get(sw_name)
+        grpc_port = sw_obj.grpc_port
+        device_id = sw_obj.device_id
+        runtime_json = sw_dict['runtime_json']
+        switch_dictionary['grpc_port'] = grpc_port
+        switch_dictionary['device_id'] = device_id
+        switch_dictionary['runtime_json'] = runtime_json
+        return switch_dictionary
+
 
     def program_switch_cli(self, sw_name, sw_dict):
         """ This method will start up the CLI and use the contents of the
