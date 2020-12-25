@@ -16,6 +16,7 @@
 #
 import argparse
 import json
+import timeit
 import os
 import sys
 from time import sleep
@@ -65,7 +66,7 @@ class ConfException(Exception):
 
 class Controller():
     def __init__(self):
-        self.project_directory = "src_new/multicast/"
+        self.project_directory = "/home/mpodles/Documents/iFabric/src_new/multicast/"
         self.connections = {}
         try:
             self.read_topology()
@@ -153,7 +154,7 @@ class Controller():
         info("Connecting to P4Runtime server on %s (%s)..." % (addr, target))
 
         if target == "bmv2":
-            sw = bmv2.Bmv2SwitchConnection(address=addr, device_id=device_id,
+            sw = bmv2.Bmv2SwitchConnection(name=sw_name, address=addr, device_id=device_id,
                                         proto_dump_file=proto_dump_fpath)
             self.connections[sw_name] = sw
         else:
@@ -175,28 +176,28 @@ class Controller():
                 info("Inserting %d table entries..." % len(table_entries))
                 for entry in table_entries:
                     info(self.tableEntryToString(entry))
-                    self.insertTableEntry(sw, entry, self.p4info_helper)
+                    self.insertTableEntry(sw, entry)
 
             if 'multicast_group_entries' in sw_conf:
                 group_entries = sw_conf['multicast_group_entries']
                 info("Inserting %d group entries..." % len(group_entries))
                 for entry in group_entries:
                     info(self.groupEntryToString(entry))
-                    self.insertMulticastGroupEntry(sw, entry, self.p4info_helper)
+                    self.insertMulticastGroupEntry(sw, entry)
 
             if 'clone_session_entries' in sw_conf:
                 clone_entries = sw_conf['clone_session_entries']
                 info("Inserting %d clone entries..." % len(clone_entries))
                 for entry in clone_entries:
                     info(self.cloneEntryToString(entry))
-                    self.insertCloneGroupEntry(sw, entry, self.p4info_helper)
+                    self.insertCloneGroupEntry(sw, entry)
         except Exception as e:
             print e
         # finally:
         #     sw.shutdown()
 
 
-    def insertTableEntry(self, sw, flow, p4info_helper):
+    def insertTableEntry(self, sw, flow):
         table_name = flow['table']
         match_fields = flow.get('match') # None if not found
         action_name = flow['action_name']
@@ -204,7 +205,7 @@ class Controller():
         action_params = flow['action_params']
         priority = flow.get('priority')  # None if not found
 
-        table_entry = p4info_helper.buildTableEntry(
+        table_entry = self.p4info_helper.buildTableEntry(
             table_name=table_name,
             match_fields=match_fields,
             default_action=default_action,
@@ -291,20 +292,77 @@ class Controller():
         ports_str = ', '.join(replicas)
         return 'Clone Session {0} => ({1}) ({2})'.format(clone_id, ports_str, packet_length_bytes)
 
-    def insertMulticastGroupEntry(self, sw, rule, p4info_helper):
-        mc_entry = p4info_helper.buildMulticastGroupEntry(rule["multicast_group_id"], rule['replicas'])
+    def insertMulticastGroupEntry(self, sw, rule):
+        mc_entry = self.p4info_helper.buildMulticastGroupEntry(rule["multicast_group_id"], rule['replicas'])
         sw.WritePREEntry(mc_entry)
 
-    def insertCloneGroupEntry(self, sw, rule, p4info_helper):
-        clone_entry = p4info_helper.buildCloneSessionEntry(rule['clone_session_id'], rule['replicas'],
+    def insertCloneGroupEntry(self, sw, rule):
+        clone_entry = self.p4info_helper.buildCloneSessionEntry(rule['clone_session_id'], rule['replicas'],
                                                         rule.get('packet_length_bytes', 0))
         sw.WritePREEntry(clone_entry)
+
+    def getAllCounters(self):
+        for n in range (10):
+            for conn in self.connections.values():
+                self.printCounter(conn, "MyIngress.ingress_byte_cnt", 1)
+                self.printCounter(conn, "MyEgress.egress_byte_cnt", 1)
+
+
+    def readTableRules(self, sw):
+        """
+        Reads the table entries from all tables on the switch.
+
+        :param p4info_helper: the P4Info helper
+        :param sw: the switch connection
+        """
+            
+        print '\n----- Reading tables rules for %s -----' % sw.name
+        for response in sw.ReadTableEntries():
+            for entity in response.entities:
+                entry = entity.table_entry
+                # TODO For extra credit, you can use the p4info_helper to translate
+                #      the IDs in the entry to names
+                table_name = self.p4info_helper.get_tables_name(entry.table_id)
+                print '%s: ' % table_name,
+                for m in entry.match:
+                    print self.p4info_helper.get_match_field_name(table_name, m.field_id),
+                    print '%r' % (self.p4info_helper.get_match_field_value(m),),
+                action = entry.action.action
+                action_name = self.p4info_helper.get_actions_name(action.action_id)
+                print '->', action_name,
+                for p in action.params:
+                    print self.p4info_helper.get_action_param_name(action_name, p.param_id),
+                    print '%r' % p.value,
+                print
 
 
 if __name__ == '__main__':
     # main()
     controller = Controller()
     controller.program_switches()
-    while True:
-        sleep(2)
-        controller.printCounter(controller.connections['s1'], "MyIngress.ingress_byte_cnt", 1)
+    # start = timeit.timeit()
+    # controller.getAllCounters()
+    # end = timeit.timeit()
+    # print(end - start)
+
+    controller.readTableRules(controller.connections["s1"])
+    print 
+    print "all rules read"
+    start = timeit.timeit()
+    flow = {
+        "table": "MyIngress.myTunnel_operate",
+        "match": {
+          "hdr.myTunnel.flow_id": 2
+        },
+        "action_name": "MyIngress.assign_multicast",
+        "action_params": {
+          "multicast_group": 2
+        }
+      }
+    controller.insertTableEntry(controller.connections["s1"], flow)
+    end = timeit.timeit()
+    print(end - start)
+    controller.readTableRules(controller.connections["s1"])
+
+
+    
