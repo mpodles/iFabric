@@ -18,6 +18,7 @@ import argparse
 import json
 import os
 import sys
+from time import sleep
 
 import bmv2
 import helper
@@ -65,6 +66,7 @@ class ConfException(Exception):
 class Controller():
     def __init__(self):
         self.project_directory = "src_new/multicast/"
+        self.connections = {}
         try:
             self.read_topology()
         except Exception as e:
@@ -94,6 +96,7 @@ class Controller():
         with open(self.project_directory  + runtime_json, 'r') as sw_conf_file:
             outfile = self.project_directory + '/%s/%s-p4runtime-requests.txt' %("logs", sw_name)
             self.program_switch(
+                sw_name = sw_name,
                 addr='127.0.0.1:%d' % grpc_port,
                 device_id=device_id,
                 sw_conf_file=sw_conf_file,
@@ -133,7 +136,7 @@ class Controller():
                 raise ConfException("file does not exist %s" % real_path)
 
 
-    def program_switch(self, addr, device_id, sw_conf_file, workdir, proto_dump_fpath):
+    def program_switch(self, sw_name, addr, device_id, sw_conf_file, workdir, proto_dump_fpath):
         sw_conf = self.json_load_byteified(sw_conf_file)
         try:
             self.check_switch_conf(sw_conf=sw_conf, workdir=workdir)
@@ -143,7 +146,7 @@ class Controller():
 
         info('Using P4Info file %s...' % sw_conf['p4info'])
         p4info_fpath = os.path.join(workdir, sw_conf['p4info'])
-        p4info_helper = helper.P4InfoHelper(p4info_fpath)
+        self.p4info_helper = helper.P4InfoHelper(p4info_fpath)
 
         target = sw_conf['target']
 
@@ -152,6 +155,7 @@ class Controller():
         if target == "bmv2":
             sw = bmv2.Bmv2SwitchConnection(address=addr, device_id=device_id,
                                         proto_dump_file=proto_dump_fpath)
+            self.connections[sw_name] = sw
         else:
             raise Exception("Don't know how to connect to target %s" % target)
 
@@ -161,7 +165,7 @@ class Controller():
             if target == "bmv2":
                 info("Setting pipeline config (%s)..." % sw_conf['bmv2_json'])
                 bmv2_json_fpath = os.path.join(workdir, sw_conf['bmv2_json'])
-                sw.SetForwardingPipelineConfig(p4info=p4info_helper.p4info,
+                sw.SetForwardingPipelineConfig(p4info=self.p4info_helper.p4info,
                                             bmv2_json_file_path=bmv2_json_fpath)
             else:
                 raise Exception("Should not be here")
@@ -171,24 +175,25 @@ class Controller():
                 info("Inserting %d table entries..." % len(table_entries))
                 for entry in table_entries:
                     info(self.tableEntryToString(entry))
-                    self.insertTableEntry(sw, entry, p4info_helper)
+                    self.insertTableEntry(sw, entry, self.p4info_helper)
 
             if 'multicast_group_entries' in sw_conf:
                 group_entries = sw_conf['multicast_group_entries']
                 info("Inserting %d group entries..." % len(group_entries))
                 for entry in group_entries:
                     info(self.groupEntryToString(entry))
-                    self.insertMulticastGroupEntry(sw, entry, p4info_helper)
+                    self.insertMulticastGroupEntry(sw, entry, self.p4info_helper)
 
             if 'clone_session_entries' in sw_conf:
                 clone_entries = sw_conf['clone_session_entries']
                 info("Inserting %d clone entries..." % len(clone_entries))
                 for entry in clone_entries:
                     info(self.cloneEntryToString(entry))
-                    self.insertCloneGroupEntry(sw, entry, p4info_helper)
-
-        finally:
-            sw.shutdown()
+                    self.insertCloneGroupEntry(sw, entry, self.p4info_helper)
+        except Exception as e:
+            print e
+        # finally:
+        #     sw.shutdown()
 
 
     def insertTableEntry(self, sw, flow, p4info_helper):
@@ -210,7 +215,7 @@ class Controller():
         sw.WriteTableEntry(table_entry)
 
 
-    def printCounter(self, p4info_helper, sw, counter_name, index):
+    def printCounter(self, sw, counter_name, index):
         """
         Reads the specified counter at the specified index from the switch. In our
         program, the index is the tunnel ID. If the index is 0, it will return all
@@ -221,7 +226,7 @@ class Controller():
         :param counter_name: the name of the counter from the P4 program
         :param index: the counter index (in our case, the tunnel ID)
         """
-        for response in sw.ReadCounters(p4info_helper.get_counters_id(counter_name), index):
+        for response in sw.ReadCounters(self.p4info_helper.get_counters_id(counter_name), index):
             for entity in response.entities:
                 counter = entity.counter_entry
                 print "%s %s %d: %d packets (%d bytes)" % (
@@ -300,3 +305,6 @@ if __name__ == '__main__':
     # main()
     controller = Controller()
     controller.program_switches()
+    while True:
+        sleep(2)
+        controller.printCounter(controller.connections['s1'], "MyIngress.ingress_byte_cnt", 1)
