@@ -214,6 +214,24 @@ class Controller():
             priority=priority)
 
         sw.WriteTableEntry(table_entry)
+    
+    def modifyTableEntry(self, sw, flow):
+        table_name = flow['table']
+        match_fields = flow.get('match') # None if not found
+        action_name = flow['action_name']
+        default_action = flow.get('default_action') # None if not found
+        action_params = flow['action_params']
+        priority = flow.get('priority')  # None if not found
+
+        table_entry = self.p4info_helper.buildTableEntry(
+            table_name=table_name,
+            match_fields=match_fields,
+            default_action=default_action,
+            action_name=action_name,
+            action_params=action_params,
+            priority=priority)
+
+        sw.WriteTableEntry(table_entry, modify=True)
 
 
     def printCounter(self, sw, counter_name, index):
@@ -352,14 +370,14 @@ if __name__ == '__main__':
     flow = {
         "table": "MyIngress.myTunnel_operate",
         "match": {
-          "hdr.myTunnel.flow_id": 2
+          "hdr.myTunnel.flow_id": 1
         },
         "action_name": "MyIngress.assign_multicast",
         "action_params": {
           "multicast_group": 2
         }
       }
-    controller.insertTableEntry(controller.connections["s1"], flow)
+    controller.modifyTableEntry(controller.connections["s1"], flow)
     end = timeit.timeit()
     print(end - start)
     controller.readTableRules(controller.connections["s1"])
