@@ -15,8 +15,8 @@
 import re
 
 import google.protobuf.text_format
-from p4 import p4runtime_pb2
-from p4.config import p4info_pb2
+from p4.v1 import p4runtime_pb2
+from p4.config.v1 import p4info_pb2
 
 from convert import encode
 
