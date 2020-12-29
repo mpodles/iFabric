@@ -1,0 +1,11 @@
+[
+    {
+        "source" : "flow1",
+        "destination": "s2"
+    },
+
+    {
+        "source" : "s1",
+        "destination": "group2"
+    }
+]

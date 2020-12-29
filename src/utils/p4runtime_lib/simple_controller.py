@@ -70,6 +70,8 @@ class Controller():
         self.connections = {}
         try:
             self.read_topology()
+            self.read_flows()
+            self.read_policy()
         except Exception as e:
             print e
     
@@ -79,11 +81,22 @@ class Controller():
         with open(topo_file, 'r') as f:
             topo = json.load(f)
             self.switches = topo['switches']
+            self.groups = topo['groups']
 
         conf_file = self.project_directory + "build/switches_vars.json"
         with open(conf_file, 'r') as f:
             self.switches_config =  json.load(f)
-        
+
+    def read_flows(self):
+        flows_file = self.project_directory + "sig-topo/flows.json"
+        with open(flows_file, 'r') as f:
+            flows = json.load(f)
+            self.flows = flows['flows']
+
+    def read_policy(self):
+        policy_file = self.project_directory + "sig-topo/policy.json"
+        with open(policy_file, 'r') as f:
+            self.policy = json.load(f)
 
     def program_switch_p4runtime(self, sw_name, sw_dict):
         """ This method will use P4Runtime to program the switch using the
@@ -319,11 +332,11 @@ class Controller():
                                                         rule.get('packet_length_bytes', 0))
         sw.WritePREEntry(clone_entry)
 
-    def getAllCounters(self):
-        for _ in range (10):
-            for conn in self.connections.values():
-                self.printCounter(conn, "MyIngress.ingress_byte_cnt", 1)
-                self.printCounter(conn, "MyEgress.egress_byte_cnt", 1)
+    def getState(self):
+        for conn in self.connections.values():
+            for flow in self.flows:
+                self.printCounter(conn, "MyIngress.ingress_byte_cnt", flow)
+                self.printCounter(conn, "MyEgress.egress_byte_cnt", flow)
 
 
     def readTableRules(self, sw):
@@ -381,6 +394,9 @@ if __name__ == '__main__':
     end = timeit.timeit()
     print(end - start)
     controller.readTableRules(controller.connections["s1"])
+    print controller.flows
+    print controller.policy
+    print controller.groups
 
 
     
