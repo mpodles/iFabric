@@ -327,6 +327,10 @@ class Controller():
         mc_entry = self.p4info_helper.buildMulticastGroupEntry(rule["multicast_group_id"], rule['replicas'])
         sw.WritePREEntry(mc_entry)
 
+    def modifyMulticastGroupEntry(self, sw, rule):
+        mc_entry = self.p4info_helper.buildMulticastGroupEntry(rule["multicast_group_id"], rule['replicas'])
+        sw.WritePREEntry(mc_entry, modify=True)
+
     def insertCloneGroupEntry(self, sw, rule):
         clone_entry = self.p4info_helper.buildCloneSessionEntry(rule['clone_session_id'], rule['replicas'],
                                                         rule.get('packet_length_bytes', 0))
@@ -397,6 +401,20 @@ if __name__ == '__main__':
     print controller.flows
     print controller.policy
     print controller.groups
+    rule = {
+        "multicast_group_id" : 1,
+        "replicas" : [
+          {
+            "egress_port" : 3,
+            "instance" : 1
+          },
+          {
+            "egress_port" : 4,
+            "instance" : 1
+          }
+        ]
+      }
+    controller.modifyMulticastGroupEntry(controller.connections["s1"], rule)
 
 
     
