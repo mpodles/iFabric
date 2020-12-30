@@ -1,17 +1,17 @@
 {
     "flows":{
         "flow1":{
-            "mac.src": "0-20"
+            "hdr.ethernet.dstAddr": "0-20"
         },
 
 
         "flow2":{
-            "ipv4.dst": "10.0.0.2"
+            "hdr.ipv4.dstAddr": "10.0.0.2"
         },
 
 
         "flow3":{
-            "tcp.dst": "20-5000"
+            "hdr.tcp.dstPort": "20-5000"
         }
     }
 }
