@@ -1,4 +1,5 @@
 import json
+import re
 
 class P4Constructor():
     def __init__(self):
@@ -29,11 +30,39 @@ class P4Constructor():
             self.hosts = topo['hosts']
 
     def parse_topology(self):
-        self.match_links_to_nodes()
+        print self.links
+        self.topology = self.prepare_skeleton()
+        for link in self.links:
+            self.parse_link(link)
+                
+    def prepare_skeleton(self):
+        skeleton = {}
+        for switch in self.switches:
+            skeleton[switch] = {"switchports" : [], "endports": []}
+        return skeleton
 
-
-    def match_links_to_nodes(self):
-        self.nodes_ports = [[node,port] for [node, port] in self.links if 'h' in node]
+    def parse_link(self,link):
+        if "h" in link[0]:
+            host = link[0]
+            switch_port = link[1]
+            switch, port = re.match("(.+)-p([0-9]+)", switch_port).groups()
+            entry = {"port":port, "host": host}
+            self.topology[switch]["endports"].append(entry)
+        elif "h" in link[1]:
+            host = link[1]
+            switch_port = link[0]
+            switch, port = re.match("(.+)-p([0-9]+)", switch_port).groups()
+            entry = {"port":port, "host": host}
+            self.topology[switch]["endports"].append(entry)
+        else:
+            switch1, port1 = re.match("(.+)-p([0-9]+)", link[0]).groups()
+            switch2, port2 = re.match("(.+)-p([0-9]+)", link[1]).groups()
+            entry1 = {"port":port1,"connected_switch":switch2, "connected_port":port2}
+            entry2 = {"port":port2,"connected_switch":switch1, "connected_port":port1}
+            self.topology[switch1]["switchports"].append(entry1)
+            self.topology[switch2]["switchports"].append(entry2)
+            
+        
 
     def read_flows(self):
         flows_file = self.project_directory + "sig-topo/flows.json"
@@ -75,7 +104,7 @@ class P4Constructor():
 
         egress_tables_entries = self.generate_tables_entries(sw, pipeline= "egress")
 
-        tables_entries = ingress_tables_entries + egress_table_entries
+        tables_entries = ingress_tables_entries + egress_tables_entries
 
         multicast_group_entries = self.generate_multicast_groups_entries(sw)
 
@@ -84,7 +113,7 @@ class P4Constructor():
             "target": "bmv2",
             "p4info": "build/fabric_tunnel.p4.p4info.txt",
             "bmv2_json": "build/fabric_tunnel.json",
-            "table_entries": table_entries,
+            "table_entries": tables_entries,
             "multicast_group_entries" : multicast_group_entries
         }
 
@@ -107,34 +136,26 @@ class P4Constructor():
     
     def generate_multicast_groups_entries(self, sw):
         used_ports = self.get_used_switch_ports(sw)
-
         multicast_group_entries = []
-
-        multicast_group_entries= [
-        {
-        "multicast_group_id" : 1,
-        "replicas" : [
-          {
-            "egress_port" : 48,
-            "instance" : 1
-          },
-          {
-            "egress_port" : 5,
-            "instance" : 1
-          }
-        ]
-        }
-        ]
         for flow_id in self.ids:
-            replicas = self.generate_replicas
-
-            multicast_group = {"multicast_group_id" :flow_id }
-
-            multicast_group_entries.append
+            replicas = self.generate_replicas(used_ports)
+            multicast_group = {"multicast_group_id" :flow_id, "replicas": replicas }
+            multicast_group_entries.append(multicast_group)
 
     def get_used_switch_ports(self, sw):
-        # TODO
-        pass
+        switchports,endports =  self.topology[sw]["switchports"],self.topology[sw]["endports"]
+        ports = []
+        for entry in switchports + endports:
+            ports.append(entry["port"])
+        return ports
+
+    def generate_replicas(self, used_ports):
+        #TODO: make the random_subset random
+        random_subset = used_ports
+        replicas = []
+        for port in random_subset:
+            replicas.append({"egress_port": port, "instance": port})
+        return replicas
 
     def generate_table_entry(self, sw, flow, table):
         for match_key, match_value in self.flows[flow]:
@@ -158,7 +179,9 @@ class P4Constructor():
 
 if __name__ == '__main__':
     constructor = P4Constructor()
-    print constructor.nodes_ports
     print constructor.flows["flow2"]
     print constructor.ids
+    print constructor.topology
+    for i in range (1,5):
+        print constructor.get_used_switch_ports("s"+str(i))
     
