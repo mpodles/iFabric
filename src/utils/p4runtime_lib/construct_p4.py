@@ -1,13 +1,16 @@
 import json
 import re
+import random
+import jinja2
 
 class P4Constructor():
     def __init__(self):
         self.project_directory = "/home/mpodles/Documents/iFabric/src/main/"
         self.ingress_tables = ["MyIngress.flow_classifier"]
-        self.ingress_tables_actions = {"MyIngress.flow_classifier": "append_myTunnel_header"} 
+        self.ingress_table_matches = []
         self.egress_tables = ["MyEgress.port_checker"]
-        self.egress_tables_actions = {"MyEgress.port_checker": "strip_header"}
+        self.tables_action = {"MyIngress.flow_classifier": "append_myTunnel_header", "MyEgress.port_checker": "strip_header"}
+        self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "strip_header": [] }
         self.connections = {}
         try:
             self.read_topology()
@@ -30,7 +33,6 @@ class P4Constructor():
             self.hosts = topo['hosts']
 
     def parse_topology(self):
-        print self.links
         self.topology = self.prepare_skeleton()
         for link in self.links:
             self.parse_link(link)
@@ -88,6 +90,7 @@ class P4Constructor():
         
     def construct_p4_program(self):
         protocols = self.flows.keys()
+        self.ingress_table_matches = protocols + ["standard_metadata.ingress_port"]
         self.fill_p4_template(protocols)
 
     def fill_p4_template(self, protocols):
@@ -133,7 +136,38 @@ class P4Constructor():
                 tables_entries.append(self.generate_table_entry(sw,flow,table))
         return tables_entries
 
-    
+    def generate_table_entry(self, sw, flow, table):
+        for match_key, match_value in self.flows[flow].items():
+            match_key,match_value = self.parse_flow(match_key, match_value)
+            action = self.tables_action[table]
+            action_params = {}
+            for param in self.actions_parameters[action]:
+                action_params[param] = self.get_param_value(param,flow)
+            table_entry = {
+                    "table": table,
+                    "match": {
+                    match_key : match_value
+                    },
+                    "action_name": action,
+                    "action_params": action_params
+                }
+        return table_entry
+
+    def parse_flow(self, match_key, match_value):
+        #This works as a dictionary and parser in the future
+        #For now we assume flow json is already provided in p4 logic
+        return match_key, match_value
+
+
+    def get_param_value(self, param, flow):
+        if param == "flow_id":
+            return self.ids[flow]
+        elif param == "node_id":
+            return 404 + self.ids[flow]
+        elif param == "group_id": 
+            return 405 + self.ids[flow]
+        
+
     def generate_multicast_groups_entries(self, sw):
         used_ports = self.get_used_switch_ports(sw)
         multicast_group_entries = []
@@ -142,46 +176,43 @@ class P4Constructor():
             multicast_group = {"multicast_group_id" :flow_id, "replicas": replicas }
             multicast_group_entries.append(multicast_group)
 
-    def get_used_switch_ports(self, sw):
-        switchports,endports =  self.topology[sw]["switchports"],self.topology[sw]["endports"]
+    
+    def get_used_switch_to_switch_ports(self,sw):
+        switchports =  self.topology[sw]["switchports"]
         ports = []
-        for entry in switchports + endports:
+        for entry in switchports:
             ports.append(entry["port"])
         return ports
 
+    def get_used_switch_to_host_ports(self,sw):
+        endports =  self.topology[sw]["endports"]
+        ports = []
+        for entry in endports:
+            ports.append(entry["port"])
+        return ports
+
+    def get_used_switch_ports(self, sw):
+        switchports,endports =  self.get_used_switch_to_switch_ports(sw),self.get_used_switch_to_host_ports(sw)
+        ports = switchports + endports
+        return ports
+
     def generate_replicas(self, used_ports):
-        #TODO: make the random_subset random
-        random_subset = used_ports
+        random_subset = []
+        for port in used_ports:
+            if random.randint(0,1) == 0:
+                random_subset.append(port)
         replicas = []
         for port in random_subset:
             replicas.append({"egress_port": port, "instance": port})
         return replicas
 
-    def generate_table_entry(self, sw, flow, table):
-        for match_key, match_value in self.flows[flow]:
-            self.parse_flow
-            table_entry = {
-                    "table": table,
-                    "match": {
-                    match_key : match_value
-                    },
-                    "action_name": "MyIngress.append_myTunnel_header",
-                    "action_params": {
-                    "flow_id": self.ids["flow2"],
-                    "node_id": self.ids["h2"],
-                    "group_id": 1
-                    }
-                }
-        return table_entry
-
-    def parse_flow(self, sw, flow):
-        pass
 
 if __name__ == '__main__':
     constructor = P4Constructor()
     print constructor.flows["flow2"]
     print constructor.ids
-    print constructor.topology
-    for i in range (1,5):
-        print constructor.get_used_switch_ports("s"+str(i))
+    #print constructor.topology
+    print constructor.flows
+    for a,b in  constructor.flows["flow2"].items():
+        print a,b
     
