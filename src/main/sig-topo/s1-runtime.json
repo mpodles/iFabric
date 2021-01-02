@@ -5,8 +5,10 @@
     "table_entries": [
       {
         "table": "MyIngress.flow_classifier",
+        "priority": 1,
         "match": {
-          "hdr.ipv4.dstAddr": "10.0.0.2"
+          "hdr.ipv4.dstAddr": "10.0.0.2",
+          "hdr.ethernet.dstAddr": ["45:45:45:45:45:45", "45:45:45:45:45:55"]
         },
         "action_name": "MyIngress.append_myTunnel_header",
         "action_params": {
@@ -16,13 +18,17 @@
         }
       },
       {
-        "table": "MyIngress.myTunnel_operate",
+        "table": "MyIngress.flow_classifier",
+        "priority": 2,
         "match": {
-          "hdr.myTunnel.flow_id": 1
+          "hdr.ipv4.dstAddr": "10.0.0.3",
+          "hdr.ethernet.dstAddr": ["45:45:45:45:45:45", "45:45:45:45:45:65"]
         },
-        "action_name": "MyIngress.assign_multicast",
+        "action_name": "MyIngress.append_myTunnel_header",
         "action_params": {
-          "multicast_group": 1
+          "flow_id": 1,
+          "node_id": 1,
+          "group_id": 1
         }
       }
     ],

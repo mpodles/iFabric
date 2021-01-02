@@ -123,7 +123,8 @@ class Controller():
             provided for the switches.
         """
         for sw_name, sw_dict in self.switches.iteritems():
-            self.program_switch_p4runtime(sw_name, sw_dict)
+            if sw_name == "s1":
+                self.program_switch_p4runtime(sw_name, sw_dict)
 
     def check_switch_conf(self, sw_conf, workdir):
         required_keys = ["p4info"]
@@ -380,41 +381,43 @@ if __name__ == '__main__':
     # end = timeit.timeit()
     # print(end - start)
 
-    controller.readTableRules(controller.connections["s1"])
-    print 
-    print "all rules read"
-    start = timeit.timeit()
-    flow = {
-        "table": "MyIngress.myTunnel_operate",
-        "match": {
-          "hdr.myTunnel.flow_id": 1
-        },
-        "action_name": "MyIngress.assign_multicast",
-        "action_params": {
-          "multicast_group": 2
-        }
-      }
-    controller.modifyTableEntry(controller.connections["s1"], flow)
-    end = timeit.timeit()
-    print(end - start)
-    controller.readTableRules(controller.connections["s1"])
-    print controller.flows
-    print controller.policy
-    print controller.groups
-    rule = {
-        "multicast_group_id" : 1,
-        "replicas" : [
-          {
-            "egress_port" : 3,
-            "instance" : 1
-          },
-          {
-            "egress_port" : 4,
-            "instance" : 1
-          }
-        ]
-      }
-    controller.modifyMulticastGroupEntry(controller.connections["s1"], rule)
+    print "Switches programmed"
+    for i in range (1,2):
+        controller.readTableRules(controller.connections["s" + str(i)])
+    # print 
+    # print "all rules read"
+    # start = timeit.timeit()
+    # flow = {
+    #     "table": "MyIngress.myTunnel_operate",
+    #     "match": {
+    #       "hdr.myTunnel.flow_id": 1
+    #     },
+    #     "action_name": "MyIngress.assign_multicast",
+    #     "action_params": {
+    #       "multicast_group": 2
+    #     }
+    #   }
+    # controller.modifyTableEntry(controller.connections["s1"], flow)
+    # end = timeit.timeit()
+    # print(end - start)
+    # controller.readTableRules(controller.connections["s1"])
+    # print controller.flows
+    # print controller.policy
+    # print controller.groups
+    # rule = {
+    #     "multicast_group_id" : 1,
+    #     "replicas" : [
+    #       {
+    #         "egress_port" : 3,
+    #         "instance" : 1
+    #       },
+    #       {
+    #         "egress_port" : 4,
+    #         "instance" : 1
+    #       }
+    #     ]
+    #   }
+    # controller.modifyMulticastGroupEntry(controller.connections["s1"], rule)
 
 
     

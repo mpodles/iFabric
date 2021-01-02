@@ -3,28 +3,7 @@
   "p4info": "build/fabric_tunnel.p4.p4info.txt",
   "bmv2_json": "build/fabric_tunnel.json",
   "table_entries": [
-    {
-      "table": "MyIngress.flow_classifier",
-      "match": {
-        "hdr.ipv4.dstAddr": "10.0.0.2"
-      },
-      "action_name": "MyIngress.append_myTunnel_header",
-      "action_params": {
-        "flow_id": 1,
-        "node_id": 1,
-        "group_id": 1
-      }
-    },
-    {
-      "table": "MyIngress.myTunnel_operate",
-      "match": {
-        "hdr.myTunnel.flow_id": 1
-      },
-      "action_name": "MyIngress.assign_multicast",
-      "action_params": {
-        "multicast_group": 1
-      }
-    },
+    
     {
       "table": "MyEgress.port_checker",
       "match": {
