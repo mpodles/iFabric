@@ -3,19 +3,30 @@ import re
 import random
 import jinja2
 
+
+class TableEntry():
+    switch=''
+    table_name=''
+    match_values= []
+    action = ''
+    action_parameters = []
+    
+
+
 class P4Constructor():
     def __init__(self):
         self.project_directory = "/home/mpodles/Documents/iFabric/src/main/"
-        self.ingress_tables = ["MyIngress.flow_classifier"]
-        self.ingress_table_matches = []
+        self.ingress_tables = ["MyIngress.node_and_group_classifier", "MyIngress.flow_classifier"]
+        self.ingress_protocols = set(["standard_metadata.ingress_port"])
         self.egress_tables = ["MyEgress.port_checker"]
-        self.tables_action = {"MyIngress.flow_classifier": "append_myTunnel_header", "MyEgress.port_checker": "strip_header"}
-        self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "strip_header": [] }
+        self.tables_action = {"MyIngress.flow_classifier": "append_myTunnel_header", "MyIngress.node_and_group_classifier": "fix_header", "MyEgress.port_checker": "strip_header"}
+        self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "fix_header":["flow_id"], "strip_header": [] }
         self.connections = {}
         try:
             self.read_topology()
             self.parse_topology()
             self.read_flows()
+            self.parse_flows()
             self.read_policy()
             self.generate_ids()
             self.construct_p4_program()
@@ -69,8 +80,54 @@ class P4Constructor():
     def read_flows(self):
         flows_file = self.project_directory + "sig-topo/flows.json"
         with open(flows_file, 'r') as f:
-            flows = json.load(f)
-            self.flows = flows['flows']
+            self.flows = json.load(f)
+
+    def parse_flows(self):
+        #get priority list, pop priorities from dicts, parse match keys and values to proper p4
+        self.flows_by_priority_with_priority = []
+        priorities = []
+        for flow_name, flow_values in self.flows.items():
+            curr_priority = flow_values.pop("priority")
+            index = 0
+            for prio in priorities:
+                if curr_priority > prio:
+                    break
+                index+=1
+            priorities.insert(index, curr_priority)
+            self.flows_by_priority_with_priority.insert(index, (flow_name, curr_priority))
+            parsed_flow = self.parse_flow(flow_values, curr_priority)
+            self.flows[flow_name] =  parsed_flow
+
+
+    def parse_flow(self, flow_values, priority):
+        #parse flow into priority + rules where rules is dict of protcols and list of range dicts,
+        #range dicts contain low and high 
+        parsed_flow = {}
+        for entry in flow_values.items():
+            protocol, values = self.parse_protocol_entry(entry)
+            parsed_flow[protocol] = values
+        return {"priority": priority, "rules": parsed_flow}
+
+    def parse_protocol_entry(self,protocol_entry):
+        protocol_name, protocol_values = protocol_entry
+        protocol_name = self.parse_protocol_name(protocol_name)
+        protocol_values = self.parse_protocol_values(protocol_values)
+        return protocol_name, protocol_values
+
+
+    def parse_protocol_name(self, protocol_name):
+        #Dictionary for parsing user protocol name to usable p4 logic
+        #For now we assume correct protocol naming provided in json
+        self.ingress_protocols.add(protocol_name)
+        return protocol_name
+
+    def parse_protocol_values(self, protocol_values):
+        #Dictionary for parsing user protocol name to usable p4 logic
+        #For now we assume correct protocol naming provided in json
+        print(type(protocol_values))
+        if type(protocol_values) == unicode:
+            protocol_values = [{"low": protocol_values, "high": protocol_values}]
+        return protocol_values
 
     def read_policy(self):
         policy_file = self.project_directory + "sig-topo/policy.json"
@@ -87,15 +144,18 @@ class P4Constructor():
         for host in self.hosts:
             id+=1
             self.ids[host] = id
+
+        for group in self.groups:
+            id+=1
+            self.ids[group] = id
         
     def construct_p4_program(self):
-        protocols = self.flows.keys()
-        self.ingress_table_matches = protocols + ["standard_metadata.ingress_port"]
-        self.fill_p4_template(protocols)
+        self.fill_p4_template()
 
-    def fill_p4_template(self, protocols):
-        # TODO
-        pass
+    def fill_p4_template(self):
+        template_file = self.project_directory +"sig-topo/fabric_tunnel_template.jinja2"
+        with open(template_file, 'r') as t:
+            template = jinja2.Template(t.read())
 
     def construct_runtimes(self):
         for sw in self.switches:
@@ -103,9 +163,9 @@ class P4Constructor():
     
 
     def construct_switch_runtime_json(self, sw):
-        ingress_tables_entries = self.generate_tables_entries(sw, pipeline= "ingress")
+        ingress_tables_entries = self.generate_tables_entries_per_flow(sw, pipeline= "ingress")
 
-        egress_tables_entries = self.generate_tables_entries(sw, pipeline= "egress")
+        egress_tables_entries = self.generate_tables_entries_per_flow(sw, pipeline= "egress")
 
         tables_entries = ingress_tables_entries + egress_tables_entries
 
@@ -125,41 +185,36 @@ class P4Constructor():
         with open("/home/mpodles/Documents/iFabric/src/main/sig-topo/" + sw + "-runtime.json", "w") as f:
             f.write(result_string)
             
-    def generate_tables_entries(self, sw , pipeline):
+    def generate_tables_entries_per_flow(self, sw , pipeline):
         tables_entries = []
         if pipeline == "ingress":
             tables=self.ingress_tables
         elif pipeline == "egress":
             tables=self.egress_tables
         for table in tables:
-            for flow in self.flows:
-                tables_entries.append(self.generate_table_entry(sw,flow,table))
+            for flow in self.flows_by_priority_with_priority:
+                tables_entries.append(self.generate_table_entry_for_flow(sw,flow,table))
         return tables_entries
 
-    def generate_table_entry(self, sw, flow, table):
+    def generate_table_entry_for_flow(self, sw, flow, table):
+        flow_name , priority = flow 
         for match_key, match_value in self.flows[flow].items():
-            match_key,match_value = self.parse_flow(match_key, match_value)
             action = self.tables_action[table]
             action_params = {}
             for param in self.actions_parameters[action]:
-                action_params[param] = self.get_param_value(param,flow)
+                action_params[param] = self.get_param_value(sw, param,flow)
             table_entry = {
                     "table": table,
+                    "priority": priority,
                     "match": {
                     match_key : match_value
                     },
                     "action_name": action,
                     "action_params": action_params
                 }
-        return table_entry
+        return table_entry    
 
-    def parse_flow(self, match_key, match_value):
-        #This works as a dictionary and parser in the future
-        #For now we assume flow json is already provided in p4 logic
-        return match_key, match_value
-
-
-    def get_param_value(self, param, flow):
+    def get_param_value(self, sw, param, flow):
         if param == "flow_id":
             return self.ids[flow]
         elif param == "node_id":
@@ -209,6 +264,7 @@ class P4Constructor():
 
 if __name__ == '__main__':
     constructor = P4Constructor()
+    constructor.generate_table_entry_for_flow("s1", "flow2", "MyIngress.flow_classifier")
     print constructor.flows["flow2"]
     print constructor.ids
     #print constructor.topology
