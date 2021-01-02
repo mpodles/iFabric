@@ -5,7 +5,7 @@
 const bit<16> TYPE_MYTUNNEL = 0x1212;
 const bit<16> TYPE_ETHERNET = 0x0001;
 const bit<16> TYPE_IPV4 = 0x800;
-const bit<32> MAX_TUNNEL_ID = 1 << 16;
+const bit<32> MAX_TUNNEL_ID = 1 << 15;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -25,7 +25,7 @@ header ethernet_t {
 header myTunnel_t {
     bit<16> header_type;
     bit<16> next_protocol;
-    bit<32> flow_id;
+    bit<16> flow_id;
     bit<16> node_id;
     bit<16> group_id;
 }
@@ -119,7 +119,7 @@ control MyIngress(inout headers hdr,
     }
     
     action append_myTunnel_header(
-        bit<32> flow_id,
+        bit<16> flow_id,
         bit<16> node_id,
         bit<16> group_id) {
         hdr.myTunnel.setValid();
@@ -130,9 +130,13 @@ control MyIngress(inout headers hdr,
         hdr.myTunnel.group_id = group_id;
     }
 
-    table flow_classifier {
+    action fix_header(bit<16> flow_id){
+        hdr.myTunnel.flow_id = flow_id;
+    }
+
+    table node_and_group_classifier {
         key = {
-            hdr.ipv4.dstAddr: exact;
+            standard_metadata.egress_port: exact;
         }
         actions = {
             append_myTunnel_header;
@@ -143,12 +147,26 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
 
+    table flow_classifier {
+        key = {
+            hdr.ipv4.dstAddr: exact;
+            hdr.ethernet.dstAddr: range;
+        }
+        actions = {
+            fix_header;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
+
     apply {
-        if (!hdr.myTunnel.isValid()) {
+        if (!hdr.myTunnel.isValid()) 
             flow_classifier.apply();          
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
-        standard_metadata.mcast_gr = hdr.myTunnel.flow_id
-    }
+        standard_metadata.mcast_grp = (bit<16>)hdr.myTunnel.flow_id;
+        }
 }
 
 /*************************************************************************
