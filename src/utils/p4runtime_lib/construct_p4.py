@@ -18,6 +18,7 @@ class P4Constructor():
         self.project_directory = "/home/mpodles/Documents/iFabric/src/main/"
         self.ingress_tables = ["MyIngress.node_and_group_classifier", "MyIngress.flow_classifier"]
         self.ingress_protocols = set(["standard_metadata.ingress_port"])
+        self.ingress_protocols_abbrev = {"standard_metadata.ingress_port": "Node"}
         self.egress_tables = ["MyEgress.port_checker"]
         self.tables_action = {"MyIngress.flow_classifier": "append_myTunnel_header", "MyIngress.node_and_group_classifier": "fix_header", "MyEgress.port_checker": "strip_header"}
         self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "fix_header":["flow_id"], "strip_header": [] }
@@ -119,12 +120,20 @@ class P4Constructor():
         #Dictionary for parsing user protocol name to usable p4 logic
         #For now we assume correct protocol naming provided in json
         self.ingress_protocols.add(protocol_name)
+        self.ingress_protocols_abbrev[protocol_name] = self.protocol_abbrev(protocol_name)
         return protocol_name
+
+    def protocol_abbrev(self, protocol_name):
+        if 'tcp' in protocol_name:
+            return 'TCP'
+        elif 'ethernet' in  protocol_name:
+            return  'Ethernet'
+        elif 'ipv4' in protocol_name:
+            return 'IPv4'
 
     def parse_protocol_values(self, protocol_values):
         #Dictionary for parsing user protocol name to usable p4 logic
         #For now we assume correct protocol naming provided in json
-        print(type(protocol_values))
         if type(protocol_values) == unicode:
             protocol_values = [{"low": protocol_values, "high": protocol_values}]
         return protocol_values
@@ -153,9 +162,16 @@ class P4Constructor():
         self.fill_p4_template()
 
     def fill_p4_template(self):
-        template_file = self.project_directory +"sig-topo/fabric_tunnel_template.jinja2"
-        with open(template_file, 'r') as t:
-            template = jinja2.Template(t.read())
+        template_directory = self.project_directory + "sig-topo/"
+
+        file_loader = jinja2.FileSystemLoader(template_directory)
+        env = jinja2.Environment(loader=file_loader)
+        template=env.get_template("fabric_tunnel_template.jinja2")
+
+        output = template.render(ingress_protocols_abbrev=self.ingress_protocols_abbrev)
+        with open(template_directory+"fabric_tunnel_ready.p4",'w+')  as f:
+             f.write(output)
+        
 
     def construct_runtimes(self):
         for sw in self.switches:
@@ -264,11 +280,11 @@ class P4Constructor():
 
 if __name__ == '__main__':
     constructor = P4Constructor()
-    constructor.generate_table_entry_for_flow("s1", "flow2", "MyIngress.flow_classifier")
-    print constructor.flows["flow2"]
-    print constructor.ids
-    #print constructor.topology
-    print constructor.flows
-    for a,b in  constructor.flows["flow2"].items():
-        print a,b
+    # constructor.generate_table_entry_for_flow("s1", "flow2", "MyIngress.flow_classifier")
+    # print constructor.flows["flow2"]
+    # print constructor.ids
+    # #print constructor.topology
+    # print constructor.flows
+    # for a,b in  constructor.flows["flow2"].items():
+    #     print a,b
     
