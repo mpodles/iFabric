@@ -2,6 +2,7 @@ import json
 import re
 import random
 import jinja2
+import os
 
 
 class TableEntry():
@@ -15,17 +16,18 @@ class TableEntry():
 
 class P4Constructor():
     def __init__(self):
-        self.project_directory = "/home/mpodles/Documents/iFabric/src/main/"
-        self.ingress_tables = ["MyIngress.node_and_group_classifier", "MyIngress.flow_classifier"]
-        self.ingress_protocols = set(["standard_metadata.ingress_port"])
-        self.ingress_protocols_abbrev = {"standard_metadata.ingress_port": "Node"}
+        self.project_directory = "/home/mpodles/iFabric/src/main/"
+        self.ingress_tables = ["MyIngress.node_and_group_classifier"]
+        self.all_matches = set([("Node", "standard_metadata.ingress_port")])
+        # self.ingress_protocols_abbrev = {"standard_metadata.ingress_port": "Node"}
         self.egress_tables = ["MyEgress.port_checker"]
-        self.tables_action = {"MyIngress.flow_classifier": "append_myTunnel_header", "MyIngress.node_and_group_classifier": "fix_header", "MyEgress.port_checker": "strip_header"}
-        self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "fix_header":["flow_id"], "strip_header": [] }
+        self.tables_action = {"MyIngress.Node_classifier": "append_myTunnel_header", "MyEgress.port_checker": "strip_header"}
+        self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "fix_header":["flow_id", "priority"], "strip_header": [] }
         self.connections = {}
         try:
             self.read_topology()
             self.parse_topology()
+            self.read_protocols_implemented_and_required()
             self.read_flows()
             self.parse_flows()
             self.read_policy()
@@ -48,7 +50,7 @@ class P4Constructor():
         self.topology = self.prepare_skeleton()
         for link in self.links:
             self.parse_link(link)
-                
+
     def prepare_skeleton(self):
         skeleton = {}
         for switch in self.switches:
@@ -76,6 +78,18 @@ class P4Constructor():
             self.topology[switch1]["switchports"].append(entry1)
             self.topology[switch2]["switchports"].append(entry2)
             
+    def read_protocols_implemented_and_required(self):
+        protocols_dir = self.project_directory + "/protocols/"
+        self.implemented_protocols = {}
+        for filename in os.listdir(protocols_dir):
+            with open(protocols_dir + filename) as f:
+                self.implemented_protocols[filename] = f.read()
+        
+        protocols_stack_file = self.project_directory + "/sig-topo/protocol_stack.json"
+        with open(protocols_stack_file, "r") as f:
+            protocols_stack = json.loads(f.read())
+            self.protocols_stack = protocols_stack["stacks"]
+            self.next_protocols_fields = protocols_stack["next_prot_fields"]
         
 
     def read_flows(self):
@@ -105,25 +119,27 @@ class P4Constructor():
         #range dicts contain low and high 
         parsed_flow = {}
         for entry in flow_values.items():
-            protocol, values = self.parse_protocol_entry(entry)
-            parsed_flow[protocol] = values
+            match_field_name, values = self.parse_protocol_entry(entry)
+            parsed_flow[match_field_name] = values
         return {"priority": priority, "rules": parsed_flow}
 
     def parse_protocol_entry(self,protocol_entry):
         protocol_name, protocol_values = protocol_entry
-        protocol_name = self.parse_protocol_name(protocol_name)
+        match_field_name = self.parse_protocol_name(protocol_name)
         protocol_values = self.parse_protocol_values(protocol_values)
-        return protocol_name, protocol_values
+        return match_field_name, protocol_values
 
 
     def parse_protocol_name(self, protocol_name):
         #Dictionary for parsing user protocol name to usable p4 logic
         #For now we assume correct protocol naming provided in json
-        self.ingress_protocols.add(protocol_name)
-        self.ingress_protocols_abbrev[protocol_name] = self.protocol_abbrev(protocol_name)
-        return protocol_name
+        # match_field_name, table_name = self.protocol_abbrev(protocol_name)
+        match_field_name, table_name = "hdr." + protocol_name, protocol_name.replace(".", "_")
+        self.all_matches.add((table_name, match_field_name))
+        return match_field_name
 
     def protocol_abbrev(self, protocol_name):
+        #TODO: add parsing any kind of protocol name like "tcp destination"
         if 'tcp' in protocol_name:
             return 'TCP'
         elif 'ethernet' in  protocol_name:
@@ -168,8 +184,10 @@ class P4Constructor():
         env = jinja2.Environment(loader=file_loader)
         template=env.get_template("fabric_tunnel_template.jinja2")
 
-        output = template.render(ingress_protocols_abbrev=self.ingress_protocols_abbrev)
+        output = template.render(all_matches=self.all_matches, protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
         with open(template_directory+"fabric_tunnel_ready.p4",'w+')  as f:
+             f.write(output)
+        with open(self.project_directory + "fabric_tunnel.p4",'w+')  as f:
              f.write(output)
         
 

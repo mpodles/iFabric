@@ -1,19 +1,19 @@
 {
 
         "flow1":{
-            "hdr.ethernet.dstAddr": [{"low": "45:45:45:45:45:45", "high": "45:45:45:45:45:65"}],
+            "Ethernet.dstAddr": [{"low": "45:45:45:45:45:45", "high": "45:45:45:45:45:65"}],
             "priority": 1
         },
 
 
         "flow2":{
-            "hdr.ipv4.dstAddr": "10.0.0.2",
+            "IPv4.dstAddr": "10.0.0.2",
             "priority": 2
         },
 
 
         "flow3":{
-            "hdr.tcp.dstPort": "20",
+            "TCP.dstPort": "20",
             "priority": 3
         }
 

@@ -1,0 +1,9 @@
+const bit<16> Ethernet_etherType_TYPE_IPv4 = 0x800;
+
+typedef bit<48> macAddr_t;
+
+header Ethernet_t {
+    macAddr_t dstAddr;
+    macAddr_t srcAddr;
+    bit<16>   etherType;
+}
