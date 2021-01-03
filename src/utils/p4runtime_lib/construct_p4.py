@@ -8,19 +8,21 @@ import os
 class TableEntry():
     switch=''
     table_name=''
-    match_values= []
+    match_field_name = ''
+    match_value= {"low": '', "high":''}
     action = ''
-    action_parameters = []
+    action_parameters = {}
+    priority = int
     
 
 
 class P4Constructor():
     def __init__(self):
         self.project_directory = "/home/mpodles/iFabric/src/main/"
-        self.ingress_tables = ["MyIngress.node_and_group_classifier"]
-        self.all_matches = set([("Node", "standard_metadata.ingress_port")])
-        # self.ingress_protocols_abbrev = {"standard_metadata.ingress_port": "Node"}
-        self.egress_tables = ["MyEgress.port_checker"]
+        self.tables = ["Node_classifier"]
+        self.match_field_name_table = {"standard_metadata.ingress_port": "Node_classifier"}
+        # # self.ingress_protocols_abbrev = {"standard_metadata.ingress_port": "Node"}
+        # self.egress_tables = ["MyEgress.port_checker"]
         self.tables_action = {"MyIngress.Node_classifier": "append_myTunnel_header", "MyEgress.port_checker": "strip_header"}
         self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "fix_header":["flow_id", "priority"], "strip_header": [] }
         self.connections = {}
@@ -30,8 +32,9 @@ class P4Constructor():
             self.read_protocols_implemented_and_required()
             self.read_flows()
             self.parse_flows()
-            self.read_policy()
-            self.generate_ids()
+            self.generate_tables_actions()
+            #self.read_policy()
+            self.generate_ids_for_flows()
             self.construct_p4_program()
             #self.construct_switch_runtime_json()
         except Exception as e:
@@ -50,7 +53,7 @@ class P4Constructor():
         self.topology = self.prepare_skeleton()
         for link in self.links:
             self.parse_link(link)
-
+    
     def prepare_skeleton(self):
         skeleton = {}
         for switch in self.switches:
@@ -113,29 +116,37 @@ class P4Constructor():
             parsed_flow = self.parse_flow(flow_values, curr_priority)
             self.flows[flow_name] =  parsed_flow
 
+    def generate_tables_actions(self):
+        for (table_name,_) in self.tables_with_matching_field_name:
+            if table_name != "Node_classifier":
+                self.tables_action["MyIngress." + table_name] = "fix_header"
+            
 
     def parse_flow(self, flow_values, priority):
         #parse flow into priority + rules where rules is dict of protcols and list of range dicts,
         #range dicts contain low and high 
         parsed_flow = {}
         for entry in flow_values.items():
-            match_field_name, values = self.parse_protocol_entry(entry)
+            match_field_name, values = self.parse_match_field_entry(entry)
             parsed_flow[match_field_name] = values
-        return {"priority": priority, "rules": parsed_flow}
+        return parsed_flow
 
-    def parse_protocol_entry(self,protocol_entry):
-        protocol_name, protocol_values = protocol_entry
-        match_field_name = self.parse_protocol_name(protocol_name)
-        protocol_values = self.parse_protocol_values(protocol_values)
-        return match_field_name, protocol_values
+    def parse_match_field_entry(self,match_field_entry):
+        match_field_name, match_field_values = match_field_entry
+        match_field_name = self.parse_match_field_name(match_field_name)
+        match_field_values = self.parse_match_field_values(match_field_values)
+        return match_field_name, match_field_values
 
 
-    def parse_protocol_name(self, protocol_name):
-        #Dictionary for parsing user protocol name to usable p4 logic
-        #For now we assume correct protocol naming provided in json
-        # match_field_name, table_name = self.protocol_abbrev(protocol_name)
-        match_field_name, table_name = "hdr." + protocol_name, protocol_name.replace(".", "_")
-        self.all_matches.add((table_name, match_field_name))
+    def parse_match_field_name(self, match_field_name):
+        #Dictionary for parsing user match_field name to usable p4 logic
+        #For now we assume correct match_field naming provided in json
+        #The function also fills dict containing table name for each match_field_name and list of all tables
+
+        # match_field_name, table_name = self.protocol_abbrev(match_field_name)
+        match_field_name, table_name = "hdr." + match_field_name, match_field_name.replace(".", "_") + "_classifier"
+        self.table_for_match_field_name[match_field_name] = table_name
+        self.tables.append(table_name)
         return match_field_name
 
     def protocol_abbrev(self, protocol_name):
@@ -147,32 +158,29 @@ class P4Constructor():
         elif 'ipv4' in protocol_name:
             return 'IPv4'
 
-    def parse_protocol_values(self, protocol_values):
-        #Dictionary for parsing user protocol name to usable p4 logic
-        #For now we assume correct protocol naming provided in json
-        if type(protocol_values) == unicode:
-            protocol_values = [{"low": protocol_values, "high": protocol_values}]
-        return protocol_values
+    def parse_match_field_values(self, match_field_values):
+        #Dictionary for parsing user match_field values
+        #into usable p4 low high bounds, for now we assume correct
+        #parsing or in case of single value we change into correct parsing
+        if type(match_field_values) == unicode:
+            match_field_values = [{"low": match_field_values, "high": match_field_values}]
+        return match_field_values
 
     def read_policy(self):
         policy_file = self.project_directory + "sig-topo/policy.json"
         with open(policy_file, 'r') as f:
             self.policy = json.load(f)
 
-    def generate_ids(self):
-        self.ids = {}
+    def generate_ids_for_flows(self):
+        self.flow_ids = {}
         id = 0
         for flow in self.flows:
             id+=1
-            self.ids[flow] = id
+            self.flow_ids[flow] = id
 
         for host in self.hosts:
             id+=1
-            self.ids[host] = id
-
-        for group in self.groups:
-            id+=1
-            self.ids[group] = id
+            self.flow_ids[host] = id
         
     def construct_p4_program(self):
         self.fill_p4_template()
@@ -184,7 +192,8 @@ class P4Constructor():
         env = jinja2.Environment(loader=file_loader)
         template=env.get_template("fabric_tunnel_template.jinja2")
 
-        output = template.render(all_matches=self.all_matches, protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
+        output = template.render(tables_with_matching_field_name=self.tables_with_matching_field_name,\
+             protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
         with open(template_directory+"fabric_tunnel_ready.p4",'w+')  as f:
              f.write(output)
         with open(self.project_directory + "fabric_tunnel.p4",'w+')  as f:
@@ -193,15 +202,11 @@ class P4Constructor():
 
     def construct_runtimes(self):
         for sw in self.switches:
-            self.construct_switch_runtime_json(sw)
+            self.construct_runtime_for_switch(sw)
     
 
-    def construct_switch_runtime_json(self, sw):
-        ingress_tables_entries = self.generate_tables_entries_per_flow(sw, pipeline= "ingress")
-
-        egress_tables_entries = self.generate_tables_entries_per_flow(sw, pipeline= "egress")
-
-        tables_entries = ingress_tables_entries + egress_tables_entries
+    def construct_runtime_for_switch(self, sw):
+        tables_entries = self.generate_tables_entries_for_switch
 
         multicast_group_entries = self.generate_multicast_groups_entries(sw)
 
@@ -216,51 +221,42 @@ class P4Constructor():
 
         result_string = json.dumps(result_dictionary)
 
-        with open("/home/mpodles/Documents/iFabric/src/main/sig-topo/" + sw + "-runtime.json", "w") as f:
-            f.write(result_string)
+        # with open("/home/mpodles/Documents/iFabric/src/main/sig-topo/" + sw + "-runtime.json", "w") as f:
+        #     f.write(result_string)
             
-    def generate_tables_entries_per_flow(self, sw , pipeline):
-        tables_entries = []
-        if pipeline == "ingress":
-            tables=self.ingress_tables
-        elif pipeline == "egress":
-            tables=self.egress_tables
-        for table in tables:
-            for flow in self.flows_by_priority_with_priority:
-                tables_entries.append(self.generate_table_entry_for_flow(sw,flow,table))
-        return tables_entries
+    def generate_tables_entries_for_switch(self, sw):
+        switch_tables_entries = []
+        for (flow_name, priority) in self.flows_by_priority_with_priority:
+                switch_tables_entries.append(self.generate_table_entry_for_flow_for_switch(sw,flow_name,priority))
+        return switch_tables_entries
 
-    def generate_table_entry_for_flow(self, sw, flow, table):
-        flow_name , priority = flow 
-        for match_key, match_value in self.flows[flow].items():
-            action = self.tables_action[table]
-            action_params = {}
-            for param in self.actions_parameters[action]:
-                action_params[param] = self.get_param_value(sw, param,flow)
-            table_entry = {
-                    "table": table,
-                    "priority": priority,
-                    "match": {
-                    match_key : match_value
-                    },
-                    "action_name": action,
-                    "action_params": action_params
-                }
-        return table_entry    
+    def generate_table_entries_for_flow_for_switch(self, sw, flow, priority):
+        one_flow_switch_table_entries =
+        for flow,rules in self.flows.items():
+            for match_field_name, match_field_values in rules:
+                for values
+                action_params = {}
+                for param in self.actions_parameters[action]:
+                    action_params[param] = self.get_param_value(sw, param,flow)
+                
+        return table_entries
+
+    def generate_table_entry_for_flow_for_table_for_switch(self, sw, flow, priority, table):
+
 
     def get_param_value(self, sw, param, flow):
         if param == "flow_id":
-            return self.ids[flow]
+            return self.flow_ids[flow]
         elif param == "node_id":
-            return 404 + self.ids[flow]
+            return 404 + self.flow_ids[flow]
         elif param == "group_id": 
-            return 405 + self.ids[flow]
+            return 405 + self.flow_ids[flow]
         
 
     def generate_multicast_groups_entries(self, sw):
         used_ports = self.get_used_switch_ports(sw)
         multicast_group_entries = []
-        for flow_id in self.ids:
+        for flow_id in self.flow_ids:
             replicas = self.generate_replicas(used_ports)
             multicast_group = {"multicast_group_id" :flow_id, "replicas": replicas }
             multicast_group_entries.append(multicast_group)

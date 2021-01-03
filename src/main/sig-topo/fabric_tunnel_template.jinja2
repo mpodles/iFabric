@@ -118,9 +118,9 @@ control MyIngress(inout headers hdr,
     }
 
 
-    {% for (table_name, match_field_name) in all_matches -%}
+    {% for (table_name, match_field_name) in tables_with_matching_field_name -%}
 
-    table {{table_name}}_classifier {
+    table {{table_name}} {
         key = {
             {{match_field_name}}: range;
         }
@@ -137,8 +137,7 @@ control MyIngress(inout headers hdr,
     apply {
         if (!hdr.myTunnel.isValid()){
             Node_classifier.apply();
-            {% for (table_name, _) in all_matches if table_name != "Node" -%}
-            {{table_name}}_classifier.apply();{% endfor %}
+            {% for (table_name, _) in tables_with_matching_field_name if table_name != "Node" -%}{{table_name}}.apply();{% endfor %}
         }         
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
         standard_metadata.mcast_grp = (bit<16>)hdr.myTunnel.flow_id;
