@@ -3,25 +3,13 @@
 #include <v1model.p4>
 
 const bit<16> TYPE_MYTUNNEL = 0x1212;
-const bit<16> TYPE_ETHERNET = 0x0001;
-const bit<16> TYPE_IPV4 = 0x800;
 const bit<32> MAX_TUNNEL_ID = 1 << 15;
-const bit<8>  TYPE_TCP  = 6;
+const bit<16> myTunnel_next_protocol_TYPE_ETHERNET = 0x0001;
+
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
-
-typedef bit<9>  egressSpec_t;
-typedef bit<48> macAddr_t;
-typedef bit<32> ip4Addr_t;
-typedef bit<48> time_t;
-
-header ethernet_t {
-    macAddr_t dstAddr;
-    macAddr_t srcAddr;
-    bit<16>   etherType;
-}
 
 header myTunnel_t {
     bit<16> header_type;
@@ -31,7 +19,20 @@ header myTunnel_t {
     bit<16> group_id;
 }
 
-header ipv4_t {
+const bit<16> Ethernet_etherType_TYPE_IPv4 = 0x800;
+
+typedef bit<48> macAddr_t;
+
+header Ethernet_t {
+    macAddr_t dstAddr;
+    macAddr_t srcAddr;
+    bit<16>   etherType;
+}  
+const bit<8>  IPv4_protocol_TYPE_TCP  = 6;
+
+typedef bit<32> ip4Addr_t;
+
+header IPv4_t {
     bit<4>    version;
     bit<4>    ihl;
     bit<8>    diffserv;
@@ -44,9 +45,8 @@ header ipv4_t {
     bit<16>   hdrChecksum;
     ip4Addr_t srcAddr;
     ip4Addr_t dstAddr;
-}
-
-header tcp_t{
+}  
+header TCP_t{
     bit<16> srcPort;
     bit<16> dstPort;
     bit<32> seqNo;
@@ -64,7 +64,8 @@ header tcp_t{
     bit<16> window;
     bit<16> checksum;
     bit<16> urgentPtr;
-}
+}  
+
 
 struct metadata {
     bit<16>    priority;
@@ -72,9 +73,10 @@ struct metadata {
 
 struct headers {
     myTunnel_t   myTunnel;
-    ethernet_t   ethernet;
-    ipv4_t       ipv4;
-    tcp_t        tcp;
+    Ethernet_t  Ethernet;  
+    IPv4_t  IPv4;  
+    TCP_t  TCP;  
+    
 }
 
 /*************************************************************************
@@ -89,38 +91,38 @@ parser MyParser(packet_in packet,
     state start {
         transition select(packet.lookahead<myTunnel_t>().header_type) {
             TYPE_MYTUNNEL              : parse_myTunnel;
-            default                    : parse_ethernet;
+            default                    : parse_Ethernet;
         }     
-        //transition parse_ethernet;  
     }
+
 
     state parse_myTunnel {
         packet.extract(hdr.myTunnel);
         transition select(hdr.myTunnel.next_protocol) {
-            TYPE_ETHERNET: parse_ethernet;
+            myTunnel_next_protocol_TYPE_ETHERNET: parse_Ethernet;
             default: accept;
         }
     }
 
-    state parse_ethernet {
-        packet.extract(hdr.ethernet);
-        transition select(hdr.ethernet.etherType) {
-            TYPE_IPV4: parse_ipv4;
-            default: accept;
+    state parse_Ethernet {
+        packet.extract(hdr.Ethernet);
+        
+        transition select(hdr.Ethernet.etherType) {
+            Ethernet_etherType_TYPE_IPv4: parse_IPv4;
+            transition accept;
         }
     }
-
-    state parse_ipv4 {
-        packet.extract(hdr.ipv4);
-        transition select(hdr.ipv4.protocol){
-            TYPE_TCP: tcp;
-            default: accept;
+    state parse_IPv4 {
+        packet.extract(hdr.IPv4);
+        
+        transition select(hdr.IPv4.protocol) {
+            IPv4_protocol_TYPE_TCP: parse_TCP;
+            transition accept;
         }
     }
-
-    state tcp {
-       packet.extract(hdr.tcp);
-       transition accept;
+    state parse_TCP {
+        packet.extract(hdr.TCP);
+        default: accept;
     }
     
 
@@ -156,7 +158,7 @@ control MyIngress(inout headers hdr,
         meta.priority = 0;
         hdr.myTunnel.setValid();
         hdr.myTunnel.header_type = TYPE_MYTUNNEL;
-        hdr.myTunnel.next_protocol = TYPE_ETHERNET;
+        hdr.myTunnel.next_protocol = myTunnel_next_protocol_TYPE_ETHERNET;
         hdr.myTunnel.flow_id = flow_id;
         hdr.myTunnel.node_id = node_id;
         hdr.myTunnel.group_id = group_id;
@@ -165,53 +167,54 @@ control MyIngress(inout headers hdr,
     action fix_header(bit<16> flow_id, bit<16> priority){
         if (priority > meta.priority){
             hdr.myTunnel.flow_id = flow_id;
-            meta.priority = priority
+            meta.priority = priority;
         }
         
     }
 
+
+    table TCP_dstPort_classifier {
+        key = {
+            hdr.TCP.dstPort: range;
+        }
+        actions = {
+            fix_header;  
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
     table Node_classifier {
         key = {
-            standard_metadata.egress_port: exact;
+            standard_metadata.ingress_port: range;
         }
         actions = {
-            append_myTunnel_header;
+            append_myTunnel_header;  
             drop;
             NoAction;
         }
         size = 1024;
         default_action = NoAction();
     }
-    table IPv4_classifier {
+    table IPv4_dstAddr_classifier {
         key = {
-            hdr.ipv4.dstAddr range;
+            hdr.IPv4.dstAddr: range;
         }
         actions = {
-            fix_header;
+            fix_header;  
             drop;
             NoAction;
         }
         size = 1024;
         default_action = NoAction();
     }
-    table TCP_classifier {
+    table Ethernet_dstAddr_classifier {
         key = {
-            hdr.tcp.dstPort range;
+            hdr.Ethernet.dstAddr: range;
         }
         actions = {
-            fix_header;
-            drop;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
-    }
-    table Ethernet_classifier {
-        key = {
-            hdr.ethernet.dstAddr range;
-        }
-        actions = {
-            fix_header;
+            fix_header;  
             drop;
             NoAction;
         }
@@ -222,11 +225,8 @@ control MyIngress(inout headers hdr,
 
     apply {
         if (!hdr.myTunnel.isValid()){
-            Node_classifier.apply()
-            IPv4_classifier.apply();
-            TCP_classifier.apply();
-            Ethernet_classifier.apply();
-            
+            Node_classifier.apply();
+            TCP_dstPort_classifier.apply();IPv4_dstAddr_classifier.apply();Ethernet_dstAddr_classifier.apply();
         }         
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
         standard_metadata.mcast_grp = (bit<16>)hdr.myTunnel.flow_id;
