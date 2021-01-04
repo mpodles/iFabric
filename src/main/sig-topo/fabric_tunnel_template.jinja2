@@ -118,7 +118,7 @@ control MyIngress(inout headers hdr,
     }
 
 
-    {% for (table_name, match_field_name) in tables_with_matching_field_name -%}
+    {% for (match_field_name, table_name) in match_field_name_table.items() -%}
 
     table {{table_name}} {
         key = {
@@ -137,7 +137,8 @@ control MyIngress(inout headers hdr,
     apply {
         if (!hdr.myTunnel.isValid()){
             Node_classifier.apply();
-            {% for (table_name, _) in tables_with_matching_field_name if table_name != "Node" -%}{{table_name}}.apply();{% endfor %}
+            {% for (match_field_name, table_name) in match_field_name_table.items() if table_name != "Node" -%}
+            {{table_name}}.apply();{% endfor %}
         }         
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
         standard_metadata.mcast_grp = (bit<16>)hdr.myTunnel.flow_id;
@@ -192,8 +193,9 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.myTunnel);
-        packet.emit(hdr.ethernet);
-        packet.emit(hdr.ipv4);
+        packet.emit(hdr.Ethernet);
+        packet.emit(hdr.IPv4);
+        packet.emit(hdr.TCP)
     }
 }
 

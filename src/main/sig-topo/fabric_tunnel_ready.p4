@@ -173,6 +173,18 @@ control MyIngress(inout headers hdr,
     }
 
 
+    table IPv4_dstAddr_classifier {
+        key = {
+            hdr.IPv4.dstAddr: range;
+        }
+        actions = {
+            fix_header;  
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
     table TCP_dstPort_classifier {
         key = {
             hdr.TCP.dstPort: range;
@@ -188,18 +200,6 @@ control MyIngress(inout headers hdr,
     table Node_classifier {
         key = {
             standard_metadata.ingress_port: range;
-        }
-        actions = {
-            append_myTunnel_header;  
-            drop;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
-    }
-    table IPv4_dstAddr_classifier {
-        key = {
-            hdr.IPv4.dstAddr: range;
         }
         actions = {
             fix_header;  
@@ -226,7 +226,7 @@ control MyIngress(inout headers hdr,
     apply {
         if (!hdr.myTunnel.isValid()){
             Node_classifier.apply();
-            TCP_dstPort_classifier.apply();IPv4_dstAddr_classifier.apply();Ethernet_dstAddr_classifier.apply();
+            IPv4_dstAddr_classifier.apply();TCP_dstPort_classifier.apply();Node_classifier.apply();Ethernet_dstAddr_classifier.apply();
         }         
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
         standard_metadata.mcast_grp = (bit<16>)hdr.myTunnel.flow_id;
@@ -281,8 +281,9 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.myTunnel);
-        packet.emit(hdr.ethernet);
-        packet.emit(hdr.ipv4);
+        packet.emit(hdr.Ethernet);
+        packet.emit(hdr.IPv4);
+        packet.emit(hdr.TCP)
     }
 }
 
