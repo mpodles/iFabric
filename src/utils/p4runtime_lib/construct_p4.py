@@ -22,9 +22,8 @@ class P4Constructor():
         self.project_directory = "/home/mpodles/iFabric/src/main/"
         self.tables = ["Node_classifier"]
         self.match_field_name_table = {"standard_metadata.ingress_port": "Node_classifier"}
-        self.egress_tables = ["MyEgress.port_checker"]
-        self.tables_action = {"MyIngress.Node_classifier": "append_myTunnel_header", "MyEgress.port_checker": "strip_header"}
-        self.actions_parameters = {"append_myTunnel_header": ["flow_id", "node_id", "group_id"], "fix_header":["flow_id", "priority"], "strip_header": [] }
+        self.tables_action = {"MyIngress.Node_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
+        self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyIngress.fix_header":["flow_id", "priority"], "MyEgress.strip_header": [] }
         self.connections = {}
 
         self.read_topology()
@@ -174,10 +173,11 @@ class P4Constructor():
                 else:                
                     self.switches_node_flows[switch][host+ "_flow"] = {"standard_metadata.ingress_port": [{"low": port, "high": port}]}
                     self.flows[host+ "_flow"] = {"standard_metadata.ingress_port": [{"low": port, "high": port}]}
+
     def generate_tables_actions(self):
         for table_name in self.match_field_name_table.values():
             if table_name != "Node_classifier":
-                self.tables_action["MyIngress." + table_name] = "fix_header"
+                self.tables_action["MyIngress." + table_name] = "MyIngress.fix_header"
 
     def read_policy(self):
         policy_file = self.project_directory + "sig-topo/policy.json"
@@ -275,7 +275,7 @@ class P4Constructor():
         egress_entries = []
         priority = 1 
         table_name = "MyEgress.port_checker"
-        action = "strip_header"
+        action = "MyEgress.strip_header"
         host_ports = set([])
         for endport in self.topology[sw]["endports"]:
             host_ports.add(endport["port"])
@@ -312,11 +312,17 @@ class P4Constructor():
     def turn_table_entries_into_dicts(self, table_entries):
         result_table_entries = []
         for table_entry in table_entries:
+            low = table_entry.match_value["low"]
+            high = table_entry.match_value["high"]
+            if self.represents_int(low):
+                low = int(low)
+            if self.represents_int(high):
+                high = int(high)
             result_table_entry = {
             "table": table_entry.table_name,
             "priority": table_entry.priority,
             "match": {
-                table_entry.match_field_name: [table_entry.match_value["low"] ,table_entry.match_value["high"]]
+                table_entry.match_field_name: [low, high]
             },
             "action_name": table_entry.action,
             "action_params": table_entry.action_parameters
@@ -335,7 +341,13 @@ class P4Constructor():
             multicast_group = {"multicast_group_id" :flow_id, "replicas": replicas }
             multicast_group_entries.append(multicast_group)
         return multicast_group_entries
-
+    
+    def represents_int(self, string):
+        try:
+            int(string)
+            return True
+        except ValueError:
+            return False
     
     def get_used_switch_to_switch_ports(self,sw):
         switchports =  self.topology[sw]["switchports"]
@@ -363,7 +375,7 @@ class P4Constructor():
                 random_subset.append(port)
         replicas = []
         for port in random_subset:
-            replicas.append({"egress_port": port, "instance": port})
+            replicas.append({"egress_port": int(port), "instance": int(port)})
         return replicas
 
 
