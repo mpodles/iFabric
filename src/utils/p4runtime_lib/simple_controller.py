@@ -66,7 +66,7 @@ class ConfException(Exception):
 
 class Controller():
     def __init__(self):
-        self.project_directory = "/home/mpodles/Documents/iFabric/src/main/"
+        self.project_directory = "/home/mpodles/iFabric/src/main/"
         self.connections = {}
         try:
             self.read_topology()

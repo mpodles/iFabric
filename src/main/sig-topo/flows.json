@@ -2,7 +2,7 @@
 
         "flow1":{
             "Ethernet.dstAddr": [{"low": "45:45:45:45:45:45", "high": "45:45:45:45:45:65"}],
-            "TCP.dstPort": [{"low": "80", "high": "83"}, {"low": "8", "high": "73"}],
+            "IPv4.dstAddr": "10.0.0.3",
             "priority": 13
         },
 
@@ -14,7 +14,7 @@
 
 
         "flow3":{
-            "TCP.dstPort": "20",
+            "IPv4.dstAddr": "10.0.0.4",
             "priority": 11
         }
 

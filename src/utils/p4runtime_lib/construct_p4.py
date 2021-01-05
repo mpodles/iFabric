@@ -250,8 +250,8 @@ class P4Constructor():
         else:
             rules = self.switches_node_flows[sw][flow]
         for match_field_name, match_field_values in rules.items():
-            table_name = self.match_field_name_table[match_field_name]
-            action = self.tables_action["MyIngress." + table_name]
+            table_name = "MyIngress." + self.match_field_name_table[match_field_name]
+            action = self.tables_action[table_name]
             priority_offset = 0
             for values_range in match_field_values:
                 table_entry = TableEntry()
@@ -273,6 +273,7 @@ class P4Constructor():
 
     def generate_egress_table_entries(self, sw):
         egress_entries = []
+        priority = 1 
         table_name = "MyEgress.port_checker"
         action = "strip_header"
         host_ports = set([])
@@ -282,11 +283,14 @@ class P4Constructor():
             table_entry = TableEntry()
             table_entry.switch = sw
             table_entry.table_name = table_name
-            table_entry.match_field_name = "standard_metadata.ingress_port"
+            table_entry.match_field_name = "standard_metadata.egress_port"
             table_entry.match_value= {"low": port, "high":port}
             table_entry.action = action
             table_entry.action_parameters = ''
+            table_entry.priority = priority
             egress_entries.append(table_entry)
+
+            priority += 1
         return egress_entries
 
     def set_table_entry_action_parameters(self, table_entry):
@@ -310,15 +314,16 @@ class P4Constructor():
         for table_entry in table_entries:
             result_table_entry = {
             "table": table_entry.table_name,
+            "priority": table_entry.priority,
             "match": {
-                table_entry.match_field_name: table_entry.match_value
+                table_entry.match_field_name: [table_entry.match_value["low"] ,table_entry.match_value["high"]]
             },
             "action_name": table_entry.action,
             "action_params": table_entry.action_parameters
             }
 
-            if table_entry.priority is not None:
-                result_table_entry["priority"] = table_entry.priority
+            # if table_entry.priority is not None:
+            #     result_table_entry["priority"] = table_entry.priority
             result_table_entries.append(result_table_entry)
         return result_table_entries
 

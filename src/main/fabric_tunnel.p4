@@ -109,7 +109,7 @@ parser MyParser(packet_in packet,
         
         transition select(hdr.Ethernet.etherType) {
             Ethernet_etherType_TYPE_IPv4: parse_IPv4;
-            transition accept;
+            default: accept;
         }
     }
     state parse_IPv4 {
@@ -117,12 +117,12 @@ parser MyParser(packet_in packet,
         
         transition select(hdr.IPv4.protocol) {
             IPv4_protocol_TYPE_TCP: parse_TCP;
-            transition accept;
+            default: accept;
         }
     }
     state parse_TCP {
         packet.extract(hdr.TCP);
-        default: accept;
+        transition accept;
     }
     
 
@@ -185,24 +185,12 @@ control MyIngress(inout headers hdr,
         size = 1024;
         default_action = NoAction();
     }
-    table TCP_dstPort_classifier {
-        key = {
-            hdr.TCP.dstPort: range;
-        }
-        actions = {
-            fix_header;  
-            drop;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
-    }
     table Node_classifier {
         key = {
             standard_metadata.ingress_port: range;
         }
         actions = {
-            fix_header;  
+            append_myTunnel_header;  
             drop;
             NoAction;
         }
@@ -226,7 +214,7 @@ control MyIngress(inout headers hdr,
     apply {
         if (!hdr.myTunnel.isValid()){
             Node_classifier.apply();
-            IPv4_dstAddr_classifier.apply();TCP_dstPort_classifier.apply();Node_classifier.apply();Ethernet_dstAddr_classifier.apply();
+            IPv4_dstAddr_classifier.apply();Ethernet_dstAddr_classifier.apply();
         }         
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
         standard_metadata.mcast_grp = (bit<16>)hdr.myTunnel.flow_id;
@@ -249,7 +237,7 @@ control MyEgress(inout headers hdr,
     
     table port_checker {
         key = {
-            standard_metadata.egress_port: exact;
+            standard_metadata.egress_port: range;
         }
         actions = {
             strip_header;
@@ -283,7 +271,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.myTunnel);
         packet.emit(hdr.Ethernet);
         packet.emit(hdr.IPv4);
-        packet.emit(hdr.TCP)
+        packet.emit(hdr.TCP);
     }
 }
 

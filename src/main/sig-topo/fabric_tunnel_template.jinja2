@@ -66,8 +66,8 @@ parser MyParser(packet_in packet,
         transition select(hdr.{{protocol_name}}.{{protocol_data["next_prot_field"]}}) {
             {% for next_protocol, field_value in protocol_data["next_prot_value"].items() -%}
             {{field_value}}: parse_{{next_protocol}};{% endfor %}
-            transition accept;
-        }{% endif %}{% if not protocol_data.get("next_prot_field")%}default: accept;{% endif %}
+            default: accept;
+        }{% endif %}{% if not protocol_data.get("next_prot_field")%}transition accept;{% endif %}
     }
     {% endfor %}
 
@@ -125,7 +125,7 @@ control MyIngress(inout headers hdr,
             {{match_field_name}}: range;
         }
         actions = {
-            {% if table_name == "Node" %}append_myTunnel_header;{% endif %}{% if table_name != "Node" %}fix_header;{% endif %}  
+            {% if table_name == "Node_classifier" %}append_myTunnel_header;{% endif %}{% if table_name != "Node_classifier" %}fix_header;{% endif %}  
             drop;
             NoAction;
         }
@@ -137,7 +137,7 @@ control MyIngress(inout headers hdr,
     apply {
         if (!hdr.myTunnel.isValid()){
             Node_classifier.apply();
-            {% for (match_field_name, table_name) in match_field_name_table.items() if table_name != "Node" -%}
+            {% for (match_field_name, table_name) in match_field_name_table.items() if table_name != "Node_classifier" -%}
             {{table_name}}.apply();{% endfor %}
         }         
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
@@ -161,7 +161,7 @@ control MyEgress(inout headers hdr,
     
     table port_checker {
         key = {
-            standard_metadata.egress_port: exact;
+            standard_metadata.egress_port: range;
         }
         actions = {
             strip_header;
@@ -195,7 +195,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.myTunnel);
         packet.emit(hdr.Ethernet);
         packet.emit(hdr.IPv4);
-        packet.emit(hdr.TCP)
+        packet.emit(hdr.TCP);
     }
 }
 
