@@ -70,7 +70,7 @@ class Controller():
         self.connections = {}
         try:
             self.read_topology()
-            self.read_flows()
+            self.read_flow_ids()
             self.read_policy()
         except Exception as e:
             print e
@@ -87,11 +87,10 @@ class Controller():
         with open(conf_file, 'r') as f:
             self.switches_config =  json.load(f)
 
-    def read_flows(self):
-        flows_file = self.project_directory + "sig-topo/flows.json"
+    def read_flow_ids(self):
+        flows_file = self.project_directory + "build/flow_ids.json"
         with open(flows_file, 'r') as f:
-            flows = json.load(f)
-            self.flows = flows['flows']
+            self.flows = json.load(f)
 
     def read_policy(self):
         policy_file = self.project_directory + "sig-topo/policy.json"
@@ -123,7 +122,6 @@ class Controller():
             provided for the switches.
         """
         for sw_name, sw_dict in self.switches.iteritems():
-            if sw_name == "s1":
                 self.program_switch_p4runtime(sw_name, sw_dict)
 
     def check_switch_conf(self, sw_conf, workdir):
@@ -339,9 +337,9 @@ class Controller():
 
     def getState(self):
         for conn in self.connections.values():
-            for flow in self.flows:
-                self.printCounter(conn, "MyIngress.ingress_byte_cnt", flow)
-                self.printCounter(conn, "MyEgress.egress_byte_cnt", flow)
+            for flow_id in self.flows.values():
+                self.printCounter(conn, "MyIngress.ingress_byte_cnt", flow_id)
+                self.printCounter(conn, "MyEgress.egress_byte_cnt", flow_id)
 
 
     def readTableRules(self, sw):
@@ -382,8 +380,12 @@ if __name__ == '__main__':
     # print(end - start)
 
     print "Switches programmed"
-    for i in range (1,2):
+    for i in range (1,5):
         controller.readTableRules(controller.connections["s" + str(i)])
+
+    while True:
+        sleep(1)
+        controller.getState()
     # print 
     # print "all rules read"
     # start = timeit.timeit()

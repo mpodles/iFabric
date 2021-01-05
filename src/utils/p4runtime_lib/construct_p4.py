@@ -33,10 +33,10 @@ class P4Constructor():
         self.parse_flows()
         self.prepare_nodes_flows()
         self.generate_tables_actions()
-        #self.read_policy()
         self.generate_ids_for_flows()
         self.construct_p4_program()
         self.construct_runtimes()
+        self.write_flow_ids_to_file()
 
        
     def read_topology(self):
@@ -179,10 +179,6 @@ class P4Constructor():
             if table_name != "Node_classifier":
                 self.tables_action["MyIngress." + table_name] = "MyIngress.fix_header"
 
-    def read_policy(self):
-        policy_file = self.project_directory + "sig-topo/policy.json"
-        with open(policy_file, 'r') as f:
-            self.policy = json.load(f)
 
     def generate_ids_for_flows(self):
         self.flow_ids = {}
@@ -378,9 +374,14 @@ class P4Constructor():
             replicas.append({"egress_port": int(port), "instance": int(port)})
         return replicas
 
+    def write_flow_ids_to_file(self):
+        with open(self.project_directory+ "build/flow_ids.json", "w") as f:
+            f.write(json.dumps(self.flow_ids))
+
 
 if __name__ == '__main__':
     constructor = P4Constructor()
+    print "P4 constructed"
     # constructor.generate_table_entry_for_flow("s1", "flow2", "MyIngress.flow_classifier")
     # print constructor.flows["flow2"]
     # print constructor.ids

@@ -40,6 +40,7 @@ stop:
 build: dirs $(compiled_json)
 
 %.json: %.p4
+	sudo python ../utils/p4runtime_lib/construct_p4.py
 	$(P4C) --p4v 16 $(P4C_ARGS) -o $(BUILD_DIR)/$@ $<
 
 dirs:
