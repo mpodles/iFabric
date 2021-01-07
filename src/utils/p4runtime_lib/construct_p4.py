@@ -199,8 +199,8 @@ class P4Constructor():
 
         output = template.render(match_field_name_table=self.match_field_name_table,\
              protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
-        with open(template_directory+"fabric_tunnel_ready.p4",'w+')  as f:
-             f.write(output)
+        # with open(template_directory+"fabric_tunnel_ready.p4",'w+')  as f:
+        #      f.write(output)
         with open(self.project_directory + "fabric_tunnel.p4",'w+')  as f:
              f.write(output)
         
