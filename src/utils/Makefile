@@ -32,6 +32,7 @@ endif
 all: run
 
 run: build
+	echo $(basename $<)
 	sudo python $(RUN_SCRIPT) -t $(TOPO) $(run_args)
 
 stop:

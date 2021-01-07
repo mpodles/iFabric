@@ -19,12 +19,12 @@ class TableEntry():
 
 class P4Constructor():
     def __init__(self):
-        self.project_directory = "/home/mpodles/iFabric/src/main/"
+        self.project_directory = os.getcwd()
         self.tables = ["Node_classifier"]
         self.match_field_name_table = {"standard_metadata.ingress_port": "Node_classifier"}
         self.tables_action = {"MyIngress.Node_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
         self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyIngress.fix_header":["flow_id", "priority"], "MyEgress.strip_header": [] }
-        self.connections = {}
+
 
         self.read_topology()
         self.parse_topology()
@@ -40,7 +40,7 @@ class P4Constructor():
 
        
     def read_topology(self):
-        topo_file = self.project_directory + "sig-topo/topology.json"
+        topo_file = os.path.join(self.project_directory, 'sig-topo/topology.json')
         with open(topo_file, 'r') as f:
             topo = json.load(f)
             self.switches = topo['switches']
@@ -82,13 +82,13 @@ class P4Constructor():
 
             
     def read_protocols_implemented_and_required(self):
-        protocols_dir = self.project_directory + "/protocols/"
+        protocols_dir = os.path.join(self.project_directory, 'protocols/')
         self.implemented_protocols = {}
         for filename in os.listdir(protocols_dir):
             with open(protocols_dir + filename) as f:
                 self.implemented_protocols[filename] = f.read()
         
-        protocols_stack_file = self.project_directory + "/sig-topo/protocol_stack.json"
+        protocols_stack_file = os.path.join(self.project_directory, 'sig-topo/protocol_stack.json')
         with open(protocols_stack_file, "r") as f:
             protocols_stack = json.loads(f.read())
             self.protocols_stack = protocols_stack["stacks"]
@@ -96,7 +96,7 @@ class P4Constructor():
         
 
     def read_flows(self):
-        flows_file = self.project_directory + "sig-topo/flows.json"
+        flows_file = os.path.join(self.project_directory, 'sig-topo/flows.json')
         with open(flows_file, 'r') as f:
             self.flows = json.load(f)
 
@@ -191,8 +191,7 @@ class P4Constructor():
         self.fill_p4_template()
 
     def fill_p4_template(self):
-        template_directory = self.project_directory + "sig-topo/"
-
+        template_directory = os.path.join(self.project_directory, 'sig-topo/')
         file_loader = jinja2.FileSystemLoader(template_directory)
         env = jinja2.Environment(loader=file_loader)
         template=env.get_template("fabric_tunnel_template.jinja2")
@@ -201,7 +200,7 @@ class P4Constructor():
              protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
         # with open(template_directory+"fabric_tunnel_ready.p4",'w+')  as f:
         #      f.write(output)
-        with open(self.project_directory + "fabric_tunnel.p4",'w+')  as f:
+        with open(os.path.join(self.project_directory, 'build/fabric_tunnel.p4'),'w+')  as f:
              f.write(output)
         
 
@@ -227,7 +226,7 @@ class P4Constructor():
 
         result_string = json.dumps(result_dictionary, encoding='UTF-8')
 
-        with open(self.project_directory + "sig-topo/" + sw + "-runtime.json", "w") as f:
+        with open(os.path.join(self.project_directory, 'build/' + sw + "-runtime.json"), "w") as f:
             f.write(result_string)
             
     def generate_tables_entries_for_switch(self, sw):
@@ -375,18 +374,11 @@ class P4Constructor():
         return replicas
 
     def write_flow_ids_to_file(self):
-        with open(self.project_directory+ "build/flow_ids.json", "w") as f:
+        with open(os.path.join(self.project_directory, 'build/flow_ids.json'), "w") as f:
             f.write(json.dumps(self.flow_ids))
 
 
 if __name__ == '__main__':
     constructor = P4Constructor()
     print "P4 constructed"
-    # constructor.generate_table_entry_for_flow("s1", "flow2", "MyIngress.flow_classifier")
-    # print constructor.flows["flow2"]
-    # print constructor.ids
-    # #print constructor.topology
-    # print constructor.flows
-    # for a,b in  constructor.flows["flow2"].items():
-    #     print a,b
-    
+ 
