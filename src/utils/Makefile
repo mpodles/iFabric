@@ -11,13 +11,13 @@ ifndef TOPO
 TOPO = topology.json
 endif
 
-source = $(wildcard *.p4)
+source = $(wildcard build/*.p4)
 compiled_json := $(source:.p4=.json)
 
 ifndef DEFAULT_PROG
-DEFAULT_PROG = $(wildcard *.p4)
+DEFAULT_PROG = fabric_tunnel.json
 endif
-DEFAULT_JSON = $(BUILD_DIR)/$(DEFAULT_PROG:.p4=.json)
+DEFAULT_JSON = $(BUILD_DIR)/$(DEFAULT_PROG)
 
 # Define NO_P4 to start BMv2 without a program
 ifndef NO_P4
@@ -31,18 +31,17 @@ endif
 
 all: run
 
-run: build
-	echo $(basename $<)
+run: buildp4
 	sudo python $(RUN_SCRIPT) -t $(TOPO) $(run_args)
 
 stop:
 	sudo mn -c
+	
+buildp4: generatep4
+	$(P4C) --p4v 16 --p4runtime-files $(BUILD_DIR)/fabric_tunnel.p4.p4info.txt -o $(BUILD_DIR)/fabric_tunnel.json $(BUILD_DIR)/fabric_tunnel.p4
 
-build: dirs $(compiled_json)
-
-%.json: %.p4
+generatep4: dirs
 	sudo python ../utils/p4runtime_lib/construct_p4.py
-	$(P4C) --p4v 16 $(P4C_ARGS) -o $(BUILD_DIR)/$@ $<
 
 dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)
