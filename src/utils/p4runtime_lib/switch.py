@@ -144,8 +144,9 @@ class SwitchConnection(object):
             update.type = p4runtime_pb2.Update.INSERT
         update.entity.packet_replication_engine_entry.CopyFrom(pre_entry)
         if dry_run:
-            print "P4Runtime Write:", request
+            print "P4Runtime Write Multicast:", request
         else:
+            print "Writing entry", request
             self.client_stub.Write(request)
 
 class GrpcRequestLogger(grpc.UnaryUnaryClientInterceptor,

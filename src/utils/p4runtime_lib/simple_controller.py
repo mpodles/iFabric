@@ -246,7 +246,7 @@ class Controller():
         sw.WriteTableEntry(table_entry, modify=True)
 
 
-    def printCounter(self, sw, counter_name, index):
+    def printCounter(self, sw, counter_name, flow):
         """
         Reads the specified counter at the specified index from the switch. In our
         program, the index is the tunnel ID. If the index is 0, it will return all
@@ -257,11 +257,12 @@ class Controller():
         :param counter_name: the name of the counter from the P4 program
         :param index: the counter index (in our case, the tunnel ID)
         """
-        for response in sw.ReadCounters(self.p4info_helper.get_counters_id(counter_name), index):
+        flow_name, index = flow
+        for response in sw.ReadCounters(self.p4info_helper.get_counters_id(counter_name), int(index)):
             for entity in response.entities:
                 counter = entity.counter_entry
-                print "%s %s %d: %d packets (%d bytes)" % (
-                    sw.name, counter_name, index,
+                print "%s %s %s: %d packets (%d bytes)" % (
+                    sw.name, counter_name, flow_name,
                     counter.data.packet_count, counter.data.byte_count
                 )
 
@@ -337,10 +338,12 @@ class Controller():
 
     def getState(self):
         for conn in self.connections.values():
-            for flow_id in self.flows.values():
-                self.printCounter(conn, "MyIngress.ingress_byte_cnt", flow_id)
-                self.printCounter(conn, "MyEgress.egress_byte_cnt", flow_id)
+            for flow in self.flows.items():
+                self.getFlowState(conn, flow)
 
+    def getFlowState(self, conn, flow):
+        self.printCounter(conn, "MyIngress.ingress_byte_cnt", flow)
+        self.printCounter(conn, "MyEgress.egress_byte_cnt", flow)
 
     def readTableRules(self, sw):
         """
@@ -369,6 +372,63 @@ class Controller():
                     print '%r' % p.value,
                 print
 
+    def writeForwardingRules(self,sw):
+        flow = "flow1"
+        rule = self.getTestRules(sw, flow)
+        self.modifyMulticastGroupEntry(controller.connections[sw], rule)
+
+    def getTestRules(self, sw, flow):
+        flow_id = self.flows[flow]
+        if sw == "s1":
+            rule = {
+        "multicast_group_id" : flow_id,
+        "replicas" : [
+          {
+            "egress_port" : 2,
+            "instance" : 2
+          },
+          {
+            "egress_port" : 4,
+            "instance" : 4
+          }
+        ]
+      }
+        elif sw == "s2":
+            rule = {
+        "multicast_group_id" : flow_id,
+        "replicas" : [
+          {
+            "egress_port" : 48,
+            "instance" : 48
+          },
+          {
+            "egress_port" : 4,
+            "instance" : 4
+          }
+        ]
+      }
+        elif sw == "s3":
+            rule = {
+        "multicast_group_id" : flow_id,
+        "replicas" : [
+          {
+            "egress_port" : 48,
+            "instance" : 48
+          }
+        ]
+      }
+        elif sw == "s4":
+            rule = {
+        "multicast_group_id" : flow_id,
+        "replicas" : [
+          {
+            "egress_port" : 48,
+            "instance" : 48
+          }
+        ]
+      }
+        return rule
+
 
 if __name__ == '__main__':
     # main()
@@ -381,11 +441,14 @@ if __name__ == '__main__':
 
     print "Switches programmed"
     for i in range (1,5):
-        controller.readTableRules(controller.connections["s" + str(i)])
+        sw = "s" + str(i)
+        controller.readTableRules(controller.connections[sw])
+        controller.writeForwardingRules(sw)
 
-    while True:
-        sleep(1)
-        controller.getState()
+
+    # while True:
+    #     sleep(15)
+    #     controller.getState()
     # print 
     # print "all rules read"
     # start = timeit.timeit()

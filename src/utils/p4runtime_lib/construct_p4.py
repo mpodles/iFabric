@@ -329,10 +329,9 @@ class P4Constructor():
         return result_table_entries
 
     def generate_multicast_groups_entries(self, sw):
-        used_ports = self.get_used_switch_ports(sw)
         multicast_group_entries = []
         for flow_id in self.flow_ids.values():
-            replicas = self.generate_replicas(used_ports)
+            replicas = self.generate_replicas_empty()
             multicast_group = {"multicast_group_id" :flow_id, "replicas": replicas }
             multicast_group_entries.append(multicast_group)
         return multicast_group_entries
@@ -363,7 +362,11 @@ class P4Constructor():
         ports = switchports + endports
         return ports
 
-    def generate_replicas(self, used_ports):
+    def generate_replicas_empty(self):
+        replicas = []
+        return replicas
+
+    def generate_replicas_random_rules(self, used_ports):
         random_subset = []
         for port in used_ports:
             if random.randint(0,1) == 0:
