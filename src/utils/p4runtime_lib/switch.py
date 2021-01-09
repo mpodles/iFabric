@@ -146,7 +146,7 @@ class SwitchConnection(object):
         if dry_run:
             print "P4Runtime Write Multicast:", request
         else:
-            print "Writing entry", request
+            # print "Writing entry", request
             self.client_stub.Write(request)
 
 class GrpcRequestLogger(grpc.UnaryUnaryClientInterceptor,

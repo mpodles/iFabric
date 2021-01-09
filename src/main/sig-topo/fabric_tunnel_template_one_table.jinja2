@@ -109,23 +109,17 @@ control MyIngress(inout headers hdr,
         hdr.myTunnel.group_id = group_id;
     }
 
-    action fix_header(bit<16> flow_id, bit<16> priority){
-        if (priority > meta.priority){
-            hdr.myTunnel.flow_id = flow_id;
-            meta.priority = priority;
-        }
-        
-    }
 
-
-    {% for (match_field_name, table_name) in match_field_name_table.items() -%}
+    {% for (table_name,match_fields) in match_fields_of_table.items() -%}
 
     table {{table_name}} {
         key = {
+            {% for match_field_name in match_fields -%}
             {{match_field_name}}: range;
+            {% endfor %}
         }
         actions = {
-            {% if table_name == "Node_classifier" %}append_myTunnel_header;{% endif %}{% if table_name != "Node_classifier" %}fix_header;{% endif %}  
+            append_myTunnel_header;
             drop;
             NoAction;
         }
@@ -136,8 +130,7 @@ control MyIngress(inout headers hdr,
 
     apply {
         if (!hdr.myTunnel.isValid()){
-            Node_classifier.apply();
-            {% for (match_field_name, table_name) in match_field_name_table.items() if table_name != "Node_classifier" -%}
+            {% for (table_name, match_fields) in match_fields_of_table.items() -%}
             {{table_name}}.apply();{% endfor %}
         }         
         ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);

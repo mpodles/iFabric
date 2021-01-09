@@ -18,13 +18,20 @@ class TableEntry():
 
 
 class P4Constructor():
-    def __init__(self):
-        self.project_directory = os.getcwd()
-        self.tables = ["Node_classifier"]
-        self.match_field_name_table = {"standard_metadata.ingress_port": "Node_classifier"}
-        self.tables_action = {"MyIngress.Node_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
-        self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyIngress.fix_header":["flow_id", "priority"], "MyEgress.strip_header": [] }
-
+    def __init__(self, p4type = "one_big_table"):
+        self.project_directory = "/home/mpodles/iFabric/src/main"
+        self.multicast_begin_state = "empty" # "random"
+        self.p4_type = p4type
+        if self.p4_type == "table_per_protocol":
+            self.tables = ["Node_classifier"]
+            self.match_fields_of_table = {"Node_classifier": set(["standard_metadata.ingress_port"])}
+            self.tables_action = {"MyIngress.Node_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
+            self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyIngress.fix_header":["flow_id", "priority"], "MyEgress.strip_header": [] }
+        elif self.p4_type =="one_big_table":
+            self.tables = ["Flow_classifier"]
+            self.match_fields_of_table = {"Flow_classifier": set(["standard_metadata.ingress_port"])}
+            self.tables_action = {"MyIngress.Flow_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
+            self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyEgress.strip_header": [] }
 
         self.read_topology()
         self.parse_topology()
@@ -118,8 +125,7 @@ class P4Constructor():
             
 
     def parse_flow(self, flow_values, priority):
-        #parse flow into priority + rules where rules is dict of protcols and list of range dicts,
-        #range dicts contain low and high 
+        #parse each entry (usually that means a protocol field) of flow
         parsed_flow = {}
         for entry in flow_values.items():
             match_field_name, values = self.parse_match_field_entry(entry)
@@ -139,10 +145,21 @@ class P4Constructor():
         #The function also fills dict containing table name for each match_field_name and list of all tables
 
         # match_field_name, table_name = self.protocol_abbrev(match_field_name)
-        match_field_name, table_name = "hdr." + match_field_name, match_field_name.replace(".", "_") + "_classifier"
-        self.match_field_name_table[match_field_name] = table_name
-        self.tables.append(table_name)
-        return match_field_name
+        if self.p4_type == "table_per_protocol":
+            match_field_name, table_name = "hdr." + match_field_name, match_field_name.replace(".", "_") + "_classifier"
+            if self.match_fields_of_table.get(table_name) is not None:
+                self.match_fields_of_table[table_name].add(match_field_name)
+            else:
+                self.match_fields_of_table[table_name] = set([])
+            self.tables.append(table_name)
+            return match_field_name
+        elif self.p4_type == "one_big_table":
+            match_field_name, table_name = "hdr." + match_field_name, "Flow_classifier"
+            if self.match_fields_of_table.get(table_name) is not None:
+                self.match_fields_of_table[table_name].add(match_field_name)
+            else:
+                self.match_fields_of_table[table_name] = set([])
+            return match_field_name
 
     def protocol_abbrev(self, protocol_name):
         #TODO: add parsing any kind of protocol name like "tcp destination"
@@ -157,9 +174,13 @@ class P4Constructor():
         #Dictionary for parsing user match_field values
         #into usable p4 low high bounds, for now we assume correct
         #parsing or in case of single value we change into correct parsing
-        if type(match_field_values) == unicode:
-            match_field_values = [{"low": match_field_values, "high": match_field_values}]
-        return match_field_values
+        parsed_match_field_values = []
+        for match_entry in match_field_values:
+            if type(match_entry) != dict:
+                parsed_match_field_values.append({"low": match_entry, "high": match_entry})
+            else:
+                parsed_match_field_values.append(match_entry)
+        return parsed_match_field_values
 
     def prepare_nodes_flows(self):
         self.switches_node_flows = {}
@@ -175,9 +196,10 @@ class P4Constructor():
                     self.flows[host+ "_flow"] = {"standard_metadata.ingress_port": [{"low": port, "high": port}]}
 
     def generate_tables_actions(self):
-        for table_name in self.match_field_name_table.values():
-            if table_name != "Node_classifier":
-                self.tables_action["MyIngress." + table_name] = "MyIngress.fix_header"
+        if self.p4_type == "table_per_protocol":
+            for table_name in self.match_fields_of_table.values():
+                if table_name != "Node_classifier":
+                    self.tables_action["MyIngress." + table_name] = "MyIngress.fix_header"
 
 
     def generate_ids_for_flows(self):
@@ -188,22 +210,22 @@ class P4Constructor():
             self.flow_ids[flow] = id
         
     def construct_p4_program(self):
-        self.fill_p4_template()
-
-    def fill_p4_template(self):
         template_directory = os.path.join(self.project_directory, 'sig-topo/')
         file_loader = jinja2.FileSystemLoader(template_directory)
         env = jinja2.Environment(loader=file_loader)
-        template=env.get_template("fabric_tunnel_template.jinja2")
 
-        output = template.render(match_field_name_table=self.match_field_name_table,\
-             protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
-        # with open(template_directory+"fabric_tunnel_ready.p4",'w+')  as f:
-        #      f.write(output)
+        if self.p4_type == "table_per_protocol":
+            template=env.get_template("fabric_tunnel_template_many_tables.jinja2")
+            output = template.render(match_fields_of_table=self.match_fields_of_table,\
+                protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
+        elif self.p4_type == "one_big_table":
+            template=env.get_template("fabric_tunnel_template_one_table.jinja2")
+            output = template.render(match_fields_of_table=self.match_fields_of_table,\
+                protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
+
         with open(os.path.join(self.project_directory, 'build/fabric_tunnel.p4'),'w+')  as f:
              f.write(output)
         
-
     def construct_runtimes(self):
         for sw in self.switches:
             self.construct_runtime_for_switch(sw)
@@ -240,30 +262,29 @@ class P4Constructor():
 
     def generate_table_entries_for_flow_for_switch(self, sw, flow, priority):
         one_flow_switch_table_entries = []
-        if priority >  0:
-            rules = self.flows[flow]
-        else:
-            rules = self.switches_node_flows[sw][flow]
-        for match_field_name, match_field_values in rules.items():
-            table_name = "MyIngress." + self.match_field_name_table[match_field_name]
-            action = self.tables_action[table_name]
-            priority_offset = 0
-            for values_range in match_field_values:
-                table_entry = TableEntry()
-                table_entry.switch = sw
-                table_entry.flow = flow
-                table_entry.table_name = table_name
-                table_entry.match_field_name = match_field_name
-                table_entry.match_value= {"low": values_range["low"], "high":values_range["high"]}
-                table_entry.action = action
-                table_entry.priority = priority
-                table_entry = self.set_table_entry_action_parameters(table_entry)
-                table_entry.priority = priority + priority_offset
+        flow_matches = self.flows[flow]
+        for table_name, matches in self.match_fields_of_table.items():
+            table_name = "MyIngress." + table_name
+            for match_field_name, match_field_values in flow_matches.items():
+                if match_field_name in matches:
+                    action = self.tables_action[table_name]
+                    priority_offset = 0
+                    for values_range in match_field_values:
+                        table_entry = TableEntry()
+                        table_entry.switch = sw
+                        table_entry.flow = flow
+                        table_entry.table_name = table_name
+                        table_entry.match_field_name = match_field_name
+                        table_entry.match_value= {"low": values_range["low"], "high":values_range["high"]}
+                        table_entry.action = action
+                        table_entry.priority = priority
+                        table_entry = self.set_table_entry_action_parameters(table_entry)
+                        table_entry.priority = priority + priority_offset
 
-                # action_parameters = self.get_action_params_for_current_flow(flow, priority)
-                priority_offset += 1
+                        # action_parameters = self.get_action_params_for_current_flow(flow, priority)
+                        priority_offset += 1
 
-                one_flow_switch_table_entries.append(table_entry)
+                        one_flow_switch_table_entries.append(table_entry)
         return one_flow_switch_table_entries
 
     def generate_egress_table_entries(self, sw):
@@ -328,21 +349,46 @@ class P4Constructor():
             result_table_entries.append(result_table_entry)
         return result_table_entries
 
-    def generate_multicast_groups_entries(self, sw):
-        multicast_group_entries = []
-        for flow_id in self.flow_ids.values():
-            replicas = self.generate_replicas_empty()
-            multicast_group = {"multicast_group_id" :flow_id, "replicas": replicas }
-            multicast_group_entries.append(multicast_group)
-        return multicast_group_entries
-    
     def represents_int(self, string):
         try:
             int(string)
             return True
         except ValueError:
             return False
+
+
+    def generate_multicast_groups_entries(self, sw):
+        multicast_group_entries = []
+        for flow_id in self.flow_ids.values():
+            if self.multicast_begin_state == "empty":
+                replicas = self.generate_replicas_empty()
+            elif self.multicast_begin_state == "random":
+                replicas = self.generate_replicas_random_rules(sw)
+            multicast_group = {"multicast_group_id" :flow_id, "replicas": replicas }
+            multicast_group_entries.append(multicast_group)
+        return multicast_group_entries
     
+    def generate_replicas_empty(self):
+        replicas = []
+        return replicas
+
+
+    def generate_replicas_random_rules(self, sw):
+        used_ports = self.get_used_switch_ports(sw)
+        random_subset = []
+        for port in used_ports:
+            if random.randint(0,1) == 0:
+                random_subset.append(port)
+        replicas = []
+        for port in random_subset:
+            replicas.append({"egress_port": int(port), "instance": int(port)})
+        return replicas
+
+    def get_used_switch_ports(self, sw):
+        switchports,endports =  self.get_used_switch_to_switch_ports(sw),self.get_used_switch_to_host_ports(sw)
+        ports = switchports + endports
+        return ports
+
     def get_used_switch_to_switch_ports(self,sw):
         switchports =  self.topology[sw]["switchports"]
         ports = []
@@ -357,24 +403,6 @@ class P4Constructor():
             ports.append(entry["port"])
         return ports
 
-    def get_used_switch_ports(self, sw):
-        switchports,endports =  self.get_used_switch_to_switch_ports(sw),self.get_used_switch_to_host_ports(sw)
-        ports = switchports + endports
-        return ports
-
-    def generate_replicas_empty(self):
-        replicas = []
-        return replicas
-
-    def generate_replicas_random_rules(self, used_ports):
-        random_subset = []
-        for port in used_ports:
-            if random.randint(0,1) == 0:
-                random_subset.append(port)
-        replicas = []
-        for port in random_subset:
-            replicas.append({"egress_port": int(port), "instance": int(port)})
-        return replicas
 
     def write_flow_ids_to_file(self):
         with open(os.path.join(self.project_directory, 'build/flow_ids.json'), "w") as f:
