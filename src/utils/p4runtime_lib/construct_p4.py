@@ -3,14 +3,14 @@ import re
 import random
 import jinja2
 import os
+import itertools
 
 
 class TableEntry():
     switch=''
     flow = ''
     table_name=''
-    match_field_name = ''
-    match_value= {"low": '', "high":''}
+    matches = {}
     action = ''
     action_parameters = {}
     priority = None
@@ -177,9 +177,17 @@ class P4Constructor():
         parsed_match_field_values = []
         for match_entry in match_field_values:
             if type(match_entry) != dict:
+                if self.represents_int(match_entry):
+                    match_entry = int(match_entry)
                 parsed_match_field_values.append({"low": match_entry, "high": match_entry})
             else:
-                parsed_match_field_values.append(match_entry)
+                low = match_entry["low"]
+                high = match_entry["high"]
+                if self.represents_int(low):
+                    low = int(low)
+                if self.represents_int(high):
+                    high = int(high) 
+                parsed_match_field_values.append({"low": low, "high": high})
         return parsed_match_field_values
 
     def prepare_nodes_flows(self):
@@ -263,6 +271,43 @@ class P4Constructor():
     def generate_table_entries_for_flow_for_switch(self, sw, flow, priority):
         one_flow_switch_table_entries = []
         flow_matches = self.flows[flow]
+        for table_name in self.tables:
+            table_name = "MyIngress." + table_name
+            match_fields_size= {}
+            all_combinations = 1
+            for match_field_name, match_field_values in flow_matches.items():
+                size = len(match_field_values)
+                match_fields_size[match_field_name] = size
+                all_combinations *= size
+            compound_iterator = 0
+
+            while compound_iterator < all_combinations:
+                matches = {}
+                match_iterator = compound_iterator
+                for match_field_name, match_field_size in match_fields_size.items():
+                    matches[match_field_name] = flow_matches[match_field_name][match_iterator % match_field_size]
+                    match_iterator /= match_field_size
+                    
+
+                action = self.tables_action[table_name]
+                table_entry = TableEntry()
+                table_entry.switch = sw
+                table_entry.flow = flow
+                table_entry.table_name = table_name
+                table_entry.matches = matches
+                table_entry.action = action
+                table_entry.priority = priority
+                table_entry = self.set_table_entry_action_parameters(table_entry)
+                table_entry.priority = priority + compound_iterator
+                compound_iterator +=1 
+                # action_parameters = self.get_action_params_for_current_flow(flow, priority)
+
+                one_flow_switch_table_entries.append(table_entry)
+        return one_flow_switch_table_entries
+
+    def generate_table_entries_for_flow_for_switch_old(self, sw, flow, priority):
+        one_flow_switch_table_entries = []
+        flow_matches = self.flows[flow]
         for table_name, matches in self.match_fields_of_table.items():
             table_name = "MyIngress." + table_name
             for match_field_name, match_field_values in flow_matches.items():
@@ -328,18 +373,16 @@ class P4Constructor():
     def turn_table_entries_into_dicts(self, table_entries):
         result_table_entries = []
         for table_entry in table_entries:
-            low = table_entry.match_value["low"]
-            high = table_entry.match_value["high"]
-            if self.represents_int(low):
-                low = int(low)
-            if self.represents_int(high):
-                high = int(high)
+            # low = table_entry.match_value["low"]
+            # high = table_entry.match_value["high"]
+            
             result_table_entry = {
             "table": table_entry.table_name,
             "priority": table_entry.priority,
-            "match": {
-                table_entry.match_field_name: [low, high]
-            },
+            "match": table_entry.matches,
+            # "match": {
+            #     table_entry.match_field_name: [low, high]
+            # },
             "action_name": table_entry.action,
             "action_params": table_entry.action_parameters
             }

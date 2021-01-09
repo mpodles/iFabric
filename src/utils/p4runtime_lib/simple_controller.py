@@ -68,13 +68,10 @@ class Controller():
     def __init__(self):
         self.project_directory = "/home/mpodles/iFabric/src/main/"
         self.connections = {}
-        try:
-            self.read_topology()
-            self.read_flow_ids()
-            self.read_policy()
-        except Exception as e:
-            print e
-    
+        self.read_topology()
+        self.read_flow_ids()
+        self.read_policy()
+  
     
     def read_topology(self):
         topo_file = self.project_directory + "sig-topo/topology.json"
@@ -172,40 +169,36 @@ class Controller():
         else:
             raise Exception("Don't know how to connect to target %s" % target)
 
-        try:
-            sw.MasterArbitrationUpdate()
+        sw.MasterArbitrationUpdate()
 
-            if target == "bmv2":
-                info("Setting pipeline config (%s)..." % sw_conf['bmv2_json'])
-                bmv2_json_fpath = os.path.join(workdir, sw_conf['bmv2_json'])
-                sw.SetForwardingPipelineConfig(p4info=self.p4info_helper.p4info,
-                                            bmv2_json_file_path=bmv2_json_fpath)
-            else:
-                raise Exception("Should not be here")
+        if target == "bmv2":
+            info("Setting pipeline config (%s)..." % sw_conf['bmv2_json'])
+            bmv2_json_fpath = os.path.join(workdir, sw_conf['bmv2_json'])
+            sw.SetForwardingPipelineConfig(p4info=self.p4info_helper.p4info,
+                                        bmv2_json_file_path=bmv2_json_fpath)
+        else:
+            raise Exception("Should not be here")
 
-            if 'table_entries' in sw_conf:
-                table_entries = sw_conf['table_entries']
-                info("Inserting %d table entries..." % len(table_entries))
-                for entry in table_entries:
-                    info(self.tableEntryToString(entry))
-                    self.insertTableEntry(sw, entry)
+        if 'table_entries' in sw_conf:
+            table_entries = sw_conf['table_entries']
+            info("Inserting %d table entries..." % len(table_entries))
+            for entry in table_entries:
+                info(self.tableEntryToString(entry))
+                self.insertTableEntry(sw, entry)
 
-            if 'multicast_group_entries' in sw_conf:
-                group_entries = sw_conf['multicast_group_entries']
-                info("Inserting %d group entries..." % len(group_entries))
-                for entry in group_entries:
-                    info(self.groupEntryToString(entry))
-                    self.insertMulticastGroupEntry(sw, entry)
+        if 'multicast_group_entries' in sw_conf:
+            group_entries = sw_conf['multicast_group_entries']
+            info("Inserting %d group entries..." % len(group_entries))
+            for entry in group_entries:
+                info(self.groupEntryToString(entry))
+                self.insertMulticastGroupEntry(sw, entry)
 
-            if 'clone_session_entries' in sw_conf:
-                clone_entries = sw_conf['clone_session_entries']
-                info("Inserting %d clone entries..." % len(clone_entries))
-                for entry in clone_entries:
-                    info(self.cloneEntryToString(entry))
-                    self.insertCloneGroupEntry(sw, entry)
-        except Exception as e:
-            print e
-        # finally:
+        if 'clone_session_entries' in sw_conf:
+            clone_entries = sw_conf['clone_session_entries']
+            info("Inserting %d clone entries..." % len(clone_entries))
+            for entry in clone_entries:
+                info(self.cloneEntryToString(entry))
+                self.insertCloneGroupEntry(sw, entry)
         #     sw.shutdown()
 
 
@@ -443,7 +436,7 @@ if __name__ == '__main__':
     for i in range (1,5):
         sw = "s" + str(i)
         controller.readTableRules(controller.connections[sw])
-        controller.writeForwardingRules(sw)
+        #controller.writeForwardingRules(sw)
 
 
     # while True:
