@@ -133,7 +133,7 @@ control MyIngress(inout headers hdr,
             {% for (table_name, match_fields) in match_fields_of_table.items() -%}
             {{table_name}}.apply();{% endfor %}
         }         
-        ingress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
+        ingress_byte_cnt.count((bit<32>) ((bit<16>)standard_metadata.ingress_port + (hdr.myTunnel.flow_id - 1)* 48));
         standard_metadata.mcast_grp = (bit<16>)hdr.myTunnel.flow_id;
         }
 }
@@ -165,7 +165,7 @@ control MyEgress(inout headers hdr,
     }
 
     apply {
-        egress_byte_cnt.count((bit<32>) hdr.myTunnel.flow_id);
+        egress_byte_cnt.count((bit<32>) ((bit<16>)standard_metadata.egress_port + (hdr.myTunnel.flow_id - 1)* 48));
         port_checker.apply();       
     }
 }

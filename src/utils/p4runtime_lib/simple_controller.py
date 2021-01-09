@@ -239,26 +239,6 @@ class Controller():
         sw.WriteTableEntry(table_entry, modify=True)
 
 
-    def printCounter(self, sw, counter_name, flow):
-        """
-        Reads the specified counter at the specified index from the switch. In our
-        program, the index is the tunnel ID. If the index is 0, it will return all
-        values from the counter.
-
-        :param p4info_helper: the P4Info helper
-        :param sw:  the switch connection
-        :param counter_name: the name of the counter from the P4 program
-        :param index: the counter index (in our case, the tunnel ID)
-        """
-        flow_name, index = flow
-        for response in sw.ReadCounters(self.p4info_helper.get_counters_id(counter_name), int(index)):
-            for entity in response.entities:
-                counter = entity.counter_entry
-                print "%s %s %s: %d packets (%d bytes)" % (
-                    sw.name, counter_name, flow_name,
-                    counter.data.packet_count, counter.data.byte_count
-                )
-
     # object hook for josn library, use str instead of unicode object
     # https://stackoverflow.com/questions/956867/how-to-get-string-objects-instead-of-unicode-from-json
     def json_load_byteified(self, file_handle):
@@ -329,14 +309,38 @@ class Controller():
                                                         rule.get('packet_length_bytes', 0))
         sw.WritePREEntry(clone_entry)
 
-    def getState(self):
-        for conn in self.connections.values():
-            for flow in self.flows.items():
-                self.getFlowState(conn, flow)
+    def getWholeState(self):
+        for sw in self.connections:
+            for flow in self.flows:
+                self.getFlowStateFromSwitch(sw, flow)
 
-    def getFlowState(self, conn, flow):
-        self.printCounter(conn, "MyIngress.ingress_byte_cnt", flow)
-        self.printCounter(conn, "MyEgress.egress_byte_cnt", flow)
+    def getFlowStateFromSwitch(self, sw, flow):
+        for port in range (1,49):
+            self.printCounter(sw, "MyIngress.ingress_byte_cnt", flow, port)
+            self.printCounter(sw, "MyEgress.egress_byte_cnt", flow, port)
+
+
+    def printCounter(self, sw, counter_name, flow, port):
+        """
+        Reads the specified counter at the specified index from the switch. In our
+        program, the index is the tunnel ID. If the index is 0, it will return all
+        values from the counter.
+
+        :param p4info_helper: the P4Info helper
+        :param sw:  the switch connection
+        :param counter_name: the name of the counter from the P4 program
+        :param index: the counter index (in our case, the tunnel ID)
+        """
+        sw = self.connections[sw]
+        flow_name, flow_id = flow, self.flows[flow]
+        index = port + (flow_id-1)*48
+        for response in sw.ReadCounters(self.p4info_helper.get_counters_id(counter_name), int(index)):
+            for entity in response.entities:
+                counter = entity.counter_entry
+                print "%s %s %s port %d index %d: %d packets (%d bytes)" % (
+                    sw.name, counter_name, flow_name, port, index,
+                    counter.data.packet_count, counter.data.byte_count
+                )
 
     def readTableRules(self, sw):
         """
@@ -440,8 +444,8 @@ if __name__ == '__main__':
 
 
     while True:
-        sleep(10)
-        controller.getState()
+        sleep(4)
+        controller.printCounter('s1', "MyIngress.ingress_byte_cnt", 'flow1', 48)
     # print 
     # print "all rules read"
     # start = timeit.timeit()
