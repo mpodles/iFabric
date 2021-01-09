@@ -195,7 +195,7 @@ class P4Constructor():
         for switch, ports in self.topology.items():
             self.switches_node_flows[switch] = {} 
             for port_dict in ports["endports"]:
-                port, host = port_dict["port"],port_dict["host"]
+                port, host = int(port_dict["port"]),port_dict["host"]
                 if self.switches_node_flows[switch].get(host+ "_flow") is not None:
                     self.switches_node_flows[switch][host+ "_flow"]["standard_metadata.ingress_port"].append({"low": port, "high": port})
                     self.flows[host+ "_flow"]["standard_metadata.ingress_port"].append({"low": port, "high": port})
@@ -344,8 +344,7 @@ class P4Constructor():
             table_entry = TableEntry()
             table_entry.switch = sw
             table_entry.table_name = table_name
-            table_entry.match_field_name = "standard_metadata.egress_port"
-            table_entry.match_value= {"low": port, "high":port}
+            table_entry.matches = {"standard_metadata.egress_port": {"low": int(port), "high": int(port) }}
             table_entry.action = action
             table_entry.action_parameters = ''
             table_entry.priority = priority

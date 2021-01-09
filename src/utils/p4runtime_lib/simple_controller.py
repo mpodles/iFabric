@@ -435,13 +435,13 @@ if __name__ == '__main__':
     print "Switches programmed"
     for i in range (1,5):
         sw = "s" + str(i)
-        controller.readTableRules(controller.connections[sw])
-        #controller.writeForwardingRules(sw)
+        # controller.readTableRules(controller.connections[sw])
+        controller.writeForwardingRules(sw)
 
 
-    # while True:
-    #     sleep(15)
-    #     controller.getState()
+    while True:
+        sleep(10)
+        controller.getState()
     # print 
     # print "all rules read"
     # start = timeit.timeit()
