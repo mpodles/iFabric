@@ -21,99 +21,113 @@
     },
     "nodes": {
         "Node_12": {
-            "ip": null,
-            "mac": null,
+            "ip": "37.81.126.223",
+            "mac": "D0:0E:F9:ED:25:D3",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_14": {
-            "ip": null,
-            "mac": null,
+            "ip": "158.250.213.209",
+            "mac": "DE:B4:A4:31:26:DE",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_9": {
-            "ip": null,
-            "mac": null,
+            "ip": "172.234.123.168",
+            "mac": "54:FE:38:24:88:B9",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_8": {
-            "ip": null,
-            "mac": null,
+            "ip": "147.208.57.131",
+            "mac": "6E:4D:8F:F8:7F:03",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_7": {
-            "ip": null,
-            "mac": null,
+            "ip": "37.219.183.242",
+            "mac": "A5:9E:92:12:E2:7E",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_6": {
-            "ip": null,
-            "mac": null,
+            "ip": "24.176.139.155",
+            "mac": "2A:CF:4E:DE:3E:F8",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_5": {
-            "ip": null,
-            "mac": null,
+            "ip": "101.48.9.96",
+            "mac": "28:AE:82:1E:58:89",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_4": {
-            "ip": null,
-            "mac": null,
+            "ip": "41.107.159.239",
+            "mac": "4D:97:92:0C:95:A2",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_3": {
-            "ip": null,
-            "mac": null,
+            "ip": "161.218.110.9",
+            "mac": "C5:0D:B0:C4:4B:29",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_2": {
-            "ip": null,
-            "mac": null,
+            "ip": "75.250.0.143",
+            "mac": "85:B2:6C:8B:0C:AB",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_1": {
-            "ip": null,
-            "mac": null,
+            "ip": "215.20.10.108",
+            "mac": "F0:A0:91:09:BC:D9",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_10": {
-            "ip": null,
-            "mac": null,
+            "ip": "214.58.229.53",
+            "mac": "0C:00:6F:28:75:CD",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_11": {
-            "ip": null,
-            "mac": null,
+            "ip": "75.186.68.15",
+            "mac": "3E:13:D5:91:D6:A2",
+            "commands": [
+                "ip route add 0.0.0.0/0 dev eth0"
+            ]
+        },
+        "Node_16": {
+            "ip": "137.194.160.204",
+            "mac": "86:21:66:77:58:65",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
         },
         "Node_13": {
-            "ip": null,
-            "mac": null,
+            "ip": "98.121.35.11",
+            "mac": "56:9E:8C:02:51:86",
+            "commands": [
+                "ip route add 0.0.0.0/0 dev eth0"
+            ]
+        },
+        "Node_15": {
+            "ip": "172.111.245.120",
+            "mac": "6C:78:75:D9:8D:9A",
             "commands": [
                 "ip route add 0.0.0.0/0 dev eth0"
             ]
@@ -122,36 +136,54 @@
     "groups": {
         "Group_3": [
             "Node_7",
-            "Node_5",
             "Node_9",
-            "Node_1"
-        ],
-        "Group_2": [
-            "Node_7",
-            "Node_2",
             "Node_8",
-            "Node_6"
-        ],
-        "Group_1": [
-            "Node_5",
-            "Node_6",
-            "Node_12",
             "Node_10"
         ],
+        "Group_2": [
+            "Node_13",
+            "Node_3",
+            "Node_11",
+            "Node_5"
+        ],
+        "Group_1": [
+            "Node_1",
+            "Node_12",
+            "Node_16",
+            "Node_6"
+        ],
+        "Group_7": [
+            "Node_14",
+            "Node_11",
+            "Node_15",
+            "Node_13"
+        ],
         "Group_6": [
+            "Node_8",
             "Node_2",
-            "Node_4"
+            "Node_3",
+            "Node_1"
         ],
         "Group_5": [
-            "Node_2",
             "Node_4",
-            "Node_3"
+            "Node_1",
+            "Node_9",
+            "Node_7"
         ],
         "Group_4": [
+            "Node_7",
+            "Node_4",
             "Node_2",
-            "Node_14",
-            "Node_13",
-            "Node_11"
+            "Node_14"
+        ],
+        "Group_9": [
+            "Node_4",
+            "Node_10"
+        ],
+        "Group_8": [
+            "Node_10",
+            "Node_4",
+            "Node_9"
         ]
     },
     "links": {
@@ -159,43 +191,43 @@
             "endports": [
                 {
                     "node": "Node_3",
-                    "port": 5,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_7",
-                    "port": 8,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_8",
-                    "port": 10,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_9",
-                    "port": 6,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_9",
                     "port": 3,
                     "connected_port": 0
                 },
                 {
-                    "node": "Node_11",
-                    "port": 4,
+                    "node": "Node_4",
+                    "port": 5,
                     "connected_port": 0
                 },
                 {
-                    "node": "Node_12",
-                    "port": 9,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_14",
+                    "node": "Node_8",
                     "port": 7,
                     "connected_port": 0
+                },
+                {
+                    "node": "Node_8",
+                    "port": 9,
+                    "connected_port": 2
+                },
+                {
+                    "node": "Node_11",
+                    "port": 10,
+                    "connected_port": 2
+                },
+                {
+                    "node": "Node_13",
+                    "port": 4,
+                    "connected_port": 1
+                },
+                {
+                    "node": "Node_15",
+                    "port": 8,
+                    "connected_port": 0
+                },
+                {
+                    "node": "Node_16",
+                    "port": 6,
+                    "connected_port": 1
                 }
             ],
             "switchports": [
@@ -214,44 +246,44 @@
         "Leaf_2": {
             "endports": [
                 {
-                    "node": "Node_1",
-                    "port": 8,
+                    "node": "Node_2",
+                    "port": 5,
                     "connected_port": 0
                 },
                 {
                     "node": "Node_4",
-                    "port": 7,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_5",
                     "port": 9,
-                    "connected_port": 0
+                    "connected_port": 1
                 },
                 {
-                    "node": "Node_6",
+                    "node": "Node_7",
                     "port": 6,
                     "connected_port": 0
                 },
                 {
-                    "node": "Node_10",
+                    "node": "Node_12",
                     "port": 10,
                     "connected_port": 0
                 },
                 {
-                    "node": "Node_10",
+                    "node": "Node_13",
+                    "port": 7,
+                    "connected_port": 0
+                },
+                {
+                    "node": "Node_14",
                     "port": 3,
                     "connected_port": 0
                 },
                 {
-                    "node": "Node_12",
+                    "node": "Node_14",
                     "port": 4,
-                    "connected_port": 0
+                    "connected_port": 1
                 },
                 {
-                    "node": "Node_13",
-                    "port": 5,
-                    "connected_port": 0
+                    "node": "Node_15",
+                    "port": 8,
+                    "connected_port": 1
                 }
             ],
             "switchports": [
@@ -271,41 +303,41 @@
             "endports": [
                 {
                     "node": "Node_3",
-                    "port": 4,
-                    "connected_port": 0
+                    "port": 8,
+                    "connected_port": 1
+                },
+                {
+                    "node": "Node_4",
+                    "port": 5,
+                    "connected_port": 2
                 },
                 {
                     "node": "Node_5",
-                    "port": 3,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_6",
-                    "port": 8,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_7",
-                    "port": 6,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_8",
-                    "port": 5,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_10",
-                    "port": 7,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_11",
                     "port": 10,
                     "connected_port": 0
                 },
                 {
+                    "node": "Node_6",
+                    "port": 3,
+                    "connected_port": 0
+                },
+                {
                     "node": "Node_12",
+                    "port": 6,
+                    "connected_port": 1
+                },
+                {
+                    "node": "Node_14",
+                    "port": 4,
+                    "connected_port": 2
+                },
+                {
+                    "node": "Node_15",
+                    "port": 7,
+                    "connected_port": 2
+                },
+                {
+                    "node": "Node_16",
                     "port": 9,
                     "connected_port": 0
                 }
@@ -326,28 +358,33 @@
         "Leaf_4": {
             "endports": [
                 {
-                    "node": "Node_2",
+                    "node": "Node_1",
                     "port": 4,
                     "connected_port": 0
                 },
                 {
-                    "node": "Node_3",
+                    "node": "Node_2",
                     "port": 3,
-                    "connected_port": 0
+                    "connected_port": 1
                 },
                 {
-                    "node": "Node_7",
-                    "port": 7,
-                    "connected_port": 0
+                    "node": "Node_5",
+                    "port": 9,
+                    "connected_port": 1
                 },
                 {
                     "node": "Node_8",
-                    "port": 6,
-                    "connected_port": 0
+                    "port": 10,
+                    "connected_port": 1
                 },
                 {
                     "node": "Node_9",
-                    "port": 9,
+                    "port": 8,
+                    "connected_port": 0
+                },
+                {
+                    "node": "Node_10",
+                    "port": 7,
                     "connected_port": 0
                 },
                 {
@@ -356,14 +393,9 @@
                     "connected_port": 0
                 },
                 {
-                    "node": "Node_13",
-                    "port": 8,
-                    "connected_port": 0
-                },
-                {
-                    "node": "Node_13",
-                    "port": 10,
-                    "connected_port": 0
+                    "node": "Node_11",
+                    "port": 6,
+                    "connected_port": 1
                 }
             ],
             "switchports": [

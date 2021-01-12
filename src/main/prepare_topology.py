@@ -82,8 +82,8 @@ class SpineLeaf():
             node = "Node_" + str(nodes_iterator)
             self.nodes.append(node)
             links, free_ports = self.generate_node_links(1, 3 ,free_ports)
+            interface_on_node = 0
             for link in links:
-                interface_on_node = 0
                 sw , link = "Leaf_" + str(1 + link/ports_per_leaf), (link%ports_per_leaf) + 1 + len(self.spines)
                 self.links[sw]["endports"].append({"port": link, "node": node, "connected_port": interface_on_node })
                 interface_on_node += 1
@@ -127,14 +127,14 @@ class SpineLeaf():
 
     def generate_ip_addressing(self, node):
         if self.ip_addressing == "random":
-            self.generate_random_ip_addressing()
+            return self.generate_random_ip_addressing()
 
     def generate_random_ip_addressing(self):
         return str(random.randint(10, 223)) + "." + str(random.randint(0, 255))+ "." +str(random.randint(0, 255))+ "." +str(random.randint(0, 255))
 
     def generate_mac_addressing(self, node):
         if self.ip_addressing == "random":
-            self.generate_random_mac_addressing()
+            return self.generate_random_mac_addressing()
 
     def generate_random_mac_addressing(self):
         #TODO: verify rstr licence
