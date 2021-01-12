@@ -1,12 +1,15 @@
 {
     "stacks":[
         ["Ethernet", "IPv4", "TCP"],
-        ["Ethernet", "IPv4"]
+        ["Ethernet", "IPv4", "UDP"],
+        ["Ethernet", "IPv4"],
+        ["Ethernet"]
     ],
     "next_prot_fields":{
         "Ethernet": {"next_prot_field":"etherType", "next_prot_value": {"IPv4": "Ethernet_etherType_TYPE_IPv4"}},
-        "IPv4": {"next_prot_field":"protocol", "next_prot_value": {"TCP": "IPv4_protocol_TYPE_TCP"}},
-        "TCP": {}
+        "IPv4": {"next_prot_field":"protocol", "next_prot_value": {"TCP": "IPv4_protocol_TYPE_TCP", "UDP": "IPv4_protocol_TYPE_UDP"}},
+        "TCP": {},
+        "UDP": {}
     }
 }
 

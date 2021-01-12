@@ -1,0 +1,6 @@
+header TCP_t{
+    bit<32> srcPort;
+    bit<32> dstPort;
+    bit<16> length;
+    bit<16> checksum;
+}

@@ -1,4 +1,5 @@
 const bit<8>  IPv4_protocol_TYPE_TCP  = 6;
+const bit<8>  IPv4_protocol_TYPE_TCP  = 17;
 
 typedef bit<32> ip4Addr_t;
 
