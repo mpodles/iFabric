@@ -1,6 +1,8 @@
 import json
 import re
 import random 
+import rstr
+import os
 
 class Topology():
     def generate_switches(self):
@@ -29,25 +31,35 @@ class SpineLeaf():
     def __init__(self, spines = 2, leaves= 4, ports_per_leaf=8, avg_group_size = 4):
         self.topology = {}
         self.links = {}
+        self.nodes = []
+        self.nodes_with_properties = {}
         self.groups = {}
+        self.switches = {}
+        self.spines = []
+        self.leaves = []
+        self.ip_addressing = "random"
+        self.mac_addressing = "random"
+        self.project_directory = "/home/mpodles/iFabric/src/main"
+        self.dir_for_topology = self.project_directory + "/sig-topo"
+
         self.generate_switches(spines, leaves)
         self.generate_switch_to_switch_links()
         self.generate_nodes_with_links(ports_per_leaf)
         self.generate_groups(avg_group_size)
+        self.generate_nodes_addressing()
+        self.write_topology()
         
 
     def generate_switches(self, spines, leaves):
-        self.switches = []
-        self.spines = []
-        self.leaves = []
+        
         for spine_nr in range (1,spines+1):
             spine = "Spine_" + str(spine_nr)
-            self.switches.append(spine)
+            self.switches[spine] = {"runtime_json" : "build/" + spine +"-runtime.json"}
             self.spines.append(spine)
             self.links[spine] = {"switchports" : [], "endports": []}
         for leaf_nr in range (1,leaves+1):
             leaf = "Leaf_" + str(leaf_nr)
-            self.switches.append(leaf)
+            self.switches[leaf] = {"runtime_json" : "build/" + leaf +"-runtime.json"}
             self.leaves.append(leaf)
             self.links[leaf] = {"switchports" : [], "endports": []}
 
@@ -63,7 +75,6 @@ class SpineLeaf():
 
     def generate_nodes_with_links(self, ports_per_leaf):
         #Generate random number of nodes based on how many endports are available
-        self.nodes = []
         nodes_iterator = 0
         free_ports = range(ports_per_leaf*len(self.leaves))
         while len(free_ports) > 0:
@@ -106,18 +117,49 @@ class SpineLeaf():
             if len(nodes) <=1:
                 self.groups.pop(group)
 
-    def generate_ip_addressing(self):
-        pass
+    def generate_nodes_addressing(self):
+        for node in self.nodes:
+            self.nodes_with_properties[node]= {}
+            self.nodes_with_properties[node]["ip"] = self.generate_ip_addressing(node)
+            self.nodes_with_properties[node]["mac"] = self.generate_mac_addressing(node)
+            self.nodes_with_properties[node]["commands"] = self.generate_node_commands(node)
 
-    def generate_mac_addressing(self):
-        pass
-    
+
+    def generate_ip_addressing(self, node):
+        if self.ip_addressing == "random":
+            self.generate_random_ip_addressing()
+
+    def generate_random_ip_addressing(self):
+        return str(random.randint(10, 223)) + "." + str(random.randint(0, 255))+ "." +str(random.randint(0, 255))+ "." +str(random.randint(0, 255))
+
+    def generate_mac_addressing(self, node):
+        if self.ip_addressing == "random":
+            self.generate_random_mac_addressing()
+
+    def generate_random_mac_addressing(self):
+        #TODO: verify rstr licence
+        random_mac=rstr.xeger('[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]')
+        return random_mac
+
+    def generate_node_commands(self, node):
+        #TODO: change eth0
+        return ["ip route add 0.0.0.0/0 dev eth0"]
+
+    def write_topology(self):
+        topology = {}
+
+        topology["switches"] = self.switches
+        topology["nodes"] = self.nodes_with_properties
+        topology["links"] = self.links
+        topology["groups"] = self.groups
+
+        topology = json.dumps(topology)
+
+        with open(os.path.join(self.dir_for_topology , 'topology_new.json'),'w+')  as f:
+             f.write(topology)
+
 
 
 if __name__ == "__main__":
     topology = SpineLeaf(spines = 2, leaves= 4, ports_per_leaf=8, avg_group_size= 4)
-    print topology.nodes
-    print
-    print topology.links
-    print
-    print topology.groups
+    
