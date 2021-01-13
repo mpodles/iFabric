@@ -1,0 +1,10 @@
+{
+    "spines" : 2, 
+    "leaves" : 4, 
+    "ports_per_leaf" : 8,
+    "avg_group_size" : 4,
+    "overlap_groups": 1,
+    "ip_addressing" : "random",
+    "mac_addressing": "random"
+
+}

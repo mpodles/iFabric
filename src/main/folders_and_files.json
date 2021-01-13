@@ -1,0 +1,16 @@
+{
+    "folders": ["configuration_files", "preparing_mininet_topology" , "control_plane", "protocols"],
+    "control_plane_folder": "control_plane",
+    "configuration_folder": "configuration_files",
+    "simulator_folder": "preparing_mininet_topology",
+    "protocols_folder": "protocols",
+    "p4template" : "fabric_tunnel_template.jinja2",
+    "p4target" : "fabric_tunnel.p4",
+    "logs_folder" : "logs",
+    "build_folder": "build",
+    "pcaps_folder": "pcap",
+    "topology_description_file": "topology_description.json",
+    "topology_file": "topology.json",
+    "BMV2_SWITCH_EXE": "simple_switch_grpc"
+
+}   

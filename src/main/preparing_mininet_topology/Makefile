@@ -1,11 +1,13 @@
+
+BMV2_SWITCH_EXE = simple_switch_grpc
+TOPO = sig-topo/topology_old.json
 BUILD_DIR = build
 PCAP_DIR = pcaps
 LOG_DIR = logs
-
 P4C = p4c-bm2-ss
 P4C_ARGS += --p4runtime-files $(BUILD_DIR)/$(basename $@).p4.p4info.txt
 
-RUN_SCRIPT = ../utils/run_exercise.py
+RUN_SCRIPT = ./run_exercise.py
 
 ifndef TOPO
 TOPO = topology.json
@@ -41,7 +43,7 @@ buildp4: generatep4
 	$(P4C) --p4v 16 --p4runtime-files $(BUILD_DIR)/fabric_tunnel.p4.p4info.txt -o $(BUILD_DIR)/fabric_tunnel.json $(BUILD_DIR)/fabric_tunnel.p4
 
 generatep4: dirs
-	sudo python ../utils/p4runtime_lib/construct_p4.py
+	sudo python ./p4runtime_lib/construct_p4.py
 
 dirs:
 	mkdir -p $(BUILD_DIR) $(PCAP_DIR) $(LOG_DIR)

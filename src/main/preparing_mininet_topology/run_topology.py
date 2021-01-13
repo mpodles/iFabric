@@ -30,7 +30,6 @@ from mininet.link import TCLink
 from mininet.cli import CLI
 
 from p4runtime_switch import P4RuntimeSwitch
-import p4runtime_lib.simple_controller
 
 def configureP4Switch(**switch_args):
     """ Helper class that is called by mininet to initialize
@@ -402,6 +401,7 @@ def get_args():
     parser.add_argument('-b', '--behavioral-exe', help='Path to behavioral executable',
                                 type=str, required=False, default='simple_switch')
     return parser.parse_args()
+
 
 
 if __name__ == '__main__':

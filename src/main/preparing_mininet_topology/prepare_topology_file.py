@@ -41,6 +41,7 @@ class SpineLeaf():
         self.mac_addressing = "random"
         self.project_directory = "/home/mpodles/iFabric/src/main"
         self.dir_for_topology = self.project_directory + "/sig-topo"
+        self.overlap_groups = True
 
         self.generate_switches(spines, leaves)
         self.generate_switch_to_switch_links()
@@ -96,7 +97,7 @@ class SpineLeaf():
         return subset, free_ports_left
 
     
-    def generate_groups(self, avg_group_size, overlap = True):
+    def generate_groups(self, avg_group_size):
         ungrouped_nodes = range(len(self.nodes))
         group_id = 1
         while len(ungrouped_nodes) > 0:
@@ -104,7 +105,7 @@ class SpineLeaf():
             subset = random.sample(ungrouped_nodes, sample_length)
             group = "Group_" + str(group_id)
             self.groups[group] = [self.nodes[i] for i in subset]
-            if overlap:
+            if self.overlap_groups:
                 how_many_to_delete = random.randint(0, sample_length)
                 while how_many_to_delete > 0:
                     subset.pop(0)
