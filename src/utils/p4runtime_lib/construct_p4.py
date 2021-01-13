@@ -27,7 +27,7 @@ class P4Constructor():
         self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyEgress.strip_header": [] }
 
         self.read_topology()
-        self.parse_topology()
+        #self.parse_topology()
         self.read_protocols_implemented_and_required()
         self.read_flows()
         self.parse_flows()
@@ -44,40 +44,41 @@ class P4Constructor():
             topo = json.load(f)
             self.switches = topo['switches']
             self.groups = topo['groups']
-            self.links = topo['links']
-            self.hosts = topo['hosts']
+            #self.links = topo['links']
+            self.hosts = topo['nodes']
+            self.topology = topo['links']
 
-    def parse_topology(self):
-        self.topology = self.prepare_skeleton()
-        for link in self.links:
-            self.parse_link(link)
+    # def parse_topology(self):
+    #     self.topology = self.prepare_skeleton()
+    #     for link in self.links:
+    #         self.parse_link(link)
     
-    def prepare_skeleton(self):
-        skeleton = {}
-        for switch in self.switches:
-            skeleton[switch] = {"switchports" : [], "endports": []}
-        return skeleton
+    # def prepare_skeleton(self):
+    #     skeleton = {}
+    #     for switch in self.switches:
+    #         skeleton[switch] = {"switchports" : [], "endports": []}
+    #     return skeleton
 
-    def parse_link(self,link):
-        if "h" in link[0]:
-            host = link[0]
-            switch_port = link[1]
-            switch, port = re.match("(.+)-p([0-9]+)", switch_port).groups()
-            entry = {"port":port, "host": host}
-            self.topology[switch]["endports"].append(entry)
-        elif "h" in link[1]:
-            host = link[1]
-            switch_port = link[0]
-            switch, port = re.match("(.+)-p([0-9]+)", switch_port).groups()
-            entry = {"port":port, "host": host}
-            self.topology[switch]["endports"].append(entry)
-        else:
-            switch1, port1 = re.match("(.+)-p([0-9]+)", link[0]).groups()
-            switch2, port2 = re.match("(.+)-p([0-9]+)", link[1]).groups()
-            entry1 = {"port":port1,"connected_switch":switch2, "connected_port":port2}
-            entry2 = {"port":port2,"connected_switch":switch1, "connected_port":port1}
-            self.topology[switch1]["switchports"].append(entry1)
-            self.topology[switch2]["switchports"].append(entry2)
+    # def parse_link(self,link):
+    #     if "h" in link[0]:
+    #         host = link[0]
+    #         switch_port = link[1]
+    #         switch, port = re.match("(.+)-p([0-9]+)", switch_port).groups()
+    #         entry = {"port":port, "host": host}
+    #         self.topology[switch]["endports"].append(entry)
+    #     elif "h" in link[1]:
+    #         host = link[1]
+    #         switch_port = link[0]
+    #         switch, port = re.match("(.+)-p([0-9]+)", switch_port).groups()
+    #         entry = {"port":port, "host": host}
+    #         self.topology[switch]["endports"].append(entry)
+    #     else:
+    #         switch1, port1 = re.match("(.+)-p([0-9]+)", link[0]).groups()
+    #         switch2, port2 = re.match("(.+)-p([0-9]+)", link[1]).groups()
+    #         entry1 = {"port":port1,"connected_switch":switch2, "connected_port":port2}
+    #         entry2 = {"port":port2,"connected_switch":switch1, "connected_port":port1}
+    #         self.topology[switch1]["switchports"].append(entry1)
+    #         self.topology[switch2]["switchports"].append(entry2)
 
             
     def read_protocols_implemented_and_required(self):
@@ -179,7 +180,7 @@ class P4Constructor():
         for switch, ports in self.topology.items():
             self.switches_node_flows[switch] = {} 
             for port_dict in ports["endports"]:
-                port, host = int(port_dict["port"]),port_dict["host"]
+                port, host = int(port_dict["port"]),port_dict["node"]
                 if self.switches_node_flows[switch].get(host+ "_flow") is not None:
                     self.switches_node_flows[switch][host+ "_flow"]["standard_metadata.ingress_port"].append({"low": port, "high": port})
                     self.flows[host+ "_flow"]["standard_metadata.ingress_port"].append({"low": port, "high": port})

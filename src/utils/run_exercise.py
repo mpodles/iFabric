@@ -126,7 +126,7 @@ class ExerciseRunner:
             pcap_dir : string   // directory for mininet switch pcap files
             quiet    : bool     // determines if we print logger messages
 
-            hosts    : dict<string, dict> // mininet host names and their associated properties
+            nodes    : dict<string, dict> // mininet nodes names and their associated properties
             switches : dict<string, dict> // mininet switch names and their associated properties
             links    : list<dict>         // list of mininet link properties
 
@@ -168,9 +168,12 @@ class ExerciseRunner:
         self.logger('Reading topology file.')
         with open(topo_file, 'r') as f:
             topo = json.load(f)
-        self.hosts = topo['hosts']
+        self.nodes = topo['hosts']
         self.switches = topo['switches']
+        print topo['links']
         self.links = self.parse_links(topo['links'])
+        print 
+        print self.links
 
         # Ensure all the needed directories exist and are directories
         for dir_name in [log_dir, pcap_dir]:
@@ -195,7 +198,7 @@ class ExerciseRunner:
         sleep(1)
 
         # some programming that must happen after the net has started
-        self.program_hosts()
+        self.program_nodes()
         #self.program_switches()
         self.prepare_switches_file()
 
@@ -252,7 +255,7 @@ class ExerciseRunner:
                                 log_console=True,
                                 pcap_dump=self.pcap_dir)
 
-        self.topo = ExerciseTopo(self.hosts, self.switches, self.links, self.log_dir, self.bmv2_exe, self.pcap_dir)
+        self.topo = ExerciseTopo(self.nodes, self.switches, self.links, self.log_dir, self.bmv2_exe, self.pcap_dir)
 
         self.net = Mininet(topo = self.topo,
                       link = TCLink,
@@ -332,20 +335,15 @@ class ExerciseRunner:
     #         if 'runtime_json' in sw_dict:
     #             self.program_switch_p4runtime(sw_name, sw_dict)
 
-    def program_hosts(self):
+    def program_nodes(self):
         """ Execute any commands provided in the topology.json file on each Mininet host
         """
-        for host_name, host_info in self.hosts.items():
-            h = self.net.get(host_name)
-            if "commands" in host_info:
-                for cmd in host_info["commands"]:
+        for node_name, node_info in self.nodes.items():
+            h = self.net.get(node_name)
+            if "commands" in node_info:
+                for cmd in node_info["commands"]:
                     h.cmd(cmd)
 
-
-    def simulate_traffic(self):
-        for host_name, host_info in self.hosts.items():
-            h = self.net.get(host_name)
-            h.cmd("python2 receive.py")
 
     def do_net_cli(self):
         """ Starts up the mininet CLI and prints some helpful output.
