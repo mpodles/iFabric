@@ -18,32 +18,37 @@ class TableEntry():
 
 
 class P4Constructor():
-    def __init__(self, build_folder_path, topology_file_path, configuration_folder_path, p4_target_file_path, protocols_folder_path):
-        self.build_folder_path = build_folder_path
-        self.topology_file_path = topology_file_path
-        self.configuration_folder_path = configuration_folder_path
-        self.p4_target_file_path = p4_target_file_path
-        self.protocols_folder_path = protocols_folder_path
+    def __init__(self, **files):
+        topology_file_path = files["topology_file_path"]
+        protocols_folder_path = files["protocols_folder_path"] 
+        configuration_folder_path = files["configuration_folder_path"] 
+        flows_file_path = files["flows_file_path"] 
+        template_file_path = files["template_file_path"] 
+        p4_target_file_path = files["p4_target_file_path"] 
+        runtimes_files_path = files["runtimes_files_path"] 
+        flow_ids_file_path = files["flow_ids_file_path"]
+
         self.multicast_begin_state = "empty" # "random"
         self.tables = ["Flow_classifier"]
         self.match_fields_of_table = {"Flow_classifier": set(["standard_metadata.ingress_port"])}
         self.tables_action = {"MyIngress.Flow_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
         self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyEgress.strip_header": [] }
 
-        self.read_topology()
+        self.read_topology(topology_file_path)
         #self.parse_topology()
-        self.read_protocols_implemented_and_required()
-        self.read_flows()
+        self.read_protocols_implemented_and_required(protocols_folder_path, configuration_folder_path)
+        self.read_flows(flows_file_path)
         self.parse_flows()
         self.prepare_nodes_flows()
         self.generate_ids_for_flows()
-        self.construct_p4_program()
+        self.construct_p4_program(template_file_path, p4_target_file_path)
         self.construct_runtimes()
-        self.write_flow_ids_to_file()
+        self.write_runtimes(runtimes_files_path)
+        self.write_flow_ids_to_file(flow_ids_file_path)
 
        
-    def read_topology(self):
-        with open(self.topology_file_path, 'r') as f:
+    def read_topology(self, topology_file_path):
+        with open(topology_file_path, 'r') as f:
             topo = json.load(f)
             self.switches = topo['switches']
             self.groups = topo['groups']
@@ -84,22 +89,21 @@ class P4Constructor():
     #         self.topology[switch2]["switchports"].append(entry2)
 
             
-    def read_protocols_implemented_and_required(self):
+    def read_protocols_implemented_and_required(self, protocols_folder_path, configuration_folder_path):
         self.implemented_protocols = {}
-        for filename in os.listdir(self.protocols_folder_path):
-            with open(os.path.join(self.protocols_folder_path, filename)) as f:
+        for filename in os.listdir(protocols_folder_path):
+            with open(os.path.join(protocols_folder_path, filename)) as f:
                 self.implemented_protocols[filename] = f.read()
         
-        protocols_stack_file = os.path.join(self.configuration_folder_path, 'protocol_stack.json')
+        protocols_stack_file = os.path.join(configuration_folder_path, 'protocol_stack.json')
         with open(protocols_stack_file, "r") as f:
             protocols_stack = json.loads(f.read())
             self.protocols_stack = protocols_stack["stacks"]
             self.next_protocols_fields = protocols_stack["next_prot_fields"]
         
 
-    def read_flows(self):
-        flows_file = os.path.join(self.configuration_folder_path, 'flows.json')
-        with open(flows_file, 'r') as f:
+    def read_flows(self, flows_file_path):
+        with open(flows_file_path, 'r') as f:
             self.flows = json.load(f)
 
     def parse_flows(self):
@@ -197,21 +201,28 @@ class P4Constructor():
             id+=1
             self.flow_ids[flow] = id
         
-    def construct_p4_program(self):
-        file_loader = jinja2.FileSystemLoader(self.configuration_folder_path)
+    def construct_p4_program(self, template_file_path, p4_target_file_path):
+        file_loader = jinja2.FileSystemLoader(os.path.dirname(template_file_path))
         env = jinja2.Environment(loader=file_loader)
 
-        template=env.get_template("fabric_tunnel_template.jinja2")
+        template=env.get_template(os.path.basename(template_file_path))
         output = template.render(match_fields_of_table=self.match_fields_of_table,\
                 protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
 
-        with open(self.p4_target_file_path,'w+')  as f:
+        with open(p4_target_file_path,'w+')  as f:
              f.write(output)
         
     def construct_runtimes(self):
+        self.runtimes = {}
         for sw in self.switches:
-            self.construct_runtime_for_switch(sw)
+            self.runtimes[sw] = self.construct_runtime_for_switch(sw)
     
+
+    def write_runtimes(self, runtimes_files_path):
+        for sw, runtime in self.runtimes.items():
+            with open(os.path.join(runtimes_files_path, sw + "-runtime.json"), "w") as f:
+                f.write(runtime)
+
 
     def construct_runtime_for_switch(self, sw):
         tables_entries = self.generate_tables_entries_for_switch(sw)
@@ -228,10 +239,9 @@ class P4Constructor():
             "multicast_group_entries" : multicast_group_entries
         }
 
-        result_string = json.dumps(result_dictionary, encoding='UTF-8') #UTF-8 probably not required
+        return json.dumps(result_dictionary, encoding='UTF-8') #UTF-8 probably not required
 
-        with open(os.path.join(self.build_folder_path, sw + "-runtime.json"), "w") as f:
-            f.write(result_string)
+        
             
     def generate_tables_entries_for_switch(self, sw):
         switch_tables_entries = []
@@ -385,8 +395,8 @@ class P4Constructor():
         return ports
 
 
-    def write_flow_ids_to_file(self):
-        with open(os.path.join(self.build_folder_path, 'flow_ids.json'), "w") as f:
+    def write_flow_ids_to_file(self, flow_ids_file_path):
+        with open(flow_ids_file_path, "w") as f:
             f.write(json.dumps(self.flow_ids))
 
 

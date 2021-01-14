@@ -6,6 +6,9 @@ import os
 
 #TODO: Make it also prepare mininet topology itself, not only file to parse
 
+def choose_topology(structure):
+    return SpineLeaf
+
 class Topology():
     pass
     #TODO: Make general Topology interface or use the mininet Topo
