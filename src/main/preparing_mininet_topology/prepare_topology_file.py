@@ -4,31 +4,20 @@ import random
 import rstr
 import os
 
+#TODO: Make it also prepare mininet topology itself, not only file to parse
+
 class Topology():
-    def generate_switches(self):
-        pass
-
-    def generate_nodes(self):
-        pass
-    
-    def generate_links(self):
-        pass
-
-    def generate_groups(self):
-        pass
-
-    def generate_flows(self):
-        pass
-
-    def generate_policy(self):
-        pass
-
-    def parse_policy_into_flows(self):
-        pass
+    pass
+    #TODO: Make general Topology interface or use the mininet Topo
 
 class SpineLeaf():
 
-    def __init__(self, spines = 2, leaves= 4, ports_per_leaf=8, avg_group_size = 4):
+    def __init__(self, configuration, topology_target_path):
+        spines = configuration["spines"]
+        leaves= configuration["leaves"]
+        ports_per_leaf=configuration["ports_per_leaf"]
+        avg_group_size =configuration ["avg_group_size"]
+        self.topology_target_path = topology_target_path
         self.topology = {}
         self.links = {}
         self.nodes = []
@@ -37,11 +26,9 @@ class SpineLeaf():
         self.switches = {}
         self.spines = []
         self.leaves = []
-        self.ip_addressing = "random"
-        self.mac_addressing = "random"
-        self.project_directory = "/home/mpodles/iFabric/src/main"
-        self.dir_for_topology = self.project_directory + "/sig-topo"
-        self.overlap_groups = True
+        self.ip_addressing = configuration["ip_addressing"]
+        self.mac_addressing = configuration["mac_addressing"]
+        self.overlap_groups = bool(configuration["overlap_groups"])
 
         self.generate_switches(spines, leaves)
         self.generate_switch_to_switch_links()
@@ -52,7 +39,6 @@ class SpineLeaf():
         
 
     def generate_switches(self, spines, leaves):
-        
         for spine_nr in range (1,spines+1):
             spine = "Spine_" + str(spine_nr)
             self.switches[spine] = {"runtime_json" : "build/" + spine +"-runtime.json"}
@@ -156,11 +142,12 @@ class SpineLeaf():
 
         topology = json.dumps(topology)
 
-        with open(os.path.join(self.dir_for_topology , 'topology_new.json'),'w+')  as f:
+        with open(self.topology_target_path,'w+')  as f:
              f.write(topology)
 
 
 
 if __name__ == "__main__":
-    topology = SpineLeaf(spines = 2, leaves= 4, ports_per_leaf=8, avg_group_size= 4)
+    pass
+    #topology = SpineLeaf(spines = 2, leaves= 4, ports_per_leaf=8, avg_group_size= 4)
     

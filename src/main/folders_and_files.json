@@ -5,7 +5,7 @@
     "simulator_folder": "preparing_mininet_topology",
     "protocols_folder": "protocols",
     "p4template" : "fabric_tunnel_template.jinja2",
-    "p4target" : "fabric_tunnel.p4",
+    "p4target" : "fabric_tunnel",
     "logs_folder" : "logs",
     "build_folder": "build",
     "pcaps_folder": "pcap",

@@ -1,4 +1,5 @@
 {
+    "type": "SpineLeaf",
     "spines" : 2, 
     "leaves" : 4, 
     "ports_per_leaf" : 8,

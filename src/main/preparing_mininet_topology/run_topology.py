@@ -148,8 +148,7 @@ class ExerciseRunner:
             return str(l) + "ms"
 
 
-    def __init__(self, topo_file, log_dir, pcap_dir,
-                       switch_json, bmv2_exe='simple_switch', quiet=False):
+    def __init__(self, configuration, quiet=False):
         """ Initializes some attributes and reads the topology json. Does not
             actually run the exercise. Use run_exercise() for that.
 
@@ -163,11 +162,19 @@ class ExerciseRunner:
                 quiet : bool          // Enable/disable script debug messages
         """
 
+        #TODO: fix p4target and switch exe later
+        build_folder = configuration["build_folder"]
+        topo_file = configuration["topology_file"]
+        topo_file = os.path.join(build_folder, topo_file)
+        log_dir = configuration["logs_folder"]
+        pcap_dir = configuration["pcaps_folder"]
+        switch_json = configuration["p4target"]+".json"
+        bmv2_exe = configuration["BMV2_SWITCH_EXE"]
         self.quiet = quiet
         self.logger('Reading topology file.')
         with open(topo_file, 'r') as f:
             topo = json.load(f)
-        self.nodes = topo['hosts']
+        self.nodes = topo['nodes']
         self.switches = topo['switches']
         print topo['links']
         self.links = self.parse_links(topo['links'])
@@ -211,7 +218,7 @@ class ExerciseRunner:
         self.net.stop()
 
 
-    def parse_links(self, unparsed_links):
+    def parse_links(self, unparsed_links): #TODO: make topology file links already parsed
         """ Given a list of links descriptions of the form [node1, node2, latency, bandwidth]
             with the latency and bandwidth being optional, parses these descriptions
             into dictionaries and store them as self.links
