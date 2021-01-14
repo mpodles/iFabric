@@ -27,6 +27,20 @@ from netstat import check_listening_on_port
 
 SWITCH_START_TIMEOUT = 10 # seconds
 
+
+class iFabricNode(Host):
+    def config(self, **params):
+        r = super(Host, self).config(**params)
+        
+        for interface, int_config in params["interfaces"].items():
+                interface_name = str("intf-" + interface)
+                mac = int_config["mac"] 
+                ip = int_config["ip"]
+                self.addIntf(intf=interface_name)
+                self.setMAC(mac, intf=interface_name)
+                self.setIP(ip, intf=interface_name)
+        return r
+
 class P4Host(Host):
     def config(self, **params):
         r = super(Host, self).config(**params)

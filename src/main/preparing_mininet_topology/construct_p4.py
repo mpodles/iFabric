@@ -18,8 +18,12 @@ class TableEntry():
 
 
 class P4Constructor():
-    def __init__(self):
-        self.project_directory = "/home/mpodles/iFabric/src/main"
+    def __init__(self, build_folder_path, topology_file_path, configuration_folder_path, p4_target_file_path, protocols_folder_path):
+        self.build_folder_path = build_folder_path
+        self.topology_file_path = topology_file_path
+        self.configuration_folder_path = configuration_folder_path
+        self.p4_target_file_path = p4_target_file_path
+        self.protocols_folder_path = protocols_folder_path
         self.multicast_begin_state = "empty" # "random"
         self.tables = ["Flow_classifier"]
         self.match_fields_of_table = {"Flow_classifier": set(["standard_metadata.ingress_port"])}
@@ -39,8 +43,7 @@ class P4Constructor():
 
        
     def read_topology(self):
-        topo_file = os.path.join(self.project_directory, 'sig-topo/topology.json')
-        with open(topo_file, 'r') as f:
+        with open(self.topology_file_path, 'r') as f:
             topo = json.load(f)
             self.switches = topo['switches']
             self.groups = topo['groups']
@@ -82,13 +85,12 @@ class P4Constructor():
 
             
     def read_protocols_implemented_and_required(self):
-        protocols_dir = os.path.join(self.project_directory, 'protocols/')
         self.implemented_protocols = {}
-        for filename in os.listdir(protocols_dir):
-            with open(protocols_dir + filename) as f:
+        for filename in os.listdir(self.protocols_folder_path):
+            with open(os.path.join(self.protocols_folder_path, filename)) as f:
                 self.implemented_protocols[filename] = f.read()
         
-        protocols_stack_file = os.path.join(self.project_directory, 'sig-topo/protocol_stack.json')
+        protocols_stack_file = os.path.join(self.configuration_folder_path, 'protocol_stack.json')
         with open(protocols_stack_file, "r") as f:
             protocols_stack = json.loads(f.read())
             self.protocols_stack = protocols_stack["stacks"]
@@ -96,7 +98,7 @@ class P4Constructor():
         
 
     def read_flows(self):
-        flows_file = os.path.join(self.project_directory, 'sig-topo/flows.json')
+        flows_file = os.path.join(self.configuration_folder_path, 'flows.json')
         with open(flows_file, 'r') as f:
             self.flows = json.load(f)
 
@@ -196,15 +198,14 @@ class P4Constructor():
             self.flow_ids[flow] = id
         
     def construct_p4_program(self):
-        template_directory = os.path.join(self.project_directory, 'sig-topo/')
-        file_loader = jinja2.FileSystemLoader(template_directory)
+        file_loader = jinja2.FileSystemLoader(self.configuration_folder_path)
         env = jinja2.Environment(loader=file_loader)
 
-        template=env.get_template("fabric_tunnel_template_one_table.jinja2")
+        template=env.get_template("fabric_tunnel_template.jinja2")
         output = template.render(match_fields_of_table=self.match_fields_of_table,\
                 protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
 
-        with open(os.path.join(self.project_directory, 'build/fabric_tunnel.p4'),'w+')  as f:
+        with open(self.p4_target_file_path,'w+')  as f:
              f.write(output)
         
     def construct_runtimes(self):
@@ -227,9 +228,9 @@ class P4Constructor():
             "multicast_group_entries" : multicast_group_entries
         }
 
-        result_string = json.dumps(result_dictionary, encoding='UTF-8')
+        result_string = json.dumps(result_dictionary, encoding='UTF-8') #UTF-8 probably not required
 
-        with open(os.path.join(self.project_directory, 'build/' + sw + "-runtime.json"), "w") as f:
+        with open(os.path.join(self.build_folder_path, sw + "-runtime.json"), "w") as f:
             f.write(result_string)
             
     def generate_tables_entries_for_switch(self, sw):
@@ -385,11 +386,11 @@ class P4Constructor():
 
 
     def write_flow_ids_to_file(self):
-        with open(os.path.join(self.project_directory, 'build/flow_ids.json'), "w") as f:
+        with open(os.path.join(self.build_folder_path, 'flow_ids.json'), "w") as f:
             f.write(json.dumps(self.flow_ids))
 
 
-if __name__ == '__main__':
-    constructor = P4Constructor()
-    print "P4 constructed"
+# if __name__ == '__main__':
+#     constructor = P4Constructor()
+#     print "P4 constructed"
  

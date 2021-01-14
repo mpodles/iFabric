@@ -11,6 +11,7 @@ class Topology():
     #TODO: Make general Topology interface or use the mininet Topo
 
 class SpineLeaf():
+    #TODO: Decouple hosts from topology and generate them however You wish
 
     def __init__(self, configuration, topology_target_path):
         spines = configuration["spines"]
@@ -22,6 +23,7 @@ class SpineLeaf():
         self.links = {}
         self.nodes = []
         self.nodes_with_properties = {}
+        self.node_links = {}
         self.groups = {}
         self.switches = {}
         self.spines = []
@@ -68,11 +70,13 @@ class SpineLeaf():
             nodes_iterator+=1
             node = "Node_" + str(nodes_iterator)
             self.nodes.append(node)
+            self.node_links[node] = []
             links, free_ports = self.generate_node_links(1, 3 ,free_ports)
             interface_on_node = 0
             for link in links:
                 sw , link = "Leaf_" + str(1 + link/ports_per_leaf), (link%ports_per_leaf) + 1 + len(self.spines)
                 self.links[sw]["endports"].append({"port": link, "node": node, "connected_port": interface_on_node })
+                self.node_links[node].append({"port": interface_on_node, "connected_switch": sw, "connected_port": link })
                 interface_on_node += 1
           
 
@@ -105,11 +109,15 @@ class SpineLeaf():
                 self.groups.pop(group)
 
     def generate_nodes_addressing(self):
-        for node in self.nodes:
-            self.nodes_with_properties[node]= {}
-            self.nodes_with_properties[node]["ip"] = self.generate_ip_addressing(node)
-            self.nodes_with_properties[node]["mac"] = self.generate_mac_addressing(node)
+        for node, connections in self.node_links.items():
+            self.nodes_with_properties[node]= {} 
             self.nodes_with_properties[node]["commands"] = self.generate_node_commands(node)
+            for connection in connections:
+                port = connection["port"]
+                self.nodes_with_properties[node][port] = {}
+                self.nodes_with_properties[node][port]["ip"] = self.generate_ip_addressing(node)
+                self.nodes_with_properties[node][port]["mac"] = self.generate_mac_addressing(node)
+               
 
 
     def generate_ip_addressing(self, node):
@@ -138,6 +146,7 @@ class SpineLeaf():
         topology["switches"] = self.switches
         topology["nodes"] = self.nodes_with_properties
         topology["links"] = self.links
+        topology["node_links"] = self.node_links
         topology["groups"] = self.groups
 
         topology = json.dumps(topology)
