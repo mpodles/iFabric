@@ -31,15 +31,22 @@ SWITCH_START_TIMEOUT = 10 # seconds
 class iFabricNode(Host):
     def config(self, **params):
         r = super(Host, self).config(**params)
-        
         for interface, int_config in params["interfaces"].items():
-                interface_name = str("intf-" + interface)
+            if interface != "commands":  #TODO: Change this so commands are not there
+                interface_name = self.name+"-eth" +str(interface) 
                 mac = int_config["mac"] 
                 ip = int_config["ip"]
-                self.addIntf(intf=interface_name)
                 self.setMAC(mac, intf=interface_name)
                 self.setIP(ip, intf=interface_name)
         return r
+
+    def describe(self):
+        print "**********"
+        print self.name
+        print "interfaces:"
+        print self.intf
+        print "**********"
+
 
 class P4Host(Host):
     def config(self, **params):

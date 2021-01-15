@@ -31,6 +31,17 @@ topology_description_file = structure["topology_description_file"]
 protocols_folder = structure["protocols_folder"]
 flows_file = structure["flows_file"]
 flow_ids_file = structure["flow_ids_file"]
+bmv2_exe = structure["BMV2_SWITCH_EXE"]
+
+topology_file_path = os.path.join(main_project_directory, build_folder, topology_file)
+compiled_p4_path = os.path.join(build_folder, compiled_p4_file_name)
+configuration_folder_path =  os.path.join(main_project_directory, configuration_folder)
+p4_target_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
+protocols_folder_path = os.path.join(main_project_directory, protocols_folder)
+template_file_path =  os.path.join(main_project_directory, configuration_folder, p4template)
+flows_file_path =  os.path.join(main_project_directory, configuration_folder, flows_file)
+runtimes_files_path = os.path.join(main_project_directory, build_folder)
+flow_ids_file_path = os.path.join(main_project_directory, build_folder, flow_ids_file)    
 
 def prepare_folders():
     os.system("mkdir -p build logs pcap")
@@ -43,17 +54,7 @@ def prepare_topology():
     topology = p_topo.SpineLeaf(topo_config, topology_target_path)
     
 
-def construct_p4_program():
-
-    topology_file_path = os.path.join(main_project_directory, build_folder, topology_file)
-    configuration_folder_path =  os.path.join(main_project_directory, configuration_folder)
-    p4_target_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
-    protocols_folder_path = os.path.join(main_project_directory, protocols_folder)
-    template_file_path =  os.path.join(main_project_directory, configuration_folder, p4template)
-    flows_file_path =  os.path.join(main_project_directory, configuration_folder, flows_file)
-    runtimes_files_path = os.path.join(main_project_directory, build_folder)
-    flow_ids_file_path = os.path.join(main_project_directory, build_folder, flow_ids_file)
-
+def construct_p4_program():   
     p4_constructor =  c_p4.P4Constructor(
         topology_file_path = topology_file_path,
         protocols_folder_path = protocols_folder_path,
@@ -75,7 +76,7 @@ def compile_p4_program():
     
 
 def run_basic_pipeline():
-    exercise = r_topo.ExerciseRunner(structure)
+    exercise = r_topo.ExerciseRunner(topology_file_path, compiled_p4_path, logs_folder, pcaps_folder, bmv2_exe)
     exercise.run_exercise()
 
 def get_args():

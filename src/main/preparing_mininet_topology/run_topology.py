@@ -67,43 +67,16 @@ def configureP4Switch(**switch_args):
 class ExerciseTopo(Topo):
     """ The mininet topology class for the P4 tutorial exercises.
     """
-    def __init__(self, nodes, switches, links, log_dir, bmv2_exe, pcap_dir, **opts):
+    def __init__(self, nodes, switches, links, node_links, log_dir, bmv2_exe, pcap_dir, **opts):
         Topo.__init__(self, **opts)
-        nodes_links = []
-        switch_links = []
         self.log_dir = log_dir
         self.pcap_dir = pcap_dir
         self.bmv2_exe = bmv2_exe
+        self.already_added_links = []
 
-        # assumes host always comes first for host<-->switch links
-        # for link in links:
-        #     if link['node1'][0] == 'h':
-        #         host_links.append(link)
-        #     else:
-        #         switch_links.append(link)
-
-        #self.add_switches(switches)
+        self.add_switches(switches)
         self.add_nodes(nodes)
-        self.add_links(links)
-        
-
-        # for link in host_links:
-        #     host_name = link['node1']
-        #     sw_name, sw_port = self.parse_switch_node(link['node2'])
-        #     host_ip = hosts[host_name]['ip']
-        #     host_mac = hosts[host_name]['mac']
-        #     self.addHost(host_name, ip=host_ip, mac=host_mac)
-        #     self.addLink(host_name, sw_name,
-        #                  delay=link['latency'], bw=link['bandwidth'],
-        #                  port2=sw_port)
-
-        # for link in switch_links:
-        #     sw1_name, sw1_port = self.parse_switch_node(link['node1'])
-        #     sw2_name, sw2_port = self.parse_switch_node(link['node2'])
-        #     self.addLink(sw1_name, sw2_name,
-        #                 port1=sw1_port, port2=sw2_port,
-        #                 delay=link['latency'], bw=link['bandwidth'])
-
+        self.add_links(links, node_links)
 
     def add_switches(self, switches):
         for sw, params in switches.iteritems():
@@ -123,8 +96,31 @@ class ExerciseTopo(Topo):
             self.addNode(node, interfaces =interfaces)
 
 
-    def add_links(self, links):
-        pass
+    def add_links(self, switch_links, node_links):
+        for node, links in node_links.items():
+            for node_link in links:
+                sw, sw_port, node_port = node_link["connected_switch"], node_link["connected_port"], node_link["port"]
+                self.addLink(node, sw,
+                         delay='0ms', bw=None,
+                         port1=node_port, port2=sw_port)
+
+        for sw, links in switch_links.items():
+            for switch_link in links["switchports"]:
+                sw_port, connected_sw, connected_sw_port = switch_link["port"], switch_link["connected_switch"], switch_link["connected_port"]
+                if not self.link_already_added(sw, sw_port, connected_sw, connected_sw_port):
+                    self.addLink(sw, connected_sw,
+                        port1=sw_port, port2=connected_sw_port,
+                        delay='0ms', bw=None)
+
+    def link_already_added(self, sw, sw_port, connected_sw, connected_sw_port):
+        link1 = ((sw,sw_port),(connected_sw,connected_sw_port))
+        link2 = ((connected_sw,connected_sw_port),(sw,sw_port))
+        if link1 in self.already_added_links or link2 in self.already_added_links:
+            return True
+        else: 
+            self.already_added_links.append(link1)
+            self.already_added_links.append(link2)
+            return False
 
 
 class ExerciseRunner:
@@ -157,7 +153,7 @@ class ExerciseRunner:
             return str(l) + "ms"
 
 
-    def __init__(self, configuration, quiet=False):
+    def __init__(self, topology_file_path, compiled_p4_path, logs_folder, pcaps_folder, bmv2_exe, quiet=False):
         """ Initializes some attributes and reads the topology json. Does not
             actually run the exercise. Use run_exercise() for that.
 
@@ -171,14 +167,11 @@ class ExerciseRunner:
                 quiet : bool          // Enable/disable script debug messages
         """
 
-        #TODO: fix p4target and switch exe later
-        build_folder = configuration["build_folder"]
-        topo_file = configuration["topology_file"]
-        topo_file = os.path.join(build_folder, topo_file)
-        log_dir = configuration["logs_folder"]
-        pcap_dir = configuration["pcaps_folder"]
-        switch_json = configuration["p4target"]+".json"
-        bmv2_exe = configuration["BMV2_SWITCH_EXE"]
+        topo_file = topology_file_path
+        log_dir = logs_folder
+        pcap_dir = pcaps_folder
+        switch_json = compiled_p4_path
+        bmv2_exe = bmv2_exe
         self.quiet = quiet
         self.logger('Reading topology file.')
         with open(topo_file, 'r') as f:
@@ -186,6 +179,7 @@ class ExerciseRunner:
         self.nodes = topo['nodes']
         self.switches = topo['switches']
         self.links = topo['links']
+        self.node_links = topo['node_links']
         #self.links = self.parse_links(topo['links'])
 
         # Ensure all the needed directories exist and are directories
@@ -267,7 +261,7 @@ class ExerciseRunner:
                                 log_console=True,
                                 pcap_dump=self.pcap_dir)
 
-        self.topo = ExerciseTopo(self.nodes, self.switches, self.links, self.log_dir, self.bmv2_exe, self.pcap_dir)
+        self.topo = ExerciseTopo(self.nodes, self.switches, self.links, self.node_links, self.log_dir, self.bmv2_exe, self.pcap_dir)
 
         self.net = Mininet(topo = self.topo,
                       link = TCLink,
