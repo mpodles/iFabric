@@ -22,7 +22,8 @@
 import os, sys, json, subprocess, re, argparse
 from time import sleep
 
-from p4_mininet import P4Switch, P4Host, iFabricNode
+from mininet_utils.p4_mininet import P4Switch, P4Host, iFabricNode
+from mininet_utils.p4runtime_switch import P4RuntimeSwitch
 
 from mininet.net import Mininet
 from mininet.node import Node
@@ -30,7 +31,7 @@ from mininet.topo import Topo
 from mininet.link import TCLink
 from mininet.cli import CLI
 
-from p4runtime_switch import P4RuntimeSwitch
+
 
 def configureP4Switch(**switch_args):
     """ Helper class that is called by mininet to initialize
@@ -241,9 +242,9 @@ class ExerciseRunner:
 
         #self.simulate_traffic()
 
-        self.do_net_cli()
+        #self.do_net_cli()
         # stop right after the CLI is exited
-        self.net.stop()
+        #self.net.stop()
 
 
     def create_network(self):

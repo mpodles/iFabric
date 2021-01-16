@@ -427,59 +427,5 @@ class Controller():
         return rule
 
 
-if __name__ == '__main__':
-    # main()
-    controller = Controller()
-    controller.program_switches()
-    # start = timeit.timeit()
-    # controller.getAllCounters()
-    # end = timeit.timeit()
-    # print(end - start)
-
-    print "Switches programmed"
-    for i in range (1,5):
-        sw = "s" + str(i)
-        # controller.readTableRules(controller.connections[sw])
-        controller.writeForwardingRules(sw)
-
-
-    while True:
-        sleep(4)
-        controller.printCounter('s1', "MyIngress.ingress_byte_cnt", 'flow1', 48)
-    # print 
-    # print "all rules read"
-    # start = timeit.timeit()
-    # flow = {
-    #     "table": "MyIngress.myTunnel_operate",
-    #     "match": {
-    #       "hdr.myTunnel.flow_id": 1
-    #     },
-    #     "action_name": "MyIngress.assign_multicast",
-    #     "action_params": {
-    #       "multicast_group": 2
-    #     }
-    #   }
-    # controller.modifyTableEntry(controller.connections["s1"], flow)
-    # end = timeit.timeit()
-    # print(end - start)
-    # controller.readTableRules(controller.connections["s1"])
-    # print controller.flows
-    # print controller.policy
-    # print controller.groups
-    # rule = {
-    #     "multicast_group_id" : 1,
-    #     "replicas" : [
-    #       {
-    #         "egress_port" : 3,
-    #         "instance" : 1
-    #       },
-    #       {
-    #         "egress_port" : 4,
-    #         "instance" : 1
-    #       }
-    #     ]
-    #   }
-    # controller.modifyMulticastGroupEntry(controller.connections["s1"], rule)
-
 
     

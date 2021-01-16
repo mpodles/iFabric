@@ -53,7 +53,7 @@ class P4Constructor():
             self.switches = topo['switches']
             self.groups = topo['groups']
             #self.links = topo['links']
-            self.hosts = topo['nodes']
+            self.nodes = topo['nodes']
             self.topology = topo['links']
 
     # def parse_topology(self):
