@@ -65,85 +65,65 @@ class ConfException(Exception):
 #                        proto_dump_fpath=args.proto_dump_file)
 
 class Controller():
-    def __init__(self):
-        self.project_directory = "/home/mpodles/iFabric/src/main/"
+    def __init__(self, **files):
+        topology_file_path = files["topology_file_path"]
+        policy_file_path = files["policy_file_path"]
+        runtimes_files_path = files["runtimes_files_path"] 
+        flows_ids_file_path = files["flows_ids_file_path"]
+        switches_mininet_connections_file_path = files["switches_connections_file_path"]
+        logs_path = files["logs_path"]
         self.connections = {}
-        self.read_topology()
-        self.read_flow_ids()
-        self.read_policy()
+        self.switches = None
+        self.groups = None
+        self.read_topology(topology_file_path, switches_mininet_connections_file_path)
+        self.read_flows_ids(flows_ids_file_path)
+        self.read_policy(policy_file_path)
+        self.program_switches(runtimes_files_path, logs_path)
   
     
-    def read_topology(self):
-        topo_file = self.project_directory + "sig-topo/topology.json"
-        with open(topo_file, 'r') as f:
+    def read_topology(self, topology_file_path, switches_mininet_connections_file_path):
+        with open(topology_file_path, 'r') as f:
             topo = json.load(f)
             self.switches = topo['switches']
             self.groups = topo['groups']
 
-        conf_file = self.project_directory + "build/switches_vars.json"
-        with open(conf_file, 'r') as f:
-            self.switches_config =  json.load(f)
+        with open(switches_mininet_connections_file_path, 'r') as f:
+            self.switches_mininet_connections = json.load(f)
 
-    def read_flow_ids(self):
-        flows_file = self.project_directory + "build/flow_ids.json"
-        with open(flows_file, 'r') as f:
+    def read_flows_ids(self, flows_ids_file_path):
+        with open(flows_ids_file_path, 'r') as f:
             self.flows = json.load(f)
 
-    def read_policy(self):
-        policy_file = self.project_directory + "sig-topo/policy.json"
-        with open(policy_file, 'r') as f:
+    def read_policy(self, policy_file_path):
+        with open(policy_file_path, 'r') as f:
             self.policy = json.load(f)
 
-    def program_switch_p4runtime(self, sw_name, sw_dict):
-        """ This method will use P4Runtime to program the switch using the
-            content of the runtime JSON file as input.
-        """
-        sw_conf = self.switches_config[sw_name]
-        grpc_port = sw_conf["grpc_port"]
-        device_id = sw_conf["device_id"]
-        runtime_json = sw_dict['runtime_json']
-        # self.logger('Configuring switch %s using P4Runtime with file %s' % (sw_name, runtime_json))
-        with open(self.project_directory  + runtime_json, 'r') as sw_conf_file:
-            outfile = self.project_directory + '/%s/%s-p4runtime-requests.txt' %("logs", sw_name)
-            self.program_switch(
-                sw_name = sw_name,
-                addr='127.0.0.1:%d' % grpc_port,
-                device_id=device_id,
-                sw_conf_file=sw_conf_file,
-                workdir=self.project_directory,
-                proto_dump_fpath=outfile)
-
-    def program_switches(self):
+    def program_switches(self, runtimes_files_path, logs_path):
         """ This method will program each switch using the BMv2 CLI and/or
             P4Runtime, depending if any command or runtime JSON files were
             provided for the switches.
         """
         for sw_name, sw_dict in self.switches.iteritems():
-                self.program_switch_p4runtime(sw_name, sw_dict)
+                self.program_switch_p4runtime(sw_name, sw_dict, runtimes_files_path, logs_path)
 
-    def check_switch_conf(self, sw_conf, workdir):
-        required_keys = ["p4info"]
-        files_to_check = ["p4info"]
-        target_choices = ["bmv2"]
-
-        if "target" not in sw_conf:
-            raise ConfException("missing key 'target'")
-        target = sw_conf['target']
-        if target not in target_choices:
-            raise ConfException("unknown target '%s'" % target)
-
-        if target == 'bmv2':
-            required_keys.append("bmv2_json")
-            files_to_check.append("bmv2_json")
-
-        for conf_key in required_keys:
-            if conf_key not in sw_conf or len(sw_conf[conf_key]) == 0:
-                raise ConfException("missing key '%s' or empty value" % conf_key)
-
-        for conf_key in files_to_check:
-            real_path = os.path.join(workdir, sw_conf[conf_key])
-            if not os.path.exists(real_path):
-                raise ConfException("file does not exist %s" % real_path)
+    def program_switch_p4runtime(self, sw_name, sw_dict, runtimes_files_path, logs_path):
+        """ This method will use P4Runtime to program the switch using the
+            content of the runtime JSON file as input.
+        """
+        sw_mn_conn = self.switches_mininet_connections[sw_name]
+        grpc_port = sw_mn_conn["grpc_port"]
+        device_id = sw_mn_conn["device_id"]
+        runtime_json = sw_dict['runtime_json']
+        # self.logger('Configuring switch %s using P4Runtime with file %s' % (sw_name, runtime_json))
+        with open(os.path.join(runtimes_files_path, runtime_json), 'r') as sw_conf_file:
+            outfile = os.path.join(logs_path, sw_name + '-p4runtime-requests.txt')
+            self.program_switch(
+                sw_name = sw_name,
+                addr='127.0.0.1:%d' % grpc_port,
+                device_id=device_id,
+                sw_conf_file=sw_conf_file,
+                workdir=runtimes_files_path,
+                proto_dump_fpath=outfile)
 
 
     def program_switch(self, sw_name, addr, device_id, sw_conf_file, workdir, proto_dump_fpath):
@@ -200,6 +180,31 @@ class Controller():
                 info(self.cloneEntryToString(entry))
                 self.insertCloneGroupEntry(sw, entry)
         #     sw.shutdown()
+    
+
+    def check_switch_conf(self, sw_conf, workdir):
+        required_keys = ["p4info"]
+        files_to_check = ["p4info"]
+        target_choices = ["bmv2"]
+
+        if "target" not in sw_conf:
+            raise ConfException("missing key 'target'")
+        target = sw_conf['target']
+        if target not in target_choices:
+            raise ConfException("unknown target '%s'" % target)
+
+        if target == 'bmv2':
+            required_keys.append("bmv2_json")
+            files_to_check.append("bmv2_json")
+
+        for conf_key in required_keys:
+            if conf_key not in sw_conf or len(sw_conf[conf_key]) == 0:
+                raise ConfException("missing key '%s' or empty value" % conf_key)
+
+        for conf_key in files_to_check:
+            real_path = sw_conf[conf_key]
+            if not os.path.exists(real_path):
+                raise ConfException("file does not exist %s" % real_path)
 
 
     def insertTableEntry(self, sw, flow):
@@ -372,7 +377,7 @@ class Controller():
     def writeForwardingRules(self,sw):
         flow = "flow1"
         rule = self.getTestRules(sw, flow)
-        self.modifyMulticastGroupEntry(controller.connections[sw], rule)
+        self.modifyMulticastGroupEntry(self.connections[sw], rule)
 
     def getTestRules(self, sw, flow):
         flow_id = self.flows[flow]

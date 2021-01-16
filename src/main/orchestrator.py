@@ -34,22 +34,28 @@ configuration_folder = structure["configuration_folder"]
 topology_description_file = structure["topology_description_file"]
 protocols_folder = structure["protocols_folder"]
 flows_file = structure["flows_file"]
-flow_ids_file = structure["flow_ids_file"]
+flows_ids_file = structure["flows_ids_file"]
 bmv2_exe = structure["BMV2_SWITCH_EXE"]
+policy_file = structure["policy_file"]
+switches_connections_file = structure["switches_connections_file"]
+
 
 topology_file_path = os.path.join(main_project_directory, build_folder, topology_file)
+logs_path = os.path.join(main_project_directory, logs_folder)
 p4_target_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
 p4runtime_target_file_path = os.path.join(main_project_directory, build_folder, p4runtime_file_name)
-compiled_p4_path = os.path.join(build_folder, compiled_p4_file_name)
+compiled_p4_file_path = os.path.join(build_folder, compiled_p4_file_name)
 configuration_folder_path =  os.path.join(main_project_directory, configuration_folder)
 protocols_folder_path = os.path.join(main_project_directory, protocols_folder)
 template_file_path =  os.path.join(main_project_directory, configuration_folder, p4template)
-flows_file_path =  os.path.join(main_project_directory, configuration_folder, flows_file)
+flows_file_path =  os.path.join(main_project_directory, build_folder, flows_file)
 runtimes_files_path = os.path.join(main_project_directory, build_folder)
-flow_ids_file_path = os.path.join(main_project_directory, build_folder, flow_ids_file)    
+flows_ids_file_path = os.path.join(main_project_directory, build_folder, flows_ids_file)  
+policy_file_path = os.path.join(main_project_directory, configuration_folder, policy_file)
+switches_connections_file_path = os.path.join(main_project_directory, build_folder, switches_connections_file)
 
 def prepare_folders():
-    os.system("mkdir -p build logs pcap")
+    os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
     topology_configuration_path = os.path.join(main_project_directory, configuration_folder, topology_description_file)
@@ -68,43 +74,58 @@ def construct_p4_program():
         template_file_path = template_file_path,
         p4_target_file_path = p4_target_file_path,
         runtimes_files_path = runtimes_files_path,
-        flow_ids_file_path = flow_ids_file_path
+        flows_ids_file_path = flows_ids_file_path,
+        compiled_p4_file_path = compiled_p4_file_path,
+        p4runtime_target_file_path = p4runtime_target_file_path,
         )
 
 def compile_p4_program():
     cmd = "p4c-bm2-ss \
         --p4v 16 \
         --p4runtime-files "+ p4runtime_target_file_path +\
-        " -o "+ compiled_p4_path +\
+        " -o "+ compiled_p4_file_path +\
         " " + p4_target_file_path
     os.system(cmd)
     
 def generate_flows():
     flows_generator = f_gen.DestinationFlowGenerator(
-        topology_file_path = topology_file_path
+        topology_file_path = topology_file_path,
+        flows_file_target_path = flows_file_path
     )
 
 def run_basic_pipeline():
     global exercise
-    exercise = r_topo.ExerciseRunner(topology_file_path, compiled_p4_path, logs_folder, pcaps_folder, bmv2_exe)
+    exercise = r_topo.ExerciseRunner(
+        topology_file_path = topology_file_path,
+        logs_folder = logs_folder,
+        pcaps_folder = pcaps_folder,
+        compiled_p4_file_path = compiled_p4_file_path,
+        bmv2_exe = bmv2_exe
+    )
     exercise.run_exercise()
     exercise.net.stop()
 
 def start_controller():
-    controller = contr.Controller()
-    controller.program_switches()
+    controller = contr.Controller(
+        topology_file_path = topology_file_path,
+        flows_ids_file_path = flows_ids_file_path,
+        switches_connections_file_path = switches_connections_file_path,
+        policy_file_path = policy_file_path,
+        runtimes_files_path = runtimes_files_path,
+        logs_path= logs_path
+    )
     # start = timeit.timeit()
     # controller.getAllCounters()
     # end = timeit.timeit()
     # print(end - start)
     print "Switches programmed"
-    for i in range (1,5):
-        sw = "s" + str(i)
-        # controller.readTableRules(controller.connections[sw])
-        controller.writeForwardingRules(sw)
-    while True:
-        sleep(4)
-        controller.printCounter('s1', "MyIngress.ingress_byte_cnt", 'flow1', 48)
+    # for i in range (1,5):
+    #     sw = "s" + str(i)
+    #     # controller.readTableRules(controller.connections[sw])
+    #     controller.writeForwardingRules(sw)
+    # while True:
+    #     sleep(4)
+    #     controller.printCounter('s1', "MyIngress.ingress_byte_cnt", 'flow1', 48)
 
 
 def get_args():
@@ -120,10 +141,10 @@ if __name__ == "__main__":
         os.system("rm -f *.pcap")
         os.system(" ".join(["rm -rf ", build_folder, pcaps_folder, logs_folder]))
     else:
-        # prepare_folders()
-        # prepare_topology()
-        # construct_p4_program()
-        # compile_p4_program()
+        prepare_folders()
+        prepare_topology()
         generate_flows()
-        # run_basic_pipeline()
-        # start_controller()
+        construct_p4_program()
+        compile_p4_program()
+        run_basic_pipeline()
+        start_controller()

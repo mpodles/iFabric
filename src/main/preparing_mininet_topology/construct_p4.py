@@ -24,9 +24,11 @@ class P4Constructor():
         configuration_folder_path = files["configuration_folder_path"] 
         flows_file_path = files["flows_file_path"] 
         template_file_path = files["template_file_path"] 
-        p4_target_file_path = files["p4_target_file_path"] 
+        p4_target_file_path = files["p4_target_file_path"]
+        compiled_p4_target_file_path = files["compiled_p4_file_path"] 
         runtimes_files_path = files["runtimes_files_path"] 
-        flow_ids_file_path = files["flow_ids_file_path"]
+        flows_ids_file_path = files["flows_ids_file_path"]
+        p4runtime_target_file_path = files["p4runtime_target_file_path"]
 
         self.multicast_begin_state = "empty" # "random"
         self.tables = ["Flow_classifier"]
@@ -42,9 +44,9 @@ class P4Constructor():
         self.prepare_nodes_flows()
         self.generate_ids_for_flows()
         self.construct_p4_program(template_file_path, p4_target_file_path)
-        self.construct_runtimes()
+        self.construct_runtimes(compiled_p4_target_file_path, p4runtime_target_file_path)
         self.write_runtimes(runtimes_files_path)
-        self.write_flow_ids_to_file(flow_ids_file_path)
+        self.write_flow_ids_to_file(flows_ids_file_path)
 
        
     def read_topology(self, topology_file_path):
@@ -195,11 +197,11 @@ class P4Constructor():
                     self.flows[host+ "_flow"] = {"standard_metadata.ingress_port": [{"low": port, "high": port}]}
 
     def generate_ids_for_flows(self):
-        self.flow_ids = {}
+        self.flows_ids = {}
         id = 0
         for flow in self.flows:
             id+=1
-            self.flow_ids[flow] = id
+            self.flows_ids[flow] = id
         
     def construct_p4_program(self, template_file_path, p4_target_file_path):
         file_loader = jinja2.FileSystemLoader(os.path.dirname(template_file_path))
@@ -212,19 +214,12 @@ class P4Constructor():
         with open(p4_target_file_path,'w+')  as f:
              f.write(output)
         
-    def construct_runtimes(self):
+    def construct_runtimes(self, compiled_p4_target_file_path, p4runtime_target_file_path):
         self.runtimes = {}
         for sw in self.switches:
-            self.runtimes[sw] = self.construct_runtime_for_switch(sw)
+            self.runtimes[sw] = self.construct_runtime_for_switch(sw, compiled_p4_target_file_path, p4runtime_target_file_path)
     
-
-    def write_runtimes(self, runtimes_files_path):
-        for sw, runtime in self.runtimes.items():
-            with open(os.path.join(runtimes_files_path, sw + "-runtime.json"), "w") as f:
-                f.write(runtime)
-
-
-    def construct_runtime_for_switch(self, sw):
+    def construct_runtime_for_switch(self, sw, compiled_p4_target_file_path, p4runtime_target_file_path):
         tables_entries = self.generate_tables_entries_for_switch(sw)
 
         multicast_group_entries = self.generate_multicast_groups_entries(sw)
@@ -233,22 +228,22 @@ class P4Constructor():
 
         result_dictionary = {
             "target": "bmv2",
-            "p4info": "build/fabric_tunnel.p4.p4info.txt",
-            "bmv2_json": "build/fabric_tunnel.json",
+            "p4info": p4runtime_target_file_path,
+            "bmv2_json": compiled_p4_target_file_path,
             "table_entries": tables_entries,
             "multicast_group_entries" : multicast_group_entries
         }
 
         return json.dumps(result_dictionary, encoding='UTF-8') #UTF-8 probably not required
 
-        
-            
     def generate_tables_entries_for_switch(self, sw):
         switch_tables_entries = []
         for (flow_name, priority) in self.flows_by_priority_with_priority:
                 switch_tables_entries += self.generate_table_entries_for_flow_for_switch(sw, flow_name, priority)
+        priority = 0
         for flow_name in self.switches_node_flows[sw]:
-                switch_tables_entries += self.generate_table_entries_for_flow_for_switch(sw, flow_name, 1)
+                priority+=1
+                switch_tables_entries += self.generate_table_entries_for_flow_for_switch(sw, flow_name, priority)
         switch_tables_entries += self.generate_egress_table_entries(sw)
         return switch_tables_entries
 
@@ -316,13 +311,13 @@ class P4Constructor():
         filled_parameters = {}
         for parameter in action_parameters:
             if parameter == "flow_id":
-                filled_parameters[parameter] = self.flow_ids[table_entry.flow]
+                filled_parameters[parameter] = self.flows_ids[table_entry.flow]
             elif parameter == "priority": 
                 filled_parameters[parameter] = table_entry.priority
             elif parameter == "node_id":
-                filled_parameters[parameter] = self.flow_ids[table_entry.flow]
+                filled_parameters[parameter] = self.flows_ids[table_entry.flow]
             elif parameter == "group_id":
-                filled_parameters[parameter] = self.flow_ids[table_entry.flow] + 100
+                filled_parameters[parameter] = self.flows_ids[table_entry.flow] + 100
 
         table_entry.action_parameters = filled_parameters
         return table_entry
@@ -347,10 +342,9 @@ class P4Constructor():
         except ValueError:
             return False
 
-
     def generate_multicast_groups_entries(self, sw):
         multicast_group_entries = []
-        for flow_id in self.flow_ids.values():
+        for flow_id in self.flows_ids.values():
             if self.multicast_begin_state == "empty":
                 replicas = self.generate_replicas_empty()
             elif self.multicast_begin_state == "random":
@@ -362,7 +356,6 @@ class P4Constructor():
     def generate_replicas_empty(self):
         replicas = []
         return replicas
-
 
     def generate_replicas_random_rules(self, sw):
         used_ports = self.get_used_switch_ports(sw)
@@ -394,10 +387,14 @@ class P4Constructor():
             ports.append(entry["port"])
         return ports
 
+    def write_runtimes(self, runtimes_files_path):
+        for sw, runtime in self.runtimes.items():
+            with open(os.path.join(runtimes_files_path, sw + "-runtime.json"), "w") as f:
+                f.write(runtime)
 
-    def write_flow_ids_to_file(self, flow_ids_file_path):
-        with open(flow_ids_file_path, "w") as f:
-            f.write(json.dumps(self.flow_ids))
+    def write_flow_ids_to_file(self, flows_ids_file_path):
+        with open(flows_ids_file_path, "w") as f:
+            f.write(json.dumps(self.flows_ids))
 
 
 # if __name__ == '__main__':

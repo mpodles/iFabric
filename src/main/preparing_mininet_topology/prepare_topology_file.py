@@ -46,12 +46,12 @@ class SpineLeaf():
     def generate_switches(self, spines, leaves):
         for spine_nr in range (1,spines+1):
             spine = "Spine_" + str(spine_nr)
-            self.switches[spine] = {"runtime_json" : "build/" + spine +"-runtime.json"}
+            self.switches[spine] = {"runtime_json" : spine +"-runtime.json"}
             self.spines.append(spine)
             self.links[spine] = {"switchports" : [], "endports": []}
         for leaf_nr in range (1,leaves+1):
             leaf = "Leaf_" + str(leaf_nr)
-            self.switches[leaf] = {"runtime_json" : "build/" + leaf +"-runtime.json"}
+            self.switches[leaf] = {"runtime_json" : leaf +"-runtime.json"}
             self.leaves.append(leaf)
             self.links[leaf] = {"switchports" : [], "endports": []}
 

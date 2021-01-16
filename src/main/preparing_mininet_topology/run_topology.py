@@ -154,7 +154,7 @@ class ExerciseRunner:
             return str(l) + "ms"
 
 
-    def __init__(self, topology_file_path, compiled_p4_path, logs_folder, pcaps_folder, bmv2_exe, quiet=False):
+    def __init__(self, quiet=False, **files):
         """ Initializes some attributes and reads the topology json. Does not
             actually run the exercise. Use run_exercise() for that.
 
@@ -168,11 +168,11 @@ class ExerciseRunner:
                 quiet : bool          // Enable/disable script debug messages
         """
 
-        topo_file = topology_file_path
-        log_dir = logs_folder
-        pcap_dir = pcaps_folder
-        switch_json = compiled_p4_path
-        bmv2_exe = bmv2_exe
+        topo_file = files["topology_file_path"]
+        log_dir = files["logs_folder"]
+        pcap_dir = files["pcaps_folder"]
+        switch_json = files["compiled_p4_file_path"]
+        bmv2_exe = files["bmv2_exe"]
         self.quiet = quiet
         self.logger('Reading topology file.')
         with open(topo_file, 'r') as f:
