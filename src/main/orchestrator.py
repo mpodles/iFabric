@@ -44,7 +44,7 @@ topology_file_path = os.path.join(main_project_directory, build_folder, topology
 logs_path = os.path.join(main_project_directory, logs_folder)
 p4_target_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
 p4runtime_target_file_path = os.path.join(main_project_directory, build_folder, p4runtime_file_name)
-compiled_p4_file_path = os.path.join(build_folder, compiled_p4_file_name)
+compiled_p4_file_path = os.path.join(main_project_directory, build_folder, compiled_p4_file_name)
 configuration_folder_path =  os.path.join(main_project_directory, configuration_folder)
 protocols_folder_path = os.path.join(main_project_directory, protocols_folder)
 template_file_path =  os.path.join(main_project_directory, configuration_folder, p4template)
@@ -103,9 +103,9 @@ def run_basic_pipeline():
         bmv2_exe = bmv2_exe
     )
     exercise.run_exercise()
-    exercise.net.stop()
 
 def start_controller():
+    print "Programming switches"
     controller = contr.Controller(
         topology_file_path = topology_file_path,
         flows_ids_file_path = flows_ids_file_path,
