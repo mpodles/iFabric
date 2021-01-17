@@ -17,9 +17,9 @@ class SpineLeaf():
     #TODO: Decouple hosts from topology and generate them however You wish
 
     def __init__(self, configuration, topology_target_path):
-        spines = configuration["spines"]
-        leaves= configuration["leaves"]
-        ports_per_leaf=configuration["ports_per_leaf"]
+        spines_count = configuration["spines"]
+        leaves_count = configuration["leaves"]
+        ports_per_leaf = configuration["ports_per_leaf"]
         avg_group_size =configuration ["avg_group_size"]
         self.topology_target_path = topology_target_path
         self.topology = {}
@@ -35,21 +35,22 @@ class SpineLeaf():
         self.mac_addressing = configuration["mac_addressing"]
         self.overlap_groups = bool(configuration["overlap_groups"])
 
-        self.generate_switches(spines, leaves)
+        self.generate_switches(spines_count, leaves_count)
         self.generate_switch_to_switch_links()
-        self.generate_nodes_with_links(ports_per_leaf)
+        #self.generate_nodes_with_links(ports_per_leaf)
+        self.generate_one_node_per_leaf(2)
         self.generate_groups(avg_group_size)
         self.generate_nodes_addressing()
         self.write_topology()
         
 
-    def generate_switches(self, spines, leaves):
-        for spine_nr in range (1,spines+1):
+    def generate_switches(self, spines_count, leaves_count):
+        for spine_nr in range (1,spines_count+1):
             spine = "Spine_" + str(spine_nr)
             self.switches[spine] = {"runtime_json" : spine +"-runtime.json"}
             self.spines.append(spine)
             self.links[spine] = {"switchports" : [], "endports": []}
-        for leaf_nr in range (1,leaves+1):
+        for leaf_nr in range (1,leaves_count+1):
             leaf = "Leaf_" + str(leaf_nr)
             self.switches[leaf] = {"runtime_json" : leaf +"-runtime.json"}
             self.leaves.append(leaf)
@@ -64,6 +65,22 @@ class SpineLeaf():
                 self.links[spine]["switchports"].append({"port": spine_interface, "connected_switch": leaf, "connected_port": leaf_interface })
                 spine_interface += 1 
             leaf_interface += 1
+
+    def generate_one_node_per_leaf(self, nr_of_interfaces):
+        nodes_iterator = 0
+        for leaf in self.leaves:
+            nodes_iterator+=1
+            node = "Node_" + str(nodes_iterator)
+            self.nodes.append(node)
+            self.node_links[node] = []
+            link = 1 + len(self.spines)
+            interface_on_node = 0 
+            while interface_on_node < nr_of_interfaces:
+                self.links[leaf]["endports"].append({"port": link, "node": node, "connected_port": interface_on_node })
+                self.node_links[node].append({"port": interface_on_node, "connected_switch": leaf, "connected_port": link })
+                interface_on_node +=1
+                link +=1
+                
 
     def generate_nodes_with_links(self, ports_per_leaf):
         #Generate random number of nodes based on how many endports are available

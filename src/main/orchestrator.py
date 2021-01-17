@@ -8,6 +8,7 @@ import preparing_mininet_topology.prepare_topology_file as p_topo
 import preparing_mininet_topology.configure_sample_flows as f_gen
 import control_plane.simple_controller as contr
 from time import sleep
+import threading
 
 #TODO: this file already needs refactoring
 
@@ -126,7 +127,7 @@ def start_controller():
     #     controller.writeForwardingRules(sw)
     # while True:
     #     sleep(4)
-    #     controller.printCounter('s1', "MyIngress.ingress_byte_cnt", 'flow1', 48)
+    #     controller.printCounter('Spine_1', "MyIngress.ingress_byte_cnt", 'Node_1_flow', 1)
 
 
 def get_args():
