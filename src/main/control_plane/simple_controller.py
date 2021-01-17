@@ -20,6 +20,7 @@ import timeit
 import os
 import sys
 from time import sleep
+import forwarding_rules_generator as forw_rules
 
 import bmv2
 import helper
@@ -35,35 +36,6 @@ def info(msg):
 class ConfException(Exception):
     pass
 
-
-# def main():
-#     parser = argparse.ArgumentParser(description='P4Runtime Simple Controller')
-
-#     parser.add_argument('-a', '--p4runtime-server-addr',
-#                         help='address and port of the switch\'s P4Runtime server (e.g. 192.168.0.1:50051)',
-#                         type=str, action="store", required=True)
-#     parser.add_argument('-d', '--device-id',
-#                         help='Internal device ID to use in P4Runtime messages',
-#                         type=int, action="store", required=True)
-#     parser.add_argument('-p', '--proto-dump-file',
-#                         help='path to file where to dump protobuf messages sent to the switch',
-#                         type=str, action="store", required=True)
-#     parser.add_argument("-c", '--runtime-conf-file',
-#                         help="path to input runtime configuration file (JSON)",
-#                         type=str, action="store", required=True)
-
-#     args = parser.parse_args()
-
-#     if not os.path.exists(args.runtime_conf_file):
-#         parser.error("File %s does not exist!" % args.runtime_conf_file)
-#     workdir = os.path.dirname(os.path.abspath(args.runtime_conf_file))
-#     with open(args.runtime_conf_file, 'r') as sw_conf_file:
-#         program_switch(addr=args.p4runtime_server_addr,
-#                        device_id=args.device_id,
-#                        sw_conf_file=sw_conf_file,
-#                        workdir=workdir,
-#                        proto_dump_fpath=args.proto_dump_file)
-
 class Controller():
     def __init__(self, **files):
         topology_file_path = files["topology_file_path"]
@@ -73,20 +45,31 @@ class Controller():
         switches_mininet_connections_file_path = files["switches_connections_file_path"]
         logs_path = files["logs_path"]
         self.connections = {}
-        self.switches = None
-        self.groups = None
-        self.read_topology(topology_file_path, switches_mininet_connections_file_path)
+        self.switches = {}
+        self.groups = {}
+        self.switches_mininet_connections = {}
+        self.flows = {}
+        self.policy = {}
+        self.links = {}
+        
+        self.read_topology(topology_file_path)
+        self.read_switches_connections(switches_mininet_connections_file_path)
         self.read_flows_ids(flows_ids_file_path)
         self.read_policy(policy_file_path)
+
+        self.forwarding_rules_generator = forw_rules.ForwardingRules(self.links, self.flows, self.policy)
         self.program_switches(runtimes_files_path, logs_path)
-  
+        self.writeForwardingRules()
+        
     
-    def read_topology(self, topology_file_path, switches_mininet_connections_file_path):
+    def read_topology(self, topology_file_path):
         with open(topology_file_path, 'r') as f:
             topo = json.load(f)
+            self.links = topo['links']
             self.switches = topo['switches']
             self.groups = topo['groups']
 
+    def read_switches_connections(self, switches_mininet_connections_file_path):
         with open(switches_mininet_connections_file_path, 'r') as f:
             self.switches_mininet_connections = json.load(f)
 
@@ -359,8 +342,6 @@ class Controller():
         for response in sw.ReadTableEntries():
             for entity in response.entities:
                 entry = entity.table_entry
-                # TODO For extra credit, you can use the p4info_helper to translate
-                #      the IDs in the entry to names
                 table_name = self.p4info_helper.get_tables_name(entry.table_id)
                 print '%s: ' % table_name,
                 for m in entry.match:
@@ -374,62 +355,12 @@ class Controller():
                     print '%r' % p.value,
                 print
 
-    def writeForwardingRules(self,sw):
-        flow = "flow1"
-        rule = self.getTestRules(sw, flow)
-        self.modifyMulticastGroupEntry(self.connections[sw], rule)
+    def writeForwardingRules(self):
+        rules_per_switch = self.forwarding_rules_generator.getRules()
+        for sw, rules in rules_per_switch.items():
+            for rule in rules: #TODO: figure out rules bulk pushing to switches
+                self.modifyMulticastGroupEntry(self.connections[sw], rule)
 
-    def getTestRules(self, sw, flow):
-        flow_id = self.flows[flow]
-        if sw == "s1":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 2,
-            "instance" : 2
-          },
-          {
-            "egress_port" : 4,
-            "instance" : 4
-          }
-        ]
-      }
-        elif sw == "s2":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 48,
-            "instance" : 48
-          },
-          {
-            "egress_port" : 4,
-            "instance" : 4
-          }
-        ]
-      }
-        elif sw == "s3":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 48,
-            "instance" : 48
-          }
-        ]
-      }
-        elif sw == "s4":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 48,
-            "instance" : 48
-          }
-        ]
-      }
-        return rule
 
 
 

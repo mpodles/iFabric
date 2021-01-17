@@ -119,6 +119,7 @@ def start_controller():
     # end = timeit.timeit()
     # print(end - start)
     print "Switches programmed"
+    exercise.do_net_cli()
     # for i in range (1,5):
     #     sw = "s" + str(i)
     #     # controller.readTableRules(controller.connections[sw])
@@ -141,10 +142,16 @@ if __name__ == "__main__":
         os.system("rm -f *.pcap")
         os.system(" ".join(["rm -rf ", build_folder, pcaps_folder, logs_folder]))
     else:
-        prepare_folders()
-        prepare_topology()
-        generate_flows()
-        construct_p4_program()
-        compile_p4_program()
-        run_basic_pipeline()
-        start_controller()
+        try:
+            prepare_folders()
+            prepare_topology()
+            generate_flows()
+            construct_p4_program()
+            compile_p4_program()
+            run_basic_pipeline()
+            start_controller()
+        except Exception as e:
+            print e
+            os.system("sudo mn -c")
+            os.system("rm -f *.pcap")
+            os.system(" ".join(["rm -rf ", build_folder, pcaps_folder, logs_folder]))
