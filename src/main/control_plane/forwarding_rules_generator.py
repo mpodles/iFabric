@@ -20,17 +20,24 @@ class ForwardingRules():
         return rules_of_sw
     
     def get_rule_for_flow_for_sw(self, flow_id, sw):
-        if "Leaf" in sw:
+        if "Leaf_1" in sw:
             rule = {
             "multicast_group_id" : flow_id,
             "replicas" : [
             {
                 "egress_port" : 1,
                 "instance" : 1
-            },
+            }
+            ]
+        }
+
+        if "Leaf_2" in sw:
+            rule = {
+            "multicast_group_id" : flow_id,
+            "replicas" : [
             {
-                "egress_port" : 4,
-                "instance" : 4
+                "egress_port" : 2,
+                "instance" : 2
             }
             ]
         }
@@ -40,12 +47,8 @@ class ForwardingRules():
             "multicast_group_id" : flow_id,
             "replicas" : [
             {
-                "egress_port" : 1,
-                "instance" : 1
-            },
-            {
-                "egress_port" : 4,
-                "instance" : 4
+                "egress_port" : 2,
+                "instance" : 2
             }
             ]
         }
