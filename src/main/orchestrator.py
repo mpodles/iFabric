@@ -6,6 +6,7 @@ import preparing_mininet_topology.construct_p4 as c_p4
 import preparing_mininet_topology.run_topology as r_topo
 import preparing_mininet_topology.prepare_topology_file as p_topo
 import preparing_mininet_topology.configure_sample_flows as f_gen
+import preparing_mininet_topology.generate_sample_policy as p_gen
 import control_plane.simple_controller as contr
 from time import sleep
 import threading
@@ -52,7 +53,7 @@ template_file_path =  os.path.join(main_project_directory, configuration_folder,
 flows_file_path =  os.path.join(main_project_directory, build_folder, flows_file)
 runtimes_files_path = os.path.join(main_project_directory, build_folder)
 flows_ids_file_path = os.path.join(main_project_directory, build_folder, flows_ids_file)  
-policy_file_path = os.path.join(main_project_directory, configuration_folder, policy_file)
+policy_file_path = os.path.join(main_project_directory, build_folder, policy_file)
 switches_connections_file_path = os.path.join(main_project_directory, build_folder, switches_connections_file)
 
 def prepare_folders():
@@ -92,6 +93,13 @@ def generate_flows():
     flows_generator = f_gen.DestinationFlowGenerator(
         topology_file_path = topology_file_path,
         flows_file_target_path = flows_file_path
+    )
+
+def generate_policy():
+    policy_generator = p_gen.DestinationPolicyGenerator(
+        topology_file_path = topology_file_path,
+        flows_file_path = flows_file_path,
+        policy_file_target_path = policy_file_path
     )
 
 def run_basic_pipeline():
@@ -147,6 +155,7 @@ if __name__ == "__main__":
             prepare_folders()
             prepare_topology()
             generate_flows()
+            generate_policy()
             construct_p4_program()
             compile_p4_program()
             run_basic_pipeline()
