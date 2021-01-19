@@ -34,11 +34,11 @@ class DestinationPolicyGenerator(PolicyGenerator):
     def __init__(self, **files):
         PolicyGenerator.__init__(self, **files)
         self.policy = []
-        self.prepare_policy()
+        self.prepare_policy_for_every_destination_port()
         self.write_policy(self.policy_file_target_path)
 
 
-    def prepare_policy(self):
+    def prepare_policy_for_every_destination_port(self):#TODO: change this -> define more general policy expectations
         for flow_name, flow_fields in self.flows.items():
             for field_name, field_values in flow_fields.items():
                 if field_name != "priority":
@@ -46,7 +46,7 @@ class DestinationPolicyGenerator(PolicyGenerator):
                         for node, properties in self.nodes.items():
                             for int_name, properties in properties.items():
                                 if int_name != "commands" and (properties["mac"]==value or properties["ip"]==value):
-                                    self.policy.append({"type":"F2NI", "source":flow_name, "destination":node, "interface":int_name})
+                                    self.policy.append({"type":"F2N", "source":flow_name, "destination":node, "interface": int_name})
                             
     def write_policy(self, policy_file_target_path):
         with open(policy_file_target_path, "w") as f:
