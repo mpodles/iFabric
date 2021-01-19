@@ -46,7 +46,7 @@ class DestinationPolicyGenerator(PolicyGenerator):
                         for node, properties in self.nodes.items():
                             for int_name, properties in properties.items():
                                 if int_name != "commands" and (properties["mac"]==value or properties["ip"]==value):
-                                    self.policy.append({"source":flow_name, "destination":node+"_"+int_name})
+                                    self.policy.append({"type":"F2NI", "source":flow_name, "destination":node, "interface":int_name})
                             
     def write_policy(self, policy_file_target_path):
         with open(policy_file_target_path, "w") as f:

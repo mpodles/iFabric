@@ -51,13 +51,14 @@ class Controller():
         self.flows = {}
         self.policy = {}
         self.links = {}
+        self.node_links = {}
         
         self.read_topology(topology_file_path)
         self.read_switches_connections(switches_mininet_connections_file_path)
         self.read_flows_ids(flows_ids_file_path)
         self.read_policy(policy_file_path)
 
-        self.forwarding_rules_generator = forw_rules.ForwardingRules(self.links, self.flows, self.policy)
+        self.forwarding_rules_generator = forw_rules.MinimalSpanningTreeRules(self.links, self.node_links, self.flows, self.policy)
         self.program_switches(runtimes_files_path, logs_path)
         self.writeForwardingRules()
         
@@ -68,6 +69,7 @@ class Controller():
             self.links = topo['links']
             self.switches = topo['switches']
             self.groups = topo['groups']
+            self.node_links = topo['node_links']
 
     def read_switches_connections(self, switches_mininet_connections_file_path):
         with open(switches_mininet_connections_file_path, 'r') as f:
@@ -356,7 +358,7 @@ class Controller():
                 print
 
     def writeForwardingRules(self):
-        rules_per_switch = self.forwarding_rules_generator.getRules()
+        rules_per_switch = self.forwarding_rules_generator.get_multicast_rules()
         for sw, rules in rules_per_switch.items():
             for rule in rules: #TODO: figure out rules bulk pushing to switches
                 self.modifyMulticastGroupEntry(self.connections[sw], rule)
