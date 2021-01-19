@@ -133,7 +133,7 @@ class  DestinationPortsRules(ForwardingRules):
     def get_edmonds_trees(self):
         for policy_entry in self.policy:
             new_graph = copy.deepcopy(self.graph)
-            # source_switches = self.get_source_switches()
+            source_switches = self.get_source_switches()
             destination_node = policy_entry["destination"]
             destination_interface = policy_entry["interface"]
             destination_switch, destination_switch_port = self.get_destination_switch(destination_node, destination_interface)
@@ -144,11 +144,14 @@ class  DestinationPortsRules(ForwardingRules):
 
             edmond = nx.algorithms.tree.branchings.Edmonds(new_graph)
             edmond.find_optimum()
-            print edmond
+
+            terminal_nodes = source_switches
+            steiner_tree = approximation.steinertree.steiner_tree(new_graph, terminal_nodes)
+            print steiner_tree
 
     def get_destination_switch(self, destination_node, destination_interface):
-        for link in self.node_links[destination_node].values():
-            if link["port"] == destination_interface:
+        for link in self.node_links[destination_node]:
+            if str(link["port"]) == destination_interface:
                 return link["connected_switch"], link["connected_port"]
         
 

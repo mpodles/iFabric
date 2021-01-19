@@ -58,7 +58,7 @@ class Controller():
         self.read_flows_ids(flows_ids_file_path)
         self.read_policy(policy_file_path)
 
-        self.forwarding_rules_generator = forw_rules.MinimalSpanningTreeRules(self.links, self.node_links, self.flows, self.policy)
+        self.forwarding_rules_generator = forw_rules.DestinationPortsRules(self.links, self.node_links, self.flows, self.policy)
         self.program_switches(runtimes_files_path, logs_path)
         self.writeForwardingRules()
         
