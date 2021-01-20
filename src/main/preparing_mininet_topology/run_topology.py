@@ -235,7 +235,7 @@ class ExerciseRunner:
         # some programming that must happen after the net has started
         self.program_nodes()
 
-        self.prepare_switches_file()
+        self.prepare_switches_connections_file()
 
         # wait for that to finish. Not sure how to do this better
         sleep(1)
@@ -279,7 +279,7 @@ class ExerciseRunner:
                 for cmd in node_info["commands"]:
                     h.cmd(cmd)
 
-    def prepare_switches_file(self):
+    def prepare_switches_connections_file(self):
         """ This method will use switches dictionary to prepare file 
         with device id and grpc ports for P4Runtime controller
         """

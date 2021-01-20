@@ -48,17 +48,17 @@ class Controller():
         self.switches = {}
         self.groups = {}
         self.switches_mininet_connections = {}
-        self.flows = {}
+        self.flows_ids = {}
         self.policy = {}
         self.links = {}
         self.node_links = {}
         
         self.read_topology(topology_file_path)
-        self.read_switches_connections(switches_mininet_connections_file_path)
+        #self.read_switches_connections(switches_mininet_connections_file_path)
         self.read_flows_ids(flows_ids_file_path)
         self.read_policy(policy_file_path)
 
-        self.forwarding_rules_generator = forw_rules.DestinationPortsRules(self.links, self.node_links, self.flows, self.policy)
+        self.forwarding_rules_generator = forw_rules.DestinationPortsRules(self.links, self.node_links, self.flows_ids, self.policy)
         self.program_switches(runtimes_files_path, logs_path)
         self.writeForwardingRules()
         
@@ -77,7 +77,7 @@ class Controller():
 
     def read_flows_ids(self, flows_ids_file_path):
         with open(flows_ids_file_path, 'r') as f:
-            self.flows = json.load(f)
+            self.flows_ids = json.load(f)
 
     def read_policy(self, policy_file_path):
         with open(policy_file_path, 'r') as f:
@@ -301,16 +301,16 @@ class Controller():
 
     def getWholeState(self):
         for sw in self.connections:
-            for flow in self.flows:
-                self.getFlowStateFromSwitch(sw, flow)
+            for flow_name in self.flows_ids:
+                self.getFlowStateFromSwitch(sw, flow_name)
 
-    def getFlowStateFromSwitch(self, sw, flow):
+    def getFlowStateFromSwitch(self, sw, flow_name):
         for port in range (1,49):
-            self.printCounter(sw, "MyIngress.ingress_byte_cnt", flow, port)
-            self.printCounter(sw, "MyEgress.egress_byte_cnt", flow, port)
+            self.printCounter(sw, "MyIngress.ingress_byte_cnt", flow_name, port)
+            self.printCounter(sw, "MyEgress.egress_byte_cnt", flow_name, port)
 
 
-    def printCounter(self, sw, counter_name, flow, port):
+    def printCounter(self, sw, counter_name, flow_name, port):
         """
         Reads the specified counter at the specified index from the switch. In our
         program, the index is the tunnel ID. If the index is 0, it will return all
@@ -322,7 +322,7 @@ class Controller():
         :param index: the counter index (in our case, the tunnel ID)
         """
         sw = self.connections[sw]
-        flow_name, flow_id = flow, self.flows[flow]
+        flow_id = self.flows_ids[flow_name]
         index = port + (flow_id-1)*48
         for response in sw.ReadCounters(self.p4info_helper.get_counters_id(counter_name), int(index)):
             for entity in response.entities:

@@ -102,7 +102,7 @@ def generate_policy():
         policy_file_target_path = policy_file_path
     )
 
-def run_basic_pipeline():
+def start_mininet_network():
     global exercise
     exercise = r_topo.ExerciseRunner(
         topology_file_path = topology_file_path,
@@ -158,7 +158,7 @@ if __name__ == "__main__":
             generate_policy()
             construct_p4_program()
             compile_p4_program()
-            run_basic_pipeline()
+            #start_mininet_network()
             start_controller()
         except Exception as e:
             print e

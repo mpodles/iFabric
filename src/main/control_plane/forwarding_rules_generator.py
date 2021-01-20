@@ -6,10 +6,10 @@ from networkx.algorithms import approximation
 import copy
 
 class ForwardingRules():
-    def __init__(self, links, node_links, flows, policy):
+    def __init__(self, links, node_links, flows_ids, policy):
         self.links = links
         self.node_links = node_links
-        self.flows = flows
+        self.flows_ids = flows_ids
         self.policy = policy
 
     def get_multicast_rules(self):
@@ -20,7 +20,7 @@ class ForwardingRules():
             
     def get_rules_for_sw(self, sw):
         rules_of_sw = []
-        for flow_name, flow_id in self.flows.items():
+        for flow_name, flow_id in self.flows_ids.items():
                 rules_of_sw.append(self.get_rule_for_flow_for_sw(flow_id, sw))
         return rules_of_sw
     
@@ -62,8 +62,8 @@ class ForwardingRules():
 
 class  DestinationPortsRules(ForwardingRules):
 
-    def __init__(self, links, node_links, flows, policy):
-        ForwardingRules.__init__(self, links, node_links, flows, policy)
+    def __init__(self, links, node_links, flows_ids, policy):
+        ForwardingRules.__init__(self, links, node_links, flows_ids, policy)
         # self.graph_nodes_ids = {}
         # self.generate_ids() 
         # self.graph = MinimalSpanningTreeRules.Graph(self.number_of_graph_nodes) 
@@ -72,9 +72,15 @@ class  DestinationPortsRules(ForwardingRules):
         # pass  
         # 
         self.graph = nx.Graph()
-
         self.generate_topology_as_nx_graph()
-        self.get_edmonds_trees()
+
+        self.graph_per_flow_name = {}
+        self.graph_root_node_per_flow_name = {}
+        self.get_steiner_tree_per_policy_entry()
+
+        self.replicas_for_each_switch = {}
+        self.rules_for_switch = {}
+        self.generate_rules_for_switches_per_tree()
 
 
     def generate_topology_as_nx_graph(self):
@@ -86,6 +92,54 @@ class  DestinationPortsRules(ForwardingRules):
             for connections in switch_connections["switchports"]:
                 port, connected_port, connected_switch = connections["port"], connections["connected_port"], connections["connected_switch"]
                 self.graph.add_edge(switch, connected_switch, weight=1, interfaces= {switch:port , connected_switch: connected_port})
+
+    def get_steiner_tree_per_policy_entry(self):
+        for policy_entry in self.policy:
+            new_graph = copy.deepcopy(self.graph)
+            source_switches = self.get_source_switches()
+            flow_name = policy_entry["source"]
+            destination_node = policy_entry["destination"]
+            destination_interface = policy_entry["interface"]
+            destination_switch, destination_switch_port = self.get_destination_switch(destination_node, destination_interface)
+            destination_node_name = destination_node + "_" + destination_interface
+            
+            new_graph.add_edge(destination_switch, destination_node_name , weight=1, 
+            interfaces= {destination_switch : destination_switch_port , destination_node_name: destination_interface})
+
+            edmond = nx.algorithms.tree.branchings.Edmonds(new_graph)
+            edmond.find_optimum()
+
+            terminal_nodes = source_switches
+            steiner_tree = approximation.steinertree.steiner_tree(new_graph, terminal_nodes)
+            self.graph_per_flow_name[flow_name] = steiner_tree
+            self.graph_root_node_per_flow_name[flow_name] = destination_node_name
+
+    def get_source_switches(self):
+        return self.links.keys()            
+
+    def get_destination_switch(self, destination_node, destination_interface):
+        for link in self.node_links[destination_node]:
+            if str(link["port"]) == destination_interface:
+                return link["connected_switch"], link["connected_port"]
+    
+    def generate_rules_for_switches_per_tree(self):
+        for flow_name, flow_id in self.flows_ids.items():
+            for switch in self.links.keys():
+                self.replicas_for_each_switch[switch] = self.generate_replicas_for_switches_for_tree(switch, flow_name)
+                self.rules_for_switch[switch] = {"multicast_group_id": flow_id, "replicas" : self.replicas_for_each_switch[switch]}
+    
+    def generate_replicas_for_switches_for_tree(self, switch, flow_name):
+        steiner_tree = self.graph_per_flow_name[flow_name]
+        root_node = self.graph_root_node_per_flow_name[flow_name]
+        for u,v,a in steiner_tree.edges(data=True):
+            print steiner_tree.edges
+            print steiner_tree.nodes
+            print steiner_tree.adj[switch]
+            # print u,v,a
+        
+
+
+
 
     # def add_all_edges_from_switches_to_nodes(self):   #TODO: in the future maybe it's better to disjont all nodes interfaces and treat like separate nodes for path builiding
     #     for policy_entry in self.policy:
@@ -104,9 +158,6 @@ class  DestinationPortsRules(ForwardingRules):
     #         pass
         # elif policy_type == "N2N":  #TODO: different policy types in the future
         #     pass
-
-    def get_source_switches(self):
-        return self.links.keys()
 
  
     # def get_steiner_trees(self):
@@ -129,30 +180,3 @@ class  DestinationPortsRules(ForwardingRules):
 
     #             nodes_interfaces[interface_connections["connected_switch"]] = interface_connections["connected_port"]            
     #     return nodes
-
-    def get_edmonds_trees(self):
-        for policy_entry in self.policy:
-            new_graph = copy.deepcopy(self.graph)
-            source_switches = self.get_source_switches()
-            destination_node = policy_entry["destination"]
-            destination_interface = policy_entry["interface"]
-            destination_switch, destination_switch_port = self.get_destination_switch(destination_node, destination_interface)
-            destination_node_name = destination_node + "_" + destination_interface
-            
-            new_graph.add_edge(destination_switch, destination_node_name , weight=1, 
-            interfaces= {destination_switch : destination_switch_port , destination_node_name: destination_interface})
-
-            edmond = nx.algorithms.tree.branchings.Edmonds(new_graph)
-            edmond.find_optimum()
-
-            terminal_nodes = source_switches
-            steiner_tree = approximation.steinertree.steiner_tree(new_graph, terminal_nodes)
-            print steiner_tree
-
-    def get_destination_switch(self, destination_node, destination_interface):
-        for link in self.node_links[destination_node]:
-            if str(link["port"]) == destination_interface:
-                return link["connected_switch"], link["connected_port"]
-        
-
-    
