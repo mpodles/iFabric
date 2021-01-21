@@ -38,7 +38,7 @@ class SpineLeaf():
         self.generate_switches(spines_count, leaves_count)
         self.generate_switch_to_switch_links()
         #self.generate_nodes_with_links(ports_per_leaf)
-        self.generate_one_node_per_leaf(2)
+        self.generate_one_node_per_leaf(nr_of_interfaces=1)
         self.generate_groups(avg_group_size)
         self.generate_nodes_addressing()
         self.write_topology()
@@ -157,8 +157,7 @@ class SpineLeaf():
         return random_mac
 
     def generate_node_commands(self, node):
-        #TODO: change eth0
-        return ["ip route add 0.0.0.0/0 dev eth0"]
+        return ["ip route add 0.0.0.0/0 dev "+ node + "-eth0"]
 
     def write_topology(self):
         topology = {}

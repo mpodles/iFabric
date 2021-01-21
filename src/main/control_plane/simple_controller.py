@@ -54,7 +54,7 @@ class Controller():
         self.node_links = {}
         
         self.read_topology(topology_file_path)
-        #self.read_switches_connections(switches_mininet_connections_file_path)
+        self.read_switches_connections(switches_mininet_connections_file_path)
         self.read_flows_ids(flows_ids_file_path)
         self.read_policy(policy_file_path)
 

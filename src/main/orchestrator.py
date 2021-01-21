@@ -158,7 +158,7 @@ if __name__ == "__main__":
             generate_policy()
             construct_p4_program()
             compile_p4_program()
-            #start_mininet_network()
+            start_mininet_network()
             start_controller()
         except Exception as e:
             print e

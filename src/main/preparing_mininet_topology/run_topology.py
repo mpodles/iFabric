@@ -277,6 +277,7 @@ class ExerciseRunner:
             h = self.net.get(node_name)
             if "commands" in node_info:
                 for cmd in node_info["commands"]:
+                    print cmd
                     h.cmd(cmd)
 
     def prepare_switches_connections_file(self):
