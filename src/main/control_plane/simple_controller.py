@@ -335,30 +335,27 @@ class Controller():
         sw.WritePREEntry(clone_entry)
 
     def start_state_gathering(self):
-        timestamp = 0
-        self.state_by_timestamp[timestamp] = {}
-        self.getWholeState(timestamp)
-        while True:
-            start = timeit.timeit()
+        start = timeit.default_timer()
+        while True:  #TODO: figure out better delay between states and gather states quicker
             sleep(1)
-            self.getWholeState(timestamp)
+            fabric_state = self.get_fabric_state()
+            end = timeit.default_timer()
             timestamp = end - start
-            
-            
-            end = timeit.timeit()
-            
-        
-        print(end - start)
+            print timestamp
+            print fabric_state
+            self.state_by_timestamp[timestamp] = fabric_state
 
-    def getWholeState(self, timestamp):
+    def get_fabric_state(self):
+        state = {}
         for sw_name, sw_connection in self.connections.items():
-            self.state_by_timestamp[timestamp][sw_name] = {}
+            state[sw_name] = {}
             used_ports = self.ports_used_on_switch[sw_name]
             for flow_name, flow_id in self.flows_ids.items():
-                self.state_by_timestamp[timestamp][sw_name][flow_name] = self.getFlowStateFromSwitch(sw_connection, used_ports, flow_id)
+                state[sw_name][flow_name] = self.get_flow_state_from_switch(sw_connection, used_ports, flow_id)
+        return state
                 
 
-    def getFlowStateFromSwitch(self, sw_conn, used_ports, flow_name):
+    def get_flow_state_from_switch(self, sw_conn, used_ports, flow_name):
         port_bytes = {}
         for port in used_ports:
             port_bytes[port] = {
@@ -374,11 +371,9 @@ class Controller():
                 counter = entity.counter_entry
                 return counter.data.byte_count
 
-    def get_egress_port_bytes(self, sw, flow_name, port):
-        sw = self.connections[sw]
-        flow_id = self.flows_ids[flow_name]
+    def get_egress_port_bytes(self, sw_conn, flow_id, port):
         index = port + (flow_id-1)*48
-        for response in sw.ReadCounters(self.p4info_helper.get_counters_id("MyEgress.egress_byte_cnt"), int(index)):
+        for response in sw_conn.ReadCounters(self.p4info_helper.get_counters_id("MyEgress.egress_byte_cnt"), int(index)):
             for entity in response.entities:
                 counter = entity.counter_entry
                 return counter.data.byte_count

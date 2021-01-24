@@ -123,20 +123,7 @@ def start_controller():
         runtimes_files_path = runtimes_files_path,
         logs_path= logs_path
     )
-    # start = timeit.timeit()
-    # controller.getAllCounters()
-    # end = timeit.timeit()
-    # print(end - start)
-    print "Switches programmed"
-    exercise.do_net_cli()
-    # for i in range (1,5):
-    #     sw = "s" + str(i)
-    #     # controller.readTableRules(controller.connections[sw])
-    #     controller.writeForwardingRules(sw)
-    # while True:
-    #     sleep(4)
-    #     controller.printCounter('Spine_1', "MyIngress.ingress_byte_cnt", 'Node_1_flow', 1)
-
+    controller.start_state_gathering()
 
 def get_args():
     parser = argparse.ArgumentParser()
