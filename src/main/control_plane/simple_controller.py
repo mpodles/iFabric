@@ -36,6 +36,17 @@ def info(msg):
 class ConfException(Exception):
     pass
 
+
+# class SwitchState():
+#     def __init__(self, sw, used_ports):
+#         self.sw = sw
+#         self.ports = used_ports
+   
+
+# class FlowState():
+#     def __init__(self, flow):
+#         self.flow = flow
+
 class Controller():
     def __init__(self, **files):
         topology_file_path = files["topology_file_path"]
@@ -52,11 +63,15 @@ class Controller():
         self.policy = {}
         self.links = {}
         self.node_links = {}
+        self.ports_used_on_switch = {}
+
+        self.state_by_timestamp = {}
         
         self.read_topology(topology_file_path)
         self.read_switches_connections(switches_mininet_connections_file_path)
         self.read_flows_ids(flows_ids_file_path)
         self.read_policy(policy_file_path)
+        self.generate_used_switch_ports()
 
         self.forwarding_rules_generator = forw_rules.DestinationPortsRules(self.links, self.node_links, self.flows_ids, self.policy)
         self.program_switches(runtimes_files_path, logs_path)
@@ -82,6 +97,26 @@ class Controller():
     def read_policy(self, policy_file_path):
         with open(policy_file_path, 'r') as f:
             self.policy = json.load(f)
+
+    def generate_used_switch_ports(self):
+        for sw in self.switches.keys():
+            switchports, endports =  self.get_used_switch_to_switch_ports(sw), self.get_used_switch_to_host_ports(sw)
+            ports = switchports + endports
+            self.ports_used_on_switch[sw] = ports
+
+    def get_used_switch_to_switch_ports(self,sw):
+        switchports =  self.links[sw]["switchports"]
+        ports = []
+        for entry in switchports:
+            ports.append(entry["port"])
+        return ports
+
+    def get_used_switch_to_host_ports(self,sw):
+        endports =  self.links[sw]["endports"]
+        ports = []
+        for entry in endports:
+            ports.append(entry["port"])
+        return ports
 
     def program_switches(self, runtimes_files_path, logs_path):
         """ This method will program each switch using the BMv2 CLI and/or
@@ -299,17 +334,55 @@ class Controller():
                                                         rule.get('packet_length_bytes', 0))
         sw.WritePREEntry(clone_entry)
 
-    def getWholeState(self):
-        for sw in self.connections:
-            for flow_name in self.flows_ids:
-                self.getFlowStateFromSwitch(sw, flow_name)
+    def start_state_gathering(self):
+        timestamp = 0
+        self.state_by_timestamp[timestamp] = {}
+        self.getWholeState(timestamp)
+        while True:
+            start = timeit.timeit()
+            sleep(1)
+            self.getWholeState(timestamp)
+            timestamp = end - start
+            
+            
+            end = timeit.timeit()
+            
+        
+        print(end - start)
 
-    def getFlowStateFromSwitch(self, sw, flow_name):
-        for port in range (1,49):
-            self.printCounter(sw, "MyIngress.ingress_byte_cnt", flow_name, port)
-            self.printCounter(sw, "MyEgress.egress_byte_cnt", flow_name, port)
+    def getWholeState(self, timestamp):
+        for sw_name, sw_connection in self.connections.items():
+            self.state_by_timestamp[timestamp][sw_name] = {}
+            used_ports = self.ports_used_on_switch[sw_name]
+            for flow_name, flow_id in self.flows_ids.items():
+                self.state_by_timestamp[timestamp][sw_name][flow_name] = self.getFlowStateFromSwitch(sw_connection, used_ports, flow_id)
+                
 
+    def getFlowStateFromSwitch(self, sw_conn, used_ports, flow_name):
+        port_bytes = {}
+        for port in used_ports:
+            port_bytes[port] = {
+                "ingress": self.get_ingress_port_bytes(sw_conn, flow_name, port) , 
+                "egress": self.get_egress_port_bytes(sw_conn, flow_name, port)
+                }
+        return port_bytes
 
+    def get_ingress_port_bytes(self, sw_conn, flow_id, port):
+        index = port + (flow_id-1)*48
+        for response in sw_conn.ReadCounters(self.p4info_helper.get_counters_id("MyIngress.ingress_byte_cnt"), int(index)):
+            for entity in response.entities:
+                counter = entity.counter_entry
+                return counter.data.byte_count
+
+    def get_egress_port_bytes(self, sw, flow_name, port):
+        sw = self.connections[sw]
+        flow_id = self.flows_ids[flow_name]
+        index = port + (flow_id-1)*48
+        for response in sw.ReadCounters(self.p4info_helper.get_counters_id("MyEgress.egress_byte_cnt"), int(index)):
+            for entity in response.entities:
+                counter = entity.counter_entry
+                return counter.data.byte_count
+    
     def printCounter(self, sw, counter_name, flow_name, port):
         """
         Reads the specified counter at the specified index from the switch. In our
