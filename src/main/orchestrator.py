@@ -130,13 +130,16 @@ def get_args():
     parser.add_argument('-c', '--clean', help='Stop previous mininet process and clean directories',
                         action='store_true', required=False, default=False)
     return parser.parse_args()
+
+def clean_setup():
+    os.system("sudo mn -c")
+    os.system("rm -f *.pcap")
+    os.system(" ".join(["rm -rf ", build_folder, pcaps_folder, logs_folder]))
     
 if __name__ == "__main__":
     args = get_args()
     if args.clean:
-        os.system("sudo mn -c")
-        os.system("rm -f *.pcap")
-        os.system(" ".join(["rm -rf ", build_folder, pcaps_folder, logs_folder]))
+        clean_setup()
     else:
         try:
             prepare_folders()
@@ -148,7 +151,6 @@ if __name__ == "__main__":
             start_mininet_network()
             start_controller()
         except Exception as e:
-            print e
-            os.system("sudo mn -c")
-            os.system("rm -f *.pcap")
-            os.system(" ".join(["rm -rf ", build_folder, pcaps_folder, logs_folder]))
+            print "Exception: ", e
+        finally:
+            clean_setup()
