@@ -336,14 +336,17 @@ class Controller():
 
     def start_state_gathering(self):
         start = timeit.default_timer()
+        current_fabric_state, previous_fabric_state = None, None
         while True:  #TODO: figure out better delay between states and gather states quicker
-            sleep(1)
-            fabric_state = self.get_fabric_state()
+            sleep(0.1)
+            current_fabric_state = self.get_fabric_state()
             end = timeit.default_timer()
             timestamp = end - start
-            print timestamp
-            print fabric_state
-            self.state_by_timestamp[timestamp] = fabric_state
+            self.state_by_timestamp[timestamp] = current_fabric_state
+
+            if previous_fabric_state is not None:
+                self.print_where_traffic_flows(current_fabric_state, previous_fabric_state)
+            previous_fabric_state = current_fabric_state
 
     def get_fabric_state(self):
         state = {}
@@ -354,13 +357,12 @@ class Controller():
                 state[sw_name][flow_name] = self.get_flow_state_from_switch(sw_connection, used_ports, flow_id)
         return state
                 
-
-    def get_flow_state_from_switch(self, sw_conn, used_ports, flow_name):
+    def get_flow_state_from_switch(self, sw_conn, used_ports, flow_id):
         port_bytes = {}
         for port in used_ports:
             port_bytes[port] = {
-                "ingress": self.get_ingress_port_bytes(sw_conn, flow_name, port) , 
-                "egress": self.get_egress_port_bytes(sw_conn, flow_name, port)
+                "ingress": self.get_ingress_port_bytes(sw_conn, flow_id, port) , 
+                "egress": self.get_egress_port_bytes(sw_conn, flow_id, port)
                 }
         return port_bytes
 
@@ -377,6 +379,26 @@ class Controller():
             for entity in response.entities:
                 counter = entity.counter_entry
                 return counter.data.byte_count
+
+    def print_where_traffic_flows(self, current_fabric_state, previous_fabric_state):
+        for sw_name in self.connections.keys():
+            for flow_name in self.flows_ids.keys():
+                for port in current_fabric_state[sw_name][flow_name].keys():
+                    curr_bytes_dict = current_fabric_state[sw_name][flow_name][port]
+                    prev_bytes_dict = previous_fabric_state[sw_name][flow_name][port]
+
+                    ingr_byte_diff = curr_bytes_dict["ingress"] - prev_bytes_dict["ingress"]
+                    egr_byte_diff = curr_bytes_dict["egress"] - prev_bytes_dict["egress"]
+
+                    if ingr_byte_diff > 0:
+                        print "flow: %s, switch: %s, port: %s, new ingress bytes: %d" % (
+                    sw_name, flow_name, port, ingr_byte_diff
+                    )
+                    if egr_byte_diff > 0:
+                        print "flow: %s, switch: %s, port: %s, new egress bytes: %d" % (
+                    sw_name, flow_name, port, egr_byte_diff
+                    )
+                    
     
     def printCounter(self, sw, counter_name, flow_name, port):
         """
