@@ -21,11 +21,20 @@ class PolicyGenerator():
             self.nodes = topo['nodes']
             self.topology = topo['links']
             self.nodes_links = topo['node_links']
-        
+
+       
     def read_flows(self, flows_file_path):
         with open(flows_file_path, 'r') as f:
             self.flows = json.load(f)
             
+
+class GroupsPolicyGenerator(PolicyGenerator):
+
+    def __init__(self, **files):
+        PolicyGenerator.__init__(self, **files)
+        self.policy = []
+        self.prepare_policy_for_every_destination_port()
+        self.write_policy(self.policy_file_target_path)
 
 
 
@@ -47,7 +56,8 @@ class DestinationPolicyGenerator(PolicyGenerator):
                             for int_name, properties in properties.items():
                                 if int_name != "commands" and (properties["mac"]==value or properties["ip"]==value):
                                     self.policy.append({"type":"F2N", "source":flow_name, "destination":node, "interface": int_name})
-                            
+
+
     def write_policy(self, policy_file_target_path):
         with open(policy_file_target_path, "w") as f:
             f.write(json.dumps(self.policy))
