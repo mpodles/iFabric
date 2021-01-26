@@ -4,27 +4,58 @@ This repo begins as a clone from https://github.com/p4lang/tutorials
 
 Networking SDN Fabric that I would like to be a step towards fully automated telecommunications. 
 
+The following document goes as follows:
+  1. Current idea
+  2. What's implemented
+  3. Possible problems
+  4. Possible extensions
+
+## The idea
 The idea consist of:
-  1. any topology made out of P4 switches
-  2. self-learning control-plane program
+  1. Topology: any topology made out of P4 switches with SDN controller/s
+  2. Configuration: things that Operator has to provide to the iFabric
+  3. Control-plane: self-learning control-plane program
+  
+The iFabric should provide a abstract definition of any high-performance hardware network (Infrastracture as a Code). It should, under configuration that iFabric Operator makes, be capable of representing currently used networks (TCP/IP, Fibre Channel etc.) and any other packet-based networks that Operator might want to set-up to meet communication requirements.
+
+The first requirement was set to try to be as backwards-compatible as possible.
+
+The structures that make the iFabric are presented with provided example of how iFabric might implement IP/MAC network. Later, I highlight other sample iFabric network implementation.
 
 ## 1. Topology:
 
-Topology is made out of P4 switches connected in any way and Nodes connected to them in any way You want. That means, Nodes can be connected to any free switchport on any switch (that is, not used for inter-switch connections) with as many links as they need. 
+Topology is made out of P4 switch and Nodes connected to them. Both switch-interconnections and Nodes to switches are whatever we want. For Node it means that, they can be connected to any switchport on any swich with as many links per switch as they need. 
 
-Nodes can be put into Groups so groups are sets of nodes. We should be able to put Node into many groups at once.
+Nodes we might have in our first example could be:
+  - email_server
+  - database_server
+  - firewall
+  - website_1
+  - website_dr_1
+  - website_dr_2
+  
+Nodes can be put into Groups. We should be able to put Node into many groups at once for example:
+  1. Websites:
+    - website_1
+    - website_dr_1
+    - website_dr_2
+  2. DR:
+    - website_dr_1
+    - website_dr_2
+  3. Servers:
+    - email_server
+    - database_server
 
-In an example 
+## 2. Configauration:
 
-### What Operator defines
 Before iFabric bringup (and possibly while fabric is operational, but unsure if current design supports that) we define:
-  - flows, ( F = { flow_1 , flow_2 ... flow_n} )
+  - flows, ( F = {flow_1, flow_2 ... flow_n} )
   - policy, ( Pol = {pol_1, pol_2 ... pol_3} )
 
 Both of those should be as user-friendly and automated in their generation as possible.
 
 Flows in an example IP/MAC fabric we might want to configure could look like:
-F = {flow_to_firewall_ip, flow_to_server1 , flow_to_servers_1_to_20 ...}
+F = {flow_to_firewall_ip, flow_to_server1, flow_to_servers_1_to_20 ...}
 
 Policies we could define in this fabric could be:
 
