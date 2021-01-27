@@ -5,61 +5,64 @@ This repo begins as a clone from https://github.com/p4lang/tutorials
 Networking SDN Fabric that I would like to be a step towards fully automated telecommunications. 
 
 The following document goes as follows:
-  1. Current idea
-  2. What's implemented
-  3. Possible problems
-  4. Possible extensions
+  1. **Current idea**
+  2. **What's implemented**
+  3. **Perceived values of the solution**
+  4. **Possible problems**
+  5. **Possible extensions**
 
-## The idea
-The idea consist of:
-  1. Topology: any topology made out of P4 switches with SDN controller/s
-  2. Configuration: things that Operator has to provide to the iFabric
-  3. Control-plane: self-learning control-plane program
+## Current idea
+The core of the idea currently consists of these three structures:
+- **Topology**
+- **Configuration**
+- **Control-plane**: self-learning control-plane program
   
-The iFabric should provide a abstract definition of any high-performance hardware network (Infrastracture as a Code). It should, under configuration that iFabric Operator makes, be capable of representing currently used networks (TCP/IP, Fibre Channel etc.) and any other packet-based networks that Operator might want to set-up to meet communication requirements.
+The *iFabric* should provide an abstract definition of any high-performance hardware network (*Infrastracture as a Code*). It should, under configuration that *iFabric Operator* makes, be capable of representing currently used networks (*TCP/IP*, *Fibre Channel etc.*) and any other packet-based networks that *Operator* might want to set-up to meet communication requirements.
 
-The first requirement was set to try to be as backwards-compatible as possible.
+The first requirement was set to try making iFabric as backwards-compatible as possible.
 
-The structures that make the iFabric are presented with provided example of how iFabric might implement IP/MAC network. Later, I highlight other sample iFabric network implementation.
+The structures that make the iFabric are presented with provided example of how *iFabric* might implement *IP/MAC* network. Later, I highlight other sample *iFabric* network implementation.
 
-## 1. Topology:
+### 1. Topology:
 
-Topology is made out of P4 switch and Nodes connected to them. Both switch-interconnections and Nodes to switches are whatever we want. For Node it means that, they can be connected to any switchport on any swich with as many links per switch as they need. 
+any physical topology made out of  P4 switches with SDN controller/s
+
+Topology is made out of *P4* switch and *Nodes* connected to them. On hardware level, we can currently distinguish two types of links: switch-interconnections and *Nodes* to switches connections. . For *Node* it means that, they can be connected to any switchport on any switch with as many links per switch as they need. 
 
 Nodes we might have in our first example could be:
-  - email_server
-  - database_server
-  - firewall
-  - website_1
-  - website_dr_1
-  - website_dr_2
+- *email_server*
+- *database_server*
+- *firewall*
+- *website_1*
+- *website_dr_1*
+- *website_dr_2*
   
 Nodes can be put into Groups. We should be able to put Node into many groups at once for example:
-  1. Websites:
-    - website_1
-    - website_dr_1
-    - website_dr_2
-  2. DR:
-    - website_dr_1
-    - website_dr_2
-  3. Servers:
-    - email_server
-    - database_server
+1. Websites:
+    - *website_1*
+    - *website_dr_1*
+    - *website_dr_2*
+2. DR:
+    - *website_dr_1*
+    - *website_dr_2*
+3. Servers:
+    - *email_server*
+    - *database_server*
 
-## 2. Configauration:
+### 2. Configuration:
 
 Before iFabric bringup (and possibly while fabric is operational, but unsure if current design supports that) we define:
-  - flows, ( F = {flow_1, flow_2 ... flow_n} )
-  - policy, ( Pol = {pol_1, pol_2 ... pol_3} )
+  - _flows, ( F = {flow_1, flow_2 ... flow_n} )_
+  - _policy, ( Pol = {pol_1, pol_2 ... pol_3} )_
 
 Both of those should be as user-friendly and automated in their generation as possible.
 
 Flows in an example IP/MAC fabric we might want to configure could look like:
-F = {flow_to_firewall_ip, flow_to_server1, flow_to_servers_1_to_20 ...}
+_F = {flow_to_firewall_ip, flow_to_server1, flow_to_servers_1_to_20 ...}_
 
 Policies we could define in this fabric could be:
 
-Pol = {}
+_Pol = {}_
 
 #### Flow - definition:
 Named Set of Protocol Fields: ProtF_Set = {ProtF_1, ..., ProtF_n}, and set of ranges for protocol fields: ProtF_Ranges(ProtF_x) = {(ProtF_Low1, ProtF_High1), (ProtF_Low2, ProtF_High2) ... (ProtF_LowN, ProtF_HighN)} for ProtF_x from ProtF_Set
@@ -126,3 +129,9 @@ Each flow also needs a priority that determines what happens if ranges from the 
 
 
 #### Policy - definition
+
+## 2. Configuration
+
+## 3. Control-plane
+
+
