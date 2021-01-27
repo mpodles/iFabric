@@ -43,6 +43,7 @@ Here's briefly how the current idea supports each of those characteristics. They
 The core of the idea currently consists of three structures briefly introduced here and expanded upon later:
 - **Topology**
 - **Configuration**
+- **Data-plane**
 - **Control-plane**
   
 
@@ -50,7 +51,7 @@ The structures that make the iFabric are presented with provided example of how 
 
 ### 1. Topology:
 
-Topology is made out of *P4* switches, SDN controllers and *Nodes* connected to them. On hardware level, we can currently distinguish two types of links: switch-interconnections and *Nodes* to switches connections. . For *Node* it means that, it can be connected to any switchport on any switch with as many links per switch as it needs. 
+Topology is made out of *P4* switches, SDN controllers and *Nodes* connected to them. On physical level, we can currently distinguish two types of links: switch-interconnections and *Nodes* to switches connections. For *Node* it means that, it can be connected to any switchport on any switch with as many links per switch as it needs. 
 
 Nodes we might have in our first example could be:
 - *email_server*
@@ -65,7 +66,7 @@ Nodes can be put into Groups. We should be able to put Node into many groups at 
     - *website_1*
     - *website_dr_1*
     - *website_dr_2*
-2. DR:
+2. DR_group:
     - *website_dr_1*
     - *website_dr_2*
 3. Servers:
@@ -73,25 +74,27 @@ Nodes can be put into Groups. We should be able to put Node into many groups at 
     - *database_server*
 
 ### 2. Configuration:
-Before the *iFabric* starts 
-  - _flows, ( F = {flow_1, flow_2 ... flow_n} )_
-  - _policy, ( Pol = {pol_1, pol_2 ... pol_3} )_
+Before the *iFabric* starts we define two sets:
+  - *flows, ( F = {flow_1, flow_2 ... flow_n} )*
+  - *policy, ( Pol = {pol_1, pol_2 ... pol_3} )*
 
-Both of those should be as user-friendly and automated in their generation as possible.
+Current design doesn't support defining those while the *iFabric* is operational but this is something that could be addressed. More in **Possible extensions**
 
-Flows in an example IP/MAC fabric we might want to configure could look like:
-_F = {flow_to_firewall_ip, flow_to_server1, flow_to_servers_1_to_20 ...}_
+Flows in our example *IP/MAC* fabric we might want to configure could look like:
+*F = {flow_to_firewall_ip, flow_to_website1, flow_to_DR ...}*
 
 Policies we could define in this fabric could be:
 
-_Pol = {}_
+*Pol = {route_traffic_to_firewall, route_traffic_to_website1, route_traffic_to_DR ...}*
 
 #### Flow - definition:
-Named Set of Protocol Fields: ProtF_Set = {ProtF_1, ..., ProtF_n}, and set of ranges for protocol fields: ProtF_Ranges(ProtF_x) = {(ProtF_Low1, ProtF_High1), (ProtF_Low2, ProtF_High2) ... (ProtF_LowN, ProtF_HighN)} for ProtF_x from ProtF_Set
+One flow has a name, priority and set of *Protocol Fields: ProtF_Set = {ProtF_1, ..., ProtF_n}*, and set of ranges for protocol fields: *ProtF_Ranges(ProtF_x) = {(ProtF_Low1, ProtF_High1), (ProtF_Low2, ProtF_High2) ... (ProtF_LowN, ProtF_HighN)} for ProtF_x from ProtF_Set and ProtF_LowN <= ProtF_HighN *
 
+Name is used for easier recognition of flows.
 
+Priority is used for determining which flow we classify traffic as if traffic matches multiple flows.
 
-Protocol Field is any data that we can define using P4. For our IP/MAC fabric we could go with:
+*Protocol Field* is any data field that we can define using P4. For our *IP/MAC* network we could go with:
 ```
 typedef bit<48> macAddr_t;
 
@@ -119,16 +122,46 @@ header IPv4_t {
     ip4Addr_t dstAddr;
 }
 ```
-In this example Protocol Fields we could use would f.g. be IPv4.dstAddr and Ethernet.dstAddr.
-Ranges we could define as f.g. ProtF_Ranges(IPv4.dstAddr) = { (10.0.0.1, 10.0.0.26) }
+In this example *Protocol Fields* we could use to define the *flow_to_firewall_ip* could be *IPv4.dstAddr* .
+Ranges we could define as *ProtF_Ranges(IPv4.dstAddr) = { (10.0.0.1, 10.0.0.2) }* 
 
-Flows in this network could look like:
-F = {flow_to_firewall_ip, flow_to_server1 , flow_to_servers_1_to_20 ...}
-
-And they could look like:
-flow_to_firewall_ip = {protocol: IPv4_
+In practice that would mean: **Treat every traffic seen on the network with destination IPv4 address of 10.0.0.1 and 10.0.0.2 as flow called *flow_to_firwall_ip* **
   
-But we could go with something like:
+For *flow_to_DR* we could use *IPv4.protocol* and *Ethernet.dstAddr* like this:
+*ProtF_Ranges(Ethernet.dstAddr) = { (AB:AB:AB:AB:00:01, AB:AB:AB:AB:00:10), (AB:AB:AB:AB:01:01, AB:AB:AB:AB:01:10) }*
+*ProtF_Ranges(IPv4.protocol) = { (11,11) }*
+
+In practice that would mean: **Every traffic seen on the network with:**
+- **destination MAC address of AB:AB:AB:AB:00:01 to AB:AB:AB:AB:00:10 and IPv4 protocol field of 11**
+- **destination MAC address of AB:AB:AB:AB:01:01 to AB:AB:AB:AB:01:10 and IPv4 protocol field of 11**
+
+**is considered a flow called *flow_to_DR***
+
+#### Policy - definition
+
+Policy is made out of named entries where each entry uses source and destination:
+For source we can use flow, *Node* and *Group*. For destination it's only *Node* and *Group*.
+
+In our example network we could have entries like:
+1.  **Source:** *flow_to_firewall_ip*
+    **Destination:** *firewall*
+    
+2.  **Source:** *flow_to_DR*
+    **Destination:** *DR_group*
+
+3.  **Source:** *Websites*
+    **Destination:** *Servers*
+
+Entries could be explained as:
+1.  **I want all traffic classified as *flow_to_firewall_ip* to be transported to where *firwall Node* is connected**
+2.  **I want all traffic classified as *flow_to_DR* to be transported to where *Nodes* from *DR_group* are connected**
+3.  **I want all traffic that's not classified as any of the defined flows coming from any of the *Nodes* in the *Websites* to be transported to where *Nodes* from *Servers* are connected**
+
+The issue of what it means to have something transported to whole *Group* (should it be all *Nodes*, all their ports, load-balanced) is further elaborated on in **Possible problems**.
+
+
+This provides explanation of how a sample *IP/MAC* network could operate like. Different example could see us using this configuration:
+
 ```
 typedef bit<256> server_ID;
 
@@ -140,20 +173,22 @@ header MyServerFarm_t {
 }
 
 ```
+With this we could have policy that sends traffic with specific *srcID* and *processOnDstServerThatNeedsThisData* servers towards servers that run processes that need this traffic.
 
-And assume that host from their NICs send data with this header instead of whole TCP/IP stack. We can use as many headers/protocols (as hardware allows). They can be new or old ones combined in any way. (at least i assume that all P4 targets support that by default, which I believe they do)
+In this scenario we would also have to assume that *Nodes* NICs support compliant encapsulation so that iFabric might parse it into flows. 
 
+### 3. Data-plane
 
-Prot_Low and Prot_High are bit values that determine the span of values that we look at in the protocol.
-
-Each flow also needs a priority that determines what happens if ranges from the flows overlaps.
-
-
-
-#### Policy - definition
-
-## 2. Configuration
-
-## 3. Control-plane
+### 4. Control-plane
 
 
+
+## What's implemented
+
+Data-plane
+
+## Perceived values of the solution
+
+## Possible problems
+
+## Possible extensions
