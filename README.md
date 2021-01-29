@@ -182,7 +182,30 @@ In this scenario we would also have to assume that *Nodes* NICs support complian
 
 ### 3. Data-plane
 
+Data-plane in current idea only tackles the problem of forwarding but later this should be naturally extendable to things like buffering, security. More in **Possible extensions**.
+
+Forwarding in P4 is done based on multicast-groups which currently have one-to-one mapping with flow_id. Each flow is assigned multicast-group that then has egress ports chosen for each switch in *iFabric*. For faster flow recognition we use special *myTunnel* header on top of everything that is being sent. Currently, the header consists of five fields:
+- header_type: used for identifying if we are looking at *myTunnel* header
+- next_protocol: used for identifying the next protcol that is encapsulated
+- flow_id: field that identifies the flow that we are looking at
+- node_id: placeholder field that may be further used by control-plane
+- group_id: same as above
+
+In the future, the *iFabric* header will definitely get prunned of unnecessary data and possibly extended to provide more useful information for control-plane control. More in **Possible extensions**.
+
+The pipeline looks as follows:
+1. Do parsing based on protocol stack that the *iFabric*  may see.
+2. If there is no *myTunnel* header then append one based on flows defined by *Operator*.
+3. Count the bytes that we see on ingress for particular port for particular flow.
+4. Assign multicast-group that is same as flow_id.
+5. Forward out of all ports that control plane decided are appropriate for this flow for this switch.
+6. Count the bytes that we see on egress for particular port for particular flow.
+7. If the port is connected to *Node* then strip the *myTunnel* header.
+
+
 ### 4. Control-plane
+Control plane is an algorithm that, looking at bytes on ingress/egress on all ports on all switches can decide forwarding that should be done.
+Current idea is for using reinforcement-learning algorithm that sees whether or not bytes that we see on ingress are visible where they should be on egress. Rewards should be assigned only for following the policy so the algorithm doesn't overfit to unwanted behaviours. If proper forwarding is achieved then more rewards may be introduced for other things we would like our *iFabric* to do. More on that in **Possible extensions**
 
 
 
