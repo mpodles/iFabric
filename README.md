@@ -134,7 +134,7 @@ header IPv4_t {
 In this example *Protocol Fields* we could use to define the *flow_to_firewall_ip* could be *IPv4.dstAddr* .
 Ranges we could define as *ProtF_Ranges(IPv4.dstAddr) = { (10.0.0.1, 10.0.0.2) }* 
 
-In practice that would mean: **Treat every traffic seen on the network with destination IPv4 address of 10.0.0.1 and 10.0.0.2 as flow called *flow_to_firwall_ip* **
+In practice that would mean: **Treat every traffic seen on the network with destination IPv4 address of 10.0.0.1 and 10.0.0.2 as flow called _flow_to_firwall_ip_**
   
 For *flow_to_DR* we could use *IPv4.protocol* and *Ethernet.dstAddr* like this:
 *ProtF_Ranges(Ethernet.dstAddr) = { (AB:AB:AB:AB:00:01, AB:AB:AB:AB:00:10), (AB:AB:AB:AB:01:01, AB:AB:AB:AB:01:10) }*
