@@ -7,19 +7,19 @@ This repo begins as a clone from https://github.com/p4lang/tutorials.
 Big thanks to everyone that took time to listen to my ideas and helped me put them together. Also, Thanks for everyone involved in P4 community, because the materials available gave me the opportunity to learn the technology and start working on this project.
 
 The following document goes as follows:
-  1. **Current idea** :
+  1. **Current idea**:
    This section should give a good outline of what's currently in the scope of the project. The idea is still under heavy development and changes quite often so little is set in stone.
   
-  2. **What's implemented** :
+  2. **What's implemented**:
   What is the current state of the project, it's possibilities and what technologies were used.
   
-  3. **Perceived values of the solution** :
+  3. **Perceived values of the solution**:
   What I think are the values of this project and what made me pursue it.
   
-  4. **Possible problems** :
+  4. **Possible problems**:
   What I currently see as biggest problems of the solution and how they might be addressed.
   
-  5. **Possible extensions** :
+  5. **Possible extensions**:
   What I see as possible extensions of this project if it gets operational.
 
 ## Current idea
@@ -91,7 +91,13 @@ Policies we could define in this network might be:
 *Pol = {route_traffic_to_firewall, route_traffic_to_website1, route_traffic_to_DR ...}*
 
 #### Flow - definition:
-One flow has a name, priority and set of *Protocol Fields: ProtF_Set = {ProtF_1, ..., ProtF_n}*, and set of ranges for protocol fields: *ProtF_Ranges(ProtF_x) = {(ProtF_Low1, ProtF_High1), (ProtF_Low2, ProtF_High2) ... (ProtF_LowN, ProtF_HighN)} for ProtF_x from ProtF_Set and ProtF_LowN <= ProtF_HighN *
+One flow has a name, priority and set of *Protocol Fields*: 
+
+*ProtF_Set = {ProtF_1, ..., ProtF_n}*
+
+and set of ranges for protocol fields: 
+
+*ProtF_Ranges(ProtF_x) = {(ProtF_Low1, ProtF_High1), (ProtF_Low2, ProtF_High2) ... (ProtF_LowN, ProtF_HighN)} for ProtF_x from ProtF_Set and ProtF_LowN <= ProtF_HighN*
 
 Name is used for easier recognition of flows.
 
