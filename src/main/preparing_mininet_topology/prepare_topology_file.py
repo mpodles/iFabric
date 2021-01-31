@@ -9,18 +9,14 @@ import os
 def choose_topology(structure):
     return SpineLeaf
 
+def join_topologies(topology1, topology2, node1, node2, node_1_int, node_2_int):
+    new_topology = topology1 + topology2  #TODO: define topologies addition
+    new_topology.links[node1]["switchports"].append({"port": node_1_int, "connected_switch": node2, "connected_port": node_2_int })
+    new_topology.links[node2]["switchports"].append({"port": node_2_int, "connected_switch":  node1, "connected_port": node_1_int })
+                
+
 class Topology():
-    pass
-    #TODO: Make general Topology interface or use the mininet Topo
-
-class SpineLeaf():
-    #TODO: Decouple hosts from topology and generate them however You wish
-
     def __init__(self, configuration, topology_target_path):
-        spines_count = configuration["spines"]
-        leaves_count = configuration["leaves"]
-        ports_per_leaf = configuration["ports_per_leaf"]
-        avg_group_size =configuration ["avg_group_size"]
         self.topology_target_path = topology_target_path
         self.topology = {}
         self.links = {}
@@ -29,6 +25,21 @@ class SpineLeaf():
         self.node_links = {}
         self.groups = {}
         self.switches = {}
+
+    def __add__(self, topology1):
+        pass
+
+    #TODO: Make general Topology interface or use the mininet Topo
+
+class SpineLeaf(Topology):
+    #TODO: Decouple hosts from topology and generate them however You wish
+
+    def __init__(self, configuration, topology_target_path):
+        Topology.__init__(self, configuration, topology_target_path)
+        spines_count = configuration["spines"]
+        leaves_count = configuration["leaves"]
+        ports_per_leaf = configuration["ports_per_leaf"]
+        avg_group_size =configuration ["avg_group_size"]
         self.spines = []
         self.leaves = []
         self.ip_addressing = configuration["ip_addressing"]

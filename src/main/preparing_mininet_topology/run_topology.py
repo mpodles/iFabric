@@ -194,32 +194,32 @@ class ExerciseRunner:
         self.switch_json = switch_json
         self.bmv2_exe = bmv2_exe
 
-    def parse_links(self, unparsed_links): #TODO: make topology file links already parsed
-        """ Given a list of links descriptions of the form [node1, node2, latency, bandwidth]
-            with the latency and bandwidth being optional, parses these descriptions
-            into dictionaries and store them as self.links
-        """
-        links = []
-        for link in unparsed_links:
-            # make sure each link's endpoints are ordered alphabetically
-            s, t, = link[0], link[1]
-            if s > t:
-                s,t = t,s
+    # def parse_links(self, unparsed_links): #TODO: make topology file links already parsed
+    #     """ Given a list of links descriptions of the form [node1, node2, latency, bandwidth]
+    #         with the latency and bandwidth being optional, parses these descriptions
+    #         into dictionaries and store them as self.links
+    #     """
+    #     links = []
+    #     for link in unparsed_links:
+    #         # make sure each link's endpoints are ordered alphabetically
+    #         s, t, = link[0], link[1]
+    #         if s > t:
+    #             s,t = t,s
 
-            link_dict = {'node1':s,
-                        'node2':t,
-                        'latency':'0ms',
-                        'bandwidth':None
-                        }
-            if len(link) > 2:
-                link_dict['latency'] = self.format_latency(link[2])
-            if len(link) > 3:
-                link_dict['bandwidth'] = link[3]
+    #         link_dict = {'node1':s,
+    #                     'node2':t,
+    #                     'latency':'0ms',
+    #                     'bandwidth':None
+    #                     }
+    #         if len(link) > 2:
+    #             link_dict['latency'] = self.format_latency(link[2])
+    #         if len(link) > 3:
+    #             link_dict['bandwidth'] = link[3]
 
-            if link_dict['node1'][0] == 'h':
-                assert link_dict['node2'][0] == 's', 'Hosts should be connected to switches, not ' + str(link_dict['node2'])
-            links.append(link_dict)
-        return links
+    #         if link_dict['node1'][0] == 'h':
+    #             assert link_dict['node2'][0] == 's', 'Hosts should be connected to switches, not ' + str(link_dict['node2'])
+    #         links.append(link_dict)
+    #     return links
 
 
     def run_exercise(self):
@@ -304,22 +304,22 @@ class ExerciseRunner:
         return switch_dictionary
 
 
-    def program_switch_cli(self, sw_name, sw_dict):
-        """ This method will start up the CLI and use the contents of the
-            command files as input.
-        """
-        cli = 'simple_switch_CLI'
-        # get the port for this particular switch's thrift server
-        sw_obj = self.net.get(sw_name)
-        thrift_port = sw_obj.thrift_port
+    # def program_switch_cli(self, sw_name, sw_dict):
+    #     """ This method will start up the CLI and use the contents of the
+    #         command files as input.
+    #     """
+    #     cli = 'simple_switch_CLI'
+    #     # get the port for this particular switch's thrift server
+    #     sw_obj = self.net.get(sw_name)
+    #     thrift_port = sw_obj.thrift_port
 
-        cli_input_commands = sw_dict['cli_input']
-        self.logger('Configuring switch %s with file %s' % (sw_name, cli_input_commands))
-        with open(cli_input_commands, 'r') as fin:
-            cli_outfile = '%s/%s_cli_output.log'%(self.log_dir, sw_name)
-            with open(cli_outfile, 'w') as fout:
-                subprocess.Popen([cli, '--thrift-port', str(thrift_port)],
-                                 stdin=fin, stdout=fout)
+    #     cli_input_commands = sw_dict['cli_input']
+    #     self.logger('Configuring switch %s with file %s' % (sw_name, cli_input_commands))
+    #     with open(cli_input_commands, 'r') as fin:
+    #         cli_outfile = '%s/%s_cli_output.log'%(self.log_dir, sw_name)
+    #         with open(cli_outfile, 'w') as fout:
+    #             subprocess.Popen([cli, '--thrift-port', str(thrift_port)],
+    #                              stdin=fin, stdout=fout)
 
     # def program_switches(self):
     #     """ This method will program each switch using the BMv2 CLI and/or
@@ -376,21 +376,21 @@ class ExerciseRunner:
         CLI(self.net)
 
 
-def get_args():
-    cwd = os.getcwd()
-    default_logs = os.path.join(cwd, 'logs')
-    default_pcaps = os.path.join(cwd, 'pcaps')
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-q', '--quiet', help='Suppress log messages.',
-                        action='store_true', required=False, default=False)
-    parser.add_argument('-t', '--topo', help='Path to topology json',
-                        type=str, required=False, default='./topology.json')
-    parser.add_argument('-l', '--log-dir', type=str, required=False, default=default_logs)
-    parser.add_argument('-p', '--pcap-dir', type=str, required=False, default=default_pcaps)
-    parser.add_argument('-j', '--switch_json', type=str, required=False)
-    parser.add_argument('-b', '--behavioral-exe', help='Path to behavioral executable',
-                                type=str, required=False, default='simple_switch')
-    return parser.parse_args()
+# def get_args():
+#     cwd = os.getcwd()
+#     default_logs = os.path.join(cwd, 'logs')
+#     default_pcaps = os.path.join(cwd, 'pcaps')
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('-q', '--quiet', help='Suppress log messages.',
+#                         action='store_true', required=False, default=False)
+#     parser.add_argument('-t', '--topo', help='Path to topology json',
+#                         type=str, required=False, default='./topology.json')
+#     parser.add_argument('-l', '--log-dir', type=str, required=False, default=default_logs)
+#     parser.add_argument('-p', '--pcap-dir', type=str, required=False, default=default_pcaps)
+#     parser.add_argument('-j', '--switch_json', type=str, required=False)
+#     parser.add_argument('-b', '--behavioral-exe', help='Path to behavioral executable',
+#                                 type=str, required=False, default='simple_switch')
+#     return parser.parse_args()
 
 
 
