@@ -95,7 +95,7 @@ class  DestinationPortsRules(ForwardingRules):
                 try:
                     _ = data["interfaces"][node1]
                     node2_int = data["interfaces"][node2]
-                    self.replicas_for_each_switch_for_each_flow[flow_name][node2] = {"egress_port" : node2_int, "instance" : node2_int }   
+                    self.replicas_for_each_switch_for_each_flow[flow_name][node2] = {"egress_port" : node2_int, "instance" : node2_int}   
                 except:
                     pass
   
