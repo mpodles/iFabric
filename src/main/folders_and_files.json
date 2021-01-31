@@ -5,12 +5,17 @@
     "simulator_folder": "preparing_mininet_topology",
     "protocols_folder": "protocols",
     "p4template" : "fabric_tunnel_template.jinja2",
-    "p4target" : "fabric_tunnel.p4",
+    "p4_file_name" : "fabric_tunnel.p4",
+    "compiled_p4_file_name": "fabric_tunnel.json",
+    "p4runtime_file_name": "fabric_tunnel.p4.p4info.txt",
     "logs_folder" : "logs",
     "build_folder": "build",
     "pcaps_folder": "pcap",
     "topology_description_file": "topology_description.json",
     "topology_file": "topology.json",
-    "BMV2_SWITCH_EXE": "simple_switch_grpc"
-
-}   
+    "BMV2_SWITCH_EXE": "simple_switch_grpc",
+    "flows_file" : "flows.json",
+    "policy_file": "policy.json",
+    "flows_ids_file": "flows_ids.json",
+    "switches_connections_file" : "switches_vars.json"
+} 

@@ -18,34 +18,44 @@ class TableEntry():
 
 
 class P4Constructor():
-    def __init__(self):
-        self.project_directory = "/home/mpodles/iFabric/src/main"
+    def __init__(self, **files):
+        topology_file_path = files["topology_file_path"]
+        protocols_folder_path = files["protocols_folder_path"] 
+        configuration_folder_path = files["configuration_folder_path"] 
+        flows_file_path = files["flows_file_path"] 
+        template_file_path = files["template_file_path"] 
+        p4_target_file_path = files["p4_target_file_path"]
+        compiled_p4_target_file_path = files["compiled_p4_file_path"] 
+        runtimes_files_path = files["runtimes_files_path"] 
+        flows_ids_file_path = files["flows_ids_file_path"]
+        p4runtime_target_file_path = files["p4runtime_target_file_path"]
+
         self.multicast_begin_state = "empty" # "random"
         self.tables = ["Flow_classifier"]
         self.match_fields_of_table = {"Flow_classifier": set(["standard_metadata.ingress_port"])}
         self.tables_action = {"MyIngress.Flow_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
         self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyEgress.strip_header": [] }
 
-        self.read_topology()
+        self.read_topology(topology_file_path)
         #self.parse_topology()
-        self.read_protocols_implemented_and_required()
-        self.read_flows()
+        self.read_protocols_implemented_and_required(protocols_folder_path, configuration_folder_path)
+        self.read_flows(flows_file_path)
         self.parse_flows()
         self.prepare_nodes_flows()
         self.generate_ids_for_flows()
-        self.construct_p4_program()
-        self.construct_runtimes()
-        self.write_flow_ids_to_file()
+        self.construct_p4_program(template_file_path, p4_target_file_path)
+        self.construct_runtimes(compiled_p4_target_file_path, p4runtime_target_file_path)
+        self.write_runtimes(runtimes_files_path)
+        self.write_flow_ids_to_file(flows_ids_file_path)
 
        
-    def read_topology(self):
-        topo_file = os.path.join(self.project_directory, 'sig-topo/topology.json')
-        with open(topo_file, 'r') as f:
+    def read_topology(self, topology_file_path):
+        with open(topology_file_path, 'r') as f:
             topo = json.load(f)
             self.switches = topo['switches']
             self.groups = topo['groups']
             #self.links = topo['links']
-            self.hosts = topo['nodes']
+            self.nodes = topo['nodes']
             self.topology = topo['links']
 
     # def parse_topology(self):
@@ -81,23 +91,21 @@ class P4Constructor():
     #         self.topology[switch2]["switchports"].append(entry2)
 
             
-    def read_protocols_implemented_and_required(self):
-        protocols_dir = os.path.join(self.project_directory, 'protocols/')
+    def read_protocols_implemented_and_required(self, protocols_folder_path, configuration_folder_path):
         self.implemented_protocols = {}
-        for filename in os.listdir(protocols_dir):
-            with open(protocols_dir + filename) as f:
+        for filename in os.listdir(protocols_folder_path):
+            with open(os.path.join(protocols_folder_path, filename)) as f:
                 self.implemented_protocols[filename] = f.read()
         
-        protocols_stack_file = os.path.join(self.project_directory, 'sig-topo/protocol_stack.json')
+        protocols_stack_file = os.path.join(configuration_folder_path, 'protocol_stack.json')
         with open(protocols_stack_file, "r") as f:
             protocols_stack = json.loads(f.read())
             self.protocols_stack = protocols_stack["stacks"]
             self.next_protocols_fields = protocols_stack["next_prot_fields"]
         
 
-    def read_flows(self):
-        flows_file = os.path.join(self.project_directory, 'sig-topo/flows.json')
-        with open(flows_file, 'r') as f:
+    def read_flows(self, flows_file_path):
+        with open(flows_file_path, 'r') as f:
             self.flows = json.load(f)
 
     def parse_flows(self):
@@ -189,30 +197,29 @@ class P4Constructor():
                     self.flows[host+ "_flow"] = {"standard_metadata.ingress_port": [{"low": port, "high": port}]}
 
     def generate_ids_for_flows(self):
-        self.flow_ids = {}
+        self.flows_ids = {}
         id = 0
         for flow in self.flows:
             id+=1
-            self.flow_ids[flow] = id
+            self.flows_ids[flow] = id
         
-    def construct_p4_program(self):
-        template_directory = os.path.join(self.project_directory, 'sig-topo/')
-        file_loader = jinja2.FileSystemLoader(template_directory)
+    def construct_p4_program(self, template_file_path, p4_target_file_path):
+        file_loader = jinja2.FileSystemLoader(os.path.dirname(template_file_path))
         env = jinja2.Environment(loader=file_loader)
 
-        template=env.get_template("fabric_tunnel_template_one_table.jinja2")
+        template=env.get_template(os.path.basename(template_file_path))
         output = template.render(match_fields_of_table=self.match_fields_of_table,\
                 protocols=self.implemented_protocols, next_protocols_fields = self.next_protocols_fields)
 
-        with open(os.path.join(self.project_directory, 'build/fabric_tunnel.p4'),'w+')  as f:
+        with open(p4_target_file_path,'w+')  as f:
              f.write(output)
         
-    def construct_runtimes(self):
+    def construct_runtimes(self, compiled_p4_target_file_path, p4runtime_target_file_path):
+        self.runtimes = {}
         for sw in self.switches:
-            self.construct_runtime_for_switch(sw)
+            self.runtimes[sw] = self.construct_runtime_for_switch(sw, compiled_p4_target_file_path, p4runtime_target_file_path)
     
-
-    def construct_runtime_for_switch(self, sw):
+    def construct_runtime_for_switch(self, sw, compiled_p4_target_file_path, p4runtime_target_file_path):
         tables_entries = self.generate_tables_entries_for_switch(sw)
 
         multicast_group_entries = self.generate_multicast_groups_entries(sw)
@@ -221,23 +228,22 @@ class P4Constructor():
 
         result_dictionary = {
             "target": "bmv2",
-            "p4info": "build/fabric_tunnel.p4.p4info.txt",
-            "bmv2_json": "build/fabric_tunnel.json",
+            "p4info": p4runtime_target_file_path,
+            "bmv2_json": compiled_p4_target_file_path,
             "table_entries": tables_entries,
             "multicast_group_entries" : multicast_group_entries
         }
 
-        result_string = json.dumps(result_dictionary, encoding='UTF-8')
+        return json.dumps(result_dictionary, encoding='UTF-8') #UTF-8 probably not required
 
-        with open(os.path.join(self.project_directory, 'build/' + sw + "-runtime.json"), "w") as f:
-            f.write(result_string)
-            
     def generate_tables_entries_for_switch(self, sw):
         switch_tables_entries = []
         for (flow_name, priority) in self.flows_by_priority_with_priority:
                 switch_tables_entries += self.generate_table_entries_for_flow_for_switch(sw, flow_name, priority)
+        priority = 0
         for flow_name in self.switches_node_flows[sw]:
-                switch_tables_entries += self.generate_table_entries_for_flow_for_switch(sw, flow_name, 1)
+                priority+=1
+                switch_tables_entries += self.generate_table_entries_for_flow_for_switch(sw, flow_name, priority)
         switch_tables_entries += self.generate_egress_table_entries(sw)
         return switch_tables_entries
 
@@ -305,13 +311,13 @@ class P4Constructor():
         filled_parameters = {}
         for parameter in action_parameters:
             if parameter == "flow_id":
-                filled_parameters[parameter] = self.flow_ids[table_entry.flow]
+                filled_parameters[parameter] = self.flows_ids[table_entry.flow]
             elif parameter == "priority": 
                 filled_parameters[parameter] = table_entry.priority
             elif parameter == "node_id":
-                filled_parameters[parameter] = self.flow_ids[table_entry.flow]
+                filled_parameters[parameter] = self.flows_ids[table_entry.flow]
             elif parameter == "group_id":
-                filled_parameters[parameter] = self.flow_ids[table_entry.flow] + 100
+                filled_parameters[parameter] = self.flows_ids[table_entry.flow] + 100
 
         table_entry.action_parameters = filled_parameters
         return table_entry
@@ -336,10 +342,9 @@ class P4Constructor():
         except ValueError:
             return False
 
-
     def generate_multicast_groups_entries(self, sw):
         multicast_group_entries = []
-        for flow_id in self.flow_ids.values():
+        for flow_id in self.flows_ids.values():
             if self.multicast_begin_state == "empty":
                 replicas = self.generate_replicas_empty()
             elif self.multicast_begin_state == "random":
@@ -351,7 +356,6 @@ class P4Constructor():
     def generate_replicas_empty(self):
         replicas = []
         return replicas
-
 
     def generate_replicas_random_rules(self, sw):
         used_ports = self.get_used_switch_ports(sw)
@@ -383,13 +387,17 @@ class P4Constructor():
             ports.append(entry["port"])
         return ports
 
+    def write_runtimes(self, runtimes_files_path):
+        for sw, runtime in self.runtimes.items():
+            with open(os.path.join(runtimes_files_path, sw + "-runtime.json"), "w") as f:
+                f.write(runtime)
 
-    def write_flow_ids_to_file(self):
-        with open(os.path.join(self.project_directory, 'build/flow_ids.json'), "w") as f:
-            f.write(json.dumps(self.flow_ids))
+    def write_flow_ids_to_file(self, flows_ids_file_path):
+        with open(flows_ids_file_path, "w") as f:
+            f.write(json.dumps(self.flows_ids))
 
 
-if __name__ == '__main__':
-    constructor = P4Constructor()
-    print "P4 constructed"
+# if __name__ == '__main__':
+#     constructor = P4Constructor()
+#     print "P4 constructed"
  

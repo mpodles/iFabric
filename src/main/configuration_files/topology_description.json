@@ -1,8 +1,9 @@
 {
-    "spines" : 2, 
-    "leaves" : 4, 
-    "ports_per_leaf" : 8,
-    "avg_group_size" : 4,
+    "type": "SpineLeaf",
+    "spines" : 1, 
+    "leaves" : 2, 
+    "ports_per_leaf" : 4,
+    "avg_group_size" : 2,
     "overlap_groups": 1,
     "ip_addressing" : "random",
     "mac_addressing": "random"

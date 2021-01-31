@@ -20,6 +20,7 @@ import timeit
 import os
 import sys
 from time import sleep
+import forwarding_rules_generator as forw_rules
 
 import bmv2
 import helper
@@ -36,114 +37,113 @@ class ConfException(Exception):
     pass
 
 
-# def main():
-#     parser = argparse.ArgumentParser(description='P4Runtime Simple Controller')
+# class SwitchState():
+#     def __init__(self, sw, used_ports):
+#         self.sw = sw
+#         self.ports = used_ports
+   
 
-#     parser.add_argument('-a', '--p4runtime-server-addr',
-#                         help='address and port of the switch\'s P4Runtime server (e.g. 192.168.0.1:50051)',
-#                         type=str, action="store", required=True)
-#     parser.add_argument('-d', '--device-id',
-#                         help='Internal device ID to use in P4Runtime messages',
-#                         type=int, action="store", required=True)
-#     parser.add_argument('-p', '--proto-dump-file',
-#                         help='path to file where to dump protobuf messages sent to the switch',
-#                         type=str, action="store", required=True)
-#     parser.add_argument("-c", '--runtime-conf-file',
-#                         help="path to input runtime configuration file (JSON)",
-#                         type=str, action="store", required=True)
-
-#     args = parser.parse_args()
-
-#     if not os.path.exists(args.runtime_conf_file):
-#         parser.error("File %s does not exist!" % args.runtime_conf_file)
-#     workdir = os.path.dirname(os.path.abspath(args.runtime_conf_file))
-#     with open(args.runtime_conf_file, 'r') as sw_conf_file:
-#         program_switch(addr=args.p4runtime_server_addr,
-#                        device_id=args.device_id,
-#                        sw_conf_file=sw_conf_file,
-#                        workdir=workdir,
-#                        proto_dump_fpath=args.proto_dump_file)
+# class FlowState():
+#     def __init__(self, flow):
+#         self.flow = flow
 
 class Controller():
-    def __init__(self):
-        self.project_directory = "/home/mpodles/iFabric/src/main/"
+    def __init__(self, **files):
+        topology_file_path = files["topology_file_path"]
+        policy_file_path = files["policy_file_path"]
+        runtimes_files_path = files["runtimes_files_path"] 
+        flows_ids_file_path = files["flows_ids_file_path"]
+        switches_mininet_connections_file_path = files["switches_connections_file_path"]
+        logs_path = files["logs_path"]
         self.connections = {}
-        self.read_topology()
-        self.read_flow_ids()
-        self.read_policy()
-  
+        self.switches = {}
+        self.groups = {}
+        self.switches_mininet_connections = {}
+        self.flows_ids = {}
+        self.policy = {}
+        self.links = {}
+        self.node_links = {}
+        self.ports_used_on_switch = {}
+
+        self.state_by_timestamp = {}
+        
+        self.read_topology(topology_file_path)
+        self.read_switches_connections(switches_mininet_connections_file_path)
+        self.read_flows_ids(flows_ids_file_path)
+        self.read_policy(policy_file_path)
+        self.generate_used_switch_ports()
+
+        self.forwarding_rules_generator = forw_rules.DestinationPortsRules(self.links, self.node_links, self.flows_ids, self.policy)
+        self.program_switches(runtimes_files_path, logs_path)
+        self.writeForwardingRules()
+        
     
-    def read_topology(self):
-        topo_file = self.project_directory + "sig-topo/topology.json"
-        with open(topo_file, 'r') as f:
+    def read_topology(self, topology_file_path):
+        with open(topology_file_path, 'r') as f:
             topo = json.load(f)
+            self.links = topo['links']
             self.switches = topo['switches']
             self.groups = topo['groups']
+            self.node_links = topo['node_links']
 
-        conf_file = self.project_directory + "build/switches_vars.json"
-        with open(conf_file, 'r') as f:
-            self.switches_config =  json.load(f)
+    def read_switches_connections(self, switches_mininet_connections_file_path):
+        with open(switches_mininet_connections_file_path, 'r') as f:
+            self.switches_mininet_connections = json.load(f)
 
-    def read_flow_ids(self):
-        flows_file = self.project_directory + "build/flow_ids.json"
-        with open(flows_file, 'r') as f:
-            self.flows = json.load(f)
+    def read_flows_ids(self, flows_ids_file_path):
+        with open(flows_ids_file_path, 'r') as f:
+            self.flows_ids = json.load(f)
 
-    def read_policy(self):
-        policy_file = self.project_directory + "sig-topo/policy.json"
-        with open(policy_file, 'r') as f:
+    def read_policy(self, policy_file_path):
+        with open(policy_file_path, 'r') as f:
             self.policy = json.load(f)
 
-    def program_switch_p4runtime(self, sw_name, sw_dict):
-        """ This method will use P4Runtime to program the switch using the
-            content of the runtime JSON file as input.
-        """
-        sw_conf = self.switches_config[sw_name]
-        grpc_port = sw_conf["grpc_port"]
-        device_id = sw_conf["device_id"]
-        runtime_json = sw_dict['runtime_json']
-        # self.logger('Configuring switch %s using P4Runtime with file %s' % (sw_name, runtime_json))
-        with open(self.project_directory  + runtime_json, 'r') as sw_conf_file:
-            outfile = self.project_directory + '/%s/%s-p4runtime-requests.txt' %("logs", sw_name)
-            self.program_switch(
-                sw_name = sw_name,
-                addr='127.0.0.1:%d' % grpc_port,
-                device_id=device_id,
-                sw_conf_file=sw_conf_file,
-                workdir=self.project_directory,
-                proto_dump_fpath=outfile)
+    def generate_used_switch_ports(self):
+        for sw in self.switches.keys():
+            switchports, endports =  self.get_used_switch_to_switch_ports(sw), self.get_used_switch_to_host_ports(sw)
+            ports = switchports + endports
+            self.ports_used_on_switch[sw] = ports
 
-    def program_switches(self):
+    def get_used_switch_to_switch_ports(self,sw):
+        switchports =  self.links[sw]["switchports"]
+        ports = []
+        for entry in switchports:
+            ports.append(entry["port"])
+        return ports
+
+    def get_used_switch_to_host_ports(self,sw):
+        endports =  self.links[sw]["endports"]
+        ports = []
+        for entry in endports:
+            ports.append(entry["port"])
+        return ports
+
+    def program_switches(self, runtimes_files_path, logs_path):
         """ This method will program each switch using the BMv2 CLI and/or
             P4Runtime, depending if any command or runtime JSON files were
             provided for the switches.
         """
         for sw_name, sw_dict in self.switches.iteritems():
-                self.program_switch_p4runtime(sw_name, sw_dict)
+                self.program_switch_p4runtime(sw_name, sw_dict, runtimes_files_path, logs_path)
 
-    def check_switch_conf(self, sw_conf, workdir):
-        required_keys = ["p4info"]
-        files_to_check = ["p4info"]
-        target_choices = ["bmv2"]
-
-        if "target" not in sw_conf:
-            raise ConfException("missing key 'target'")
-        target = sw_conf['target']
-        if target not in target_choices:
-            raise ConfException("unknown target '%s'" % target)
-
-        if target == 'bmv2':
-            required_keys.append("bmv2_json")
-            files_to_check.append("bmv2_json")
-
-        for conf_key in required_keys:
-            if conf_key not in sw_conf or len(sw_conf[conf_key]) == 0:
-                raise ConfException("missing key '%s' or empty value" % conf_key)
-
-        for conf_key in files_to_check:
-            real_path = os.path.join(workdir, sw_conf[conf_key])
-            if not os.path.exists(real_path):
-                raise ConfException("file does not exist %s" % real_path)
+    def program_switch_p4runtime(self, sw_name, sw_dict, runtimes_files_path, logs_path):
+        """ This method will use P4Runtime to program the switch using the
+            content of the runtime JSON file as input.
+        """
+        sw_mn_conn = self.switches_mininet_connections[sw_name]
+        grpc_port = sw_mn_conn["grpc_port"]
+        device_id = sw_mn_conn["device_id"]
+        runtime_json = sw_dict['runtime_json']
+        # self.logger('Configuring switch %s using P4Runtime with file %s' % (sw_name, runtime_json))
+        with open(os.path.join(runtimes_files_path, runtime_json), 'r') as sw_conf_file:
+            outfile = os.path.join(logs_path, sw_name + '-p4runtime-requests.txt')
+            self.program_switch(
+                sw_name = sw_name,
+                addr='127.0.0.1:%d' % grpc_port,
+                device_id=device_id,
+                sw_conf_file=sw_conf_file,
+                workdir=runtimes_files_path,
+                proto_dump_fpath=outfile)
 
 
     def program_switch(self, sw_name, addr, device_id, sw_conf_file, workdir, proto_dump_fpath):
@@ -200,6 +200,31 @@ class Controller():
                 info(self.cloneEntryToString(entry))
                 self.insertCloneGroupEntry(sw, entry)
         #     sw.shutdown()
+    
+
+    def check_switch_conf(self, sw_conf, workdir):
+        required_keys = ["p4info"]
+        files_to_check = ["p4info"]
+        target_choices = ["bmv2"]
+
+        if "target" not in sw_conf:
+            raise ConfException("missing key 'target'")
+        target = sw_conf['target']
+        if target not in target_choices:
+            raise ConfException("unknown target '%s'" % target)
+
+        if target == 'bmv2':
+            required_keys.append("bmv2_json")
+            files_to_check.append("bmv2_json")
+
+        for conf_key in required_keys:
+            if conf_key not in sw_conf or len(sw_conf[conf_key]) == 0:
+                raise ConfException("missing key '%s' or empty value" % conf_key)
+
+        for conf_key in files_to_check:
+            real_path = sw_conf[conf_key]
+            if not os.path.exists(real_path):
+                raise ConfException("file does not exist %s" % real_path)
 
 
     def insertTableEntry(self, sw, flow):
@@ -309,18 +334,51 @@ class Controller():
                                                         rule.get('packet_length_bytes', 0))
         sw.WritePREEntry(clone_entry)
 
-    def getWholeState(self):
-        for sw in self.connections:
-            for flow in self.flows:
-                self.getFlowStateFromSwitch(sw, flow)
+    def start_state_gathering(self):
+        start = timeit.default_timer()
+        while True:  #TODO: figure out better delay between states and gather states quicker
+            sleep(1)
+            fabric_state = self.get_fabric_state()
+            end = timeit.default_timer()
+            timestamp = end - start
+            print timestamp
+            print fabric_state
+            self.state_by_timestamp[timestamp] = fabric_state
 
-    def getFlowStateFromSwitch(self, sw, flow):
-        for port in range (1,49):
-            self.printCounter(sw, "MyIngress.ingress_byte_cnt", flow, port)
-            self.printCounter(sw, "MyEgress.egress_byte_cnt", flow, port)
+    def get_fabric_state(self):
+        state = {}
+        for sw_name, sw_connection in self.connections.items():
+            state[sw_name] = {}
+            used_ports = self.ports_used_on_switch[sw_name]
+            for flow_name, flow_id in self.flows_ids.items():
+                state[sw_name][flow_name] = self.get_flow_state_from_switch(sw_connection, used_ports, flow_id)
+        return state
+                
 
+    def get_flow_state_from_switch(self, sw_conn, used_ports, flow_name):
+        port_bytes = {}
+        for port in used_ports:
+            port_bytes[port] = {
+                "ingress": self.get_ingress_port_bytes(sw_conn, flow_name, port) , 
+                "egress": self.get_egress_port_bytes(sw_conn, flow_name, port)
+                }
+        return port_bytes
 
-    def printCounter(self, sw, counter_name, flow, port):
+    def get_ingress_port_bytes(self, sw_conn, flow_id, port):
+        index = port + (flow_id-1)*48
+        for response in sw_conn.ReadCounters(self.p4info_helper.get_counters_id("MyIngress.ingress_byte_cnt"), int(index)):
+            for entity in response.entities:
+                counter = entity.counter_entry
+                return counter.data.byte_count
+
+    def get_egress_port_bytes(self, sw_conn, flow_id, port):
+        index = port + (flow_id-1)*48
+        for response in sw_conn.ReadCounters(self.p4info_helper.get_counters_id("MyEgress.egress_byte_cnt"), int(index)):
+            for entity in response.entities:
+                counter = entity.counter_entry
+                return counter.data.byte_count
+    
+    def printCounter(self, sw, counter_name, flow_name, port):
         """
         Reads the specified counter at the specified index from the switch. In our
         program, the index is the tunnel ID. If the index is 0, it will return all
@@ -332,7 +390,7 @@ class Controller():
         :param index: the counter index (in our case, the tunnel ID)
         """
         sw = self.connections[sw]
-        flow_name, flow_id = flow, self.flows[flow]
+        flow_id = self.flows_ids[flow_name]
         index = port + (flow_id-1)*48
         for response in sw.ReadCounters(self.p4info_helper.get_counters_id(counter_name), int(index)):
             for entity in response.entities:
@@ -354,8 +412,6 @@ class Controller():
         for response in sw.ReadTableEntries():
             for entity in response.entities:
                 entry = entity.table_entry
-                # TODO For extra credit, you can use the p4info_helper to translate
-                #      the IDs in the entry to names
                 table_name = self.p4info_helper.get_tables_name(entry.table_id)
                 print '%s: ' % table_name,
                 for m in entry.match:
@@ -369,117 +425,13 @@ class Controller():
                     print '%r' % p.value,
                 print
 
-    def writeForwardingRules(self,sw):
-        flow = "flow1"
-        rule = self.getTestRules(sw, flow)
-        self.modifyMulticastGroupEntry(controller.connections[sw], rule)
-
-    def getTestRules(self, sw, flow):
-        flow_id = self.flows[flow]
-        if sw == "s1":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 2,
-            "instance" : 2
-          },
-          {
-            "egress_port" : 4,
-            "instance" : 4
-          }
-        ]
-      }
-        elif sw == "s2":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 48,
-            "instance" : 48
-          },
-          {
-            "egress_port" : 4,
-            "instance" : 4
-          }
-        ]
-      }
-        elif sw == "s3":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 48,
-            "instance" : 48
-          }
-        ]
-      }
-        elif sw == "s4":
-            rule = {
-        "multicast_group_id" : flow_id,
-        "replicas" : [
-          {
-            "egress_port" : 48,
-            "instance" : 48
-          }
-        ]
-      }
-        return rule
+    def writeForwardingRules(self):
+        rules_per_switch = self.forwarding_rules_generator.get_multicast_rules()
+        for sw, rules in rules_per_switch.items():
+            for rule in rules: #TODO: figure out rules bulk pushing to switches
+                self.modifyMulticastGroupEntry(self.connections[sw], rule)
 
 
-if __name__ == '__main__':
-    # main()
-    controller = Controller()
-    controller.program_switches()
-    # start = timeit.timeit()
-    # controller.getAllCounters()
-    # end = timeit.timeit()
-    # print(end - start)
-
-    print "Switches programmed"
-    for i in range (1,5):
-        sw = "s" + str(i)
-        # controller.readTableRules(controller.connections[sw])
-        controller.writeForwardingRules(sw)
-
-
-    while True:
-        sleep(4)
-        controller.printCounter('s1', "MyIngress.ingress_byte_cnt", 'flow1', 48)
-    # print 
-    # print "all rules read"
-    # start = timeit.timeit()
-    # flow = {
-    #     "table": "MyIngress.myTunnel_operate",
-    #     "match": {
-    #       "hdr.myTunnel.flow_id": 1
-    #     },
-    #     "action_name": "MyIngress.assign_multicast",
-    #     "action_params": {
-    #       "multicast_group": 2
-    #     }
-    #   }
-    # controller.modifyTableEntry(controller.connections["s1"], flow)
-    # end = timeit.timeit()
-    # print(end - start)
-    # controller.readTableRules(controller.connections["s1"])
-    # print controller.flows
-    # print controller.policy
-    # print controller.groups
-    # rule = {
-    #     "multicast_group_id" : 1,
-    #     "replicas" : [
-    #       {
-    #         "egress_port" : 3,
-    #         "instance" : 1
-    #       },
-    #       {
-    #         "egress_port" : 4,
-    #         "instance" : 1
-    #       }
-    #     ]
-    #   }
-    # controller.modifyMulticastGroupEntry(controller.connections["s1"], rule)
 
 
     
