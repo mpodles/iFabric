@@ -33,8 +33,8 @@ class GroupsPolicyGenerator(PolicyGenerator):
     def __init__(self, **files):
         PolicyGenerator.__init__(self, **files)
         self.policy = []
-        self.prepare_policy_for_every_destination_port()
-        self.write_policy(self.policy_file_target_path)
+        # self.prepare_policy_for_every_destination_port()
+        # self.write_policy(self.policy_file_target_path)
 
 
 
