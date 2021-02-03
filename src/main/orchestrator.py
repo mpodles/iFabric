@@ -8,6 +8,7 @@ import preparing_mininet_topology.prepare_topology_file as p_topo
 import preparing_mininet_topology.configure_sample_flows as f_gen
 import preparing_mininet_topology.generate_sample_policy as p_gen
 import control_plane.simple_controller as contr
+import Network.TopologyGenerator as topo_gen
 from time import sleep
 import threading
 
@@ -43,6 +44,7 @@ switches_connections_file = structure["switches_connections_file"]
 
 
 topology_file_path = os.path.join(main_project_directory, build_folder, topology_file)
+topology_configuration_path = os.path.join(main_project_directory, configuration_folder, topology_description_file)
 logs_path = os.path.join(main_project_directory, logs_folder)
 p4_target_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
 p4runtime_target_file_path = os.path.join(main_project_directory, build_folder, p4runtime_file_name)
@@ -60,11 +62,12 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    topology_configuration_path = os.path.join(main_project_directory, configuration_folder, topology_description_file)
-    topology_target_path = os.path.join(main_project_directory, build_folder, topology_file)
-    with open(topology_configuration_path, "r") as f:
-        topo_config = json.loads(f.read())
-    topology = p_topo.SpineLeaf(topo_config, topology_target_path)
+    topo_gen.initialize_topology("generate", topology_configuration_path)
+    # 
+    # topology_target_path = os.path.join(main_project_directory, build_folder, topology_file)
+    # with open(topology_configuration_path, "r") as f:
+    #     topo_config = json.loads(f.read())
+    # topology = p_topo.SpineLeaf(topo_config, topology_target_path)
     
 
 def construct_p4_program():   
@@ -138,19 +141,17 @@ def clean_setup():
     
 if __name__ == "__main__":
     args = get_args()
-    if args.clean:
+    clean_setup()
+    try:
+        prepare_folders()
+        prepare_topology()
+        # generate_flows()
+        # generate_policy()
+        # construct_p4_program()
+        # compile_p4_program()
+        # start_mininet_network()
+        # start_controller()
+    except Exception as e:
+        print "Exception: ", e
+    finally:
         clean_setup()
-    else:
-        try:
-            prepare_folders()
-            prepare_topology()
-            generate_flows()
-            generate_policy()
-            construct_p4_program()
-            compile_p4_program()
-            start_mininet_network()
-            start_controller()
-        except Exception as e:
-            print "Exception: ", e
-        finally:
-            clean_setup()

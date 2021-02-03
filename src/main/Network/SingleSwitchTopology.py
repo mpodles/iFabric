@@ -12,6 +12,7 @@ from mininet.link import TCLink
    
 class SingleSwitchTopology(Topology):
     def __init__(self):
+        super(SingleSwitchTopology, self).__init__()
         self.switch_class = BMVSwitch
         self.endpoint_class = iFabricEndPoint
 

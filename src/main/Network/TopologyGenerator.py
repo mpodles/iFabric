@@ -5,9 +5,9 @@ from SingleSwitchTopology import SingleSwitchTopology
 from MininetSwitch import MininetSwitch
 from MininetEndpoint import iFabricEndPoint
 
-def initialize_topology(source, **params):
+def initialize_topology(source, *params):
     if source == "generate":
-        generate_topology(**params)
+        generate_topology(*params)
     # elif: source == "read":
     #     read_topology()
     # elif: source == "discover":
@@ -15,15 +15,15 @@ def initialize_topology(source, **params):
         
 
 def generate_topology(topology_configuration_path):
-    topology_configuration = json.load(topology_configuration_path)
+    topology_configuration = json.loads(open(topology_configuration_path).read())
     topology_type  = topology_configuration["type"]
     if topology_type == "SingleSwitch":
         return SingleSwitchTopologyGenerator(topology_configuration).generate_topology()
     
 
-class TopologyGenerator():
+class TopologyGenerator(object):
     def __init__(self, configuration):
-        self.topology = Topology()
+        pass
        
 
     def generate_topology(self):
@@ -51,6 +51,7 @@ class TopologyGenerator():
 
 class SingleSwitchTopologyGenerator(TopologyGenerator):
     def __init__(self, configuration):
+        super(SingleSwitchTopologyGenerator, self).__init__(configuration)
         self.topology = SingleSwitchTopology()
 
         self.endpoints = configuration["endpoints"]
@@ -83,7 +84,7 @@ class SingleSwitchTopologyGenerator(TopologyGenerator):
             self.topology.mininet_topo.addNode(
                 endpoint_name, 
                 cls=self.topology.endpoint_class,
-                interfaces = {})
+                parameters = [])
 
     def generate_groups(self):
         groups_count = self.endpoints / self.avg_group_size
@@ -105,6 +106,8 @@ class SingleSwitchTopologyGenerator(TopologyGenerator):
                     bw=None,
                     port1=switch_interface,
                     port2=endpoint_interface)
+                print self.topology.mininet_topo.nodeInfo(endpoint)
+                self.topology.mininet_topo.setNodeInfo(endpoint, info = endpoint_interface)
             self.topology.switches_with_endpoints.add_edge(
                     "SingleSwitch",
                     endpoint, 

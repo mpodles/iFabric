@@ -11,7 +11,7 @@
     "logs_folder" : "logs",
     "build_folder": "build",
     "pcaps_folder": "pcap",
-    "topology_description_file": "topology_description.json",
+    "topology_description_file": "topology_description_test.json",
     "topology_file": "topology.json",
     "BMV2_SWITCH_EXE": "simple_switch_grpc",
     "flows_file" : "flows.json",

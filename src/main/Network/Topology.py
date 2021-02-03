@@ -4,7 +4,7 @@ from mininet.topo import Topo
 from mininet.net import Mininet
 from mininet.link import TCLink
    
-class Topology():
+class Topology(object):
     def __init__(self):
         self.endpoints = nx.Graph()
         self.switches = nx.Graph()
