@@ -1,6 +1,9 @@
 import json
 import networkx as nx
+from Topology import  Topology
 from SingleSwitchTopology import SingleSwitchTopology
+from MininetSwitch import MininetSwitch
+from MininetEndpoint import iFabricEndPoint
 
 def initialize_topology(source, **params):
     if source == "generate":
@@ -15,21 +18,35 @@ def generate_topology(topology_configuration_path):
     topology_configuration = json.load(topology_configuration_path)
     topology_type  = topology_configuration["type"]
     if topology_type == "SingleSwitch":
-        generated_topology = SingleSwitchTopologyGenerator(topology_configuration)
+        return SingleSwitchTopologyGenerator(topology_configuration).generate_topology()
+    
 
 class TopologyGenerator():
     def __init__(self, configuration):
-        self.generate_switches(configuration)
-        self.generate_endpoints(configuration)
-        self.generate_groups(configuration)
+        self.topology = Topology()
+       
 
-    def generate_switches(self, configuration):
+    def generate_topology(self):
+        self.generate_switches()
+        self.generate_endpoints()
+        self.generate_groups()
+        self.generate_topology_with_endpoints()
+        self.generate_topology_with_groups()
+        return self.topology
+    
+    def generate_switches(self):
         pass
     
-    def generate_endpoints(self, configuration):
+    def generate_endpoints(self):
         pass
 
-    def generate_groups(self, configuration):
+    def generate_groups(self):
+        pass
+
+    def generate_topology_with_endpoints(self):
+        pass
+
+    def generate_topology_with_groups(self):
         pass
 
 class SingleSwitchTopologyGenerator(TopologyGenerator):
@@ -37,21 +54,71 @@ class SingleSwitchTopologyGenerator(TopologyGenerator):
         self.topology = SingleSwitchTopology()
 
         self.endpoints = configuration["endpoints"]
-        self.leaves_count = configuration["leaves"]
         self.ports_per_endpoint = configuration["ports_per_endpoint"]
         self.avg_group_size =configuration ["avg_group_size"]
-        self.mac_addressing = configuration["mac_addressing"]
+        self.mac_addressing = configuration["mac_addressing"]  #is it random or something else
         self.ip_addressing = configuration["ip_addressing"]
 
-        self.generate_switches(configuration)
-        self.generate_endpoints(configuration)
-        self.generate_groups(configuration)
+    def generate_topology(self):
+        self.generate_switches()
+        self.generate_endpoints()
+        self.generate_groups()
 
-    def generate_switches(self, configuration):
+        self.generate_topology_with_endpoints()
+        #self.generate_topology_with_groups()
+
+        return self.topology
+
+    def generate_switches(self):
         self.topology.switches.add_node("SingleSwitch")
+        self.topology.mininet_topo.addSwitch(
+            "SingleSwitch", 
+            cls=self.topology.switch_class,
+            parameters = [])
     
-    def generate_endpoints(self, configuration):
-        self.topology.endpoints.add_node("SingleSwitch")
+    def generate_endpoints(self):
+        for ep_nr in range(1,self.endpoints+1):
+            endpoint_name = "EP_" + str(ep_nr)
+            self.topology.endpoints.add_node(endpoint_name)
+            self.topology.mininet_topo.addNode(
+                endpoint_name, 
+                cls=self.topology.endpoint_class,
+                interfaces = {})
 
-    def generate_groups(self, configuration):
-        self.topology.groups.add_node("SingleSwitch")
+    def generate_groups(self):
+        groups_count = self.endpoints / self.avg_group_size
+        for gr_nr in range(1, groups_count + 1):
+            endpoints = ["EP_" + str(self.avg_group_size*gr_nr - i) for i in range(self.avg_group_size)]
+            self.topology.groups.add_node("Group_" + str(gr_nr), endpoints = endpoints)
+
+    def generate_topology_with_endpoints(self):
+        switch_interface = 1
+        for endpoint in self.topology.endpoints.nodes:
+            interfaces = []
+            for endpoint_interface in range(self.ports_per_endpoint):
+                interfaces.append({"SingleSwitch": switch_interface , endpoint: endpoint_interface})
+                switch_interface += 1
+                self.topology.mininet_topo.addLink(
+                    "SingleSwitch",
+                    endpoint, 
+                    delay='0ms',
+                    bw=None,
+                    port1=switch_interface,
+                    port2=endpoint_interface)
+            self.topology.switches_with_endpoints.add_edge(
+                    "SingleSwitch",
+                    endpoint, 
+                    weight=1, 
+                    interfaces= interfaces)
+
+    def generate_topology_with_groups(self):
+        #TODO: finish this
+        switch_interface = 1
+        # for group in self.topology.groups.nodes:
+        #     for endpoint_interface in range(self.ports_per_endpoint):
+        #         self.topology.switches_with_endpoints.add_edge(
+        #             "SingleSwitch",
+        #             group, 
+        #             weight=1, 
+        #             interfaces= [{"SingleSwitch": switch_interface , endpoint: endpoint_interface}])
+    
