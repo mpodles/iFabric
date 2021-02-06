@@ -11,7 +11,7 @@ class Telemetry():
 class FlowTelemetry(Telemetry):
     def __init__(self, **params):
         super(self, Telemetry).__init__()
-        self.states = {"flow_state_for_switch":SwitchFlowsState(**params)}
+        self.states = [SwitchFlowsState(**params)]
 
 
     
