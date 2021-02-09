@@ -1,4 +1,6 @@
 import json
+import rstr
+import random
 import networkx as nx
 from Topology import  Topology
 from SingleSwitchTopology import SingleSwitchTopology
@@ -7,7 +9,7 @@ from MininetEndpoint import iFabricEndPoint
 
 def initialize_topology(source, *params):
     if source == "generate":
-        generate_topology(*params)
+        return generate_topology(*params)
     # elif: source == "read":
     #     read_topology()
     # elif: source == "discover":
@@ -23,7 +25,7 @@ def generate_topology(topology_configuration_path):
 
 class TopologyGenerator(object):
     def __init__(self, configuration):
-        pass
+        self.topology = Topology()
        
 
     def generate_topology(self):
@@ -74,17 +76,14 @@ class SingleSwitchTopologyGenerator(TopologyGenerator):
         self.topology.switches.add_node("SingleSwitch")
         self.topology.mininet_topo.addSwitch(
             "SingleSwitch", 
-            cls=self.topology.switch_class,
-            parameters = [])
+            cls=self.topology.switch_class)
     
     def generate_endpoints(self):
         for ep_nr in range(1,self.endpoints+1):
             endpoint_name = "EP_" + str(ep_nr)
             self.topology.endpoints.add_node(endpoint_name)
             self.topology.mininet_topo.addNode(
-                endpoint_name, 
-                cls=self.topology.endpoint_class,
-                parameters = [])
+                endpoint_name)
 
     def generate_groups(self):
         groups_count = self.endpoints / self.avg_group_size
@@ -95,9 +94,9 @@ class SingleSwitchTopologyGenerator(TopologyGenerator):
     def generate_topology_with_endpoints(self):
         switch_interface = 1
         for endpoint in self.topology.endpoints.nodes:
-            interfaces = []
+            info = {"cls" : self.topology.endpoint_class}
+            interfaces = {}
             for endpoint_interface in range(self.ports_per_endpoint):
-                interfaces.append({"SingleSwitch": switch_interface , endpoint: endpoint_interface})
                 switch_interface += 1
                 self.topology.mininet_topo.addLink(
                     "SingleSwitch",
@@ -106,8 +105,16 @@ class SingleSwitchTopologyGenerator(TopologyGenerator):
                     bw=None,
                     port1=switch_interface,
                     port2=endpoint_interface)
-                print self.topology.mininet_topo.nodeInfo(endpoint)
-                self.topology.mininet_topo.setNodeInfo(endpoint, info = endpoint_interface)
+                interface_name = endpoint + "-eth" + str(endpoint_interface)
+                interfaces[interface_name] = {
+                    "ip": self.generate_ip_addressing(endpoint),
+                    "mac": self.generate_mac_addressing(endpoint),
+                    "connected_to": "SingleSwitch",
+                    "connected_on": switch_interface}
+                    
+            info["interfaces"] = interfaces
+            self.topology.mininet_topo.setNodeInfo(endpoint, info = info)
+
             self.topology.switches_with_endpoints.add_edge(
                     "SingleSwitch",
                     endpoint, 
@@ -124,4 +131,21 @@ class SingleSwitchTopologyGenerator(TopologyGenerator):
         #             group, 
         #             weight=1, 
         #             interfaces= [{"SingleSwitch": switch_interface , endpoint: endpoint_interface}])
+
+    
+    def generate_ip_addressing(self, endpoint):
+        if self.ip_addressing == "random":
+            return self.generate_random_ip_addressing()
+
+    def generate_random_ip_addressing(self):
+        return str(random.randint(10, 223)) + "." + str(random.randint(0, 255))+ "." +str(random.randint(0, 255))+ "." +str(random.randint(0, 255))
+
+    def generate_mac_addressing(self, endpoint):
+        if self.ip_addressing == "random":
+            return self.generate_random_mac_addressing()
+
+    def generate_random_mac_addressing(self):
+        #TODO: verify rstr licence
+        random_mac=rstr.xeger('[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]')
+        return random_mac
     

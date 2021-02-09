@@ -14,6 +14,5 @@ class Topology(object):
         self.switch_class = None
         self.endpoint_class = None
         self.mininet_topo = Topo()
-        self.net = Mininet(topo = self.mininet_topo, link = TCLink)
 
         

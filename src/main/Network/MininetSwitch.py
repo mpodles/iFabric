@@ -18,6 +18,7 @@ class MininetSwitch(Switch):
     "BMv2 switch with gRPC support"
     next_grpc_port = 50051
     next_thrift_port = 9090
+    next_device_id = 0
 
     def __init__(self, name, sw_path = None, json_path = None,
                  grpc_port = None,
@@ -29,7 +30,7 @@ class MininetSwitch(Switch):
                  enable_debugger = False,
                  log_file = None,
                  **kwargs):
-        Switch.__init__(self, name, **kwargs)
+        Switch.__init__(self, name, dpid = MininetSwitch.next_device_id, **kwargs)
         assert (sw_path)
         self.sw_path = sw_path
         # make sure that the provided sw_path is valid
@@ -124,6 +125,10 @@ class MininetSwitch(Switch):
             error("P4 switch {} did not start correctly.\n".format(self.name))
             exit(1)
         info("P4 switch {} has been started.\n".format(self.name))
+
+    @classmethod
+    def setup(cls):
+        pass
 
 
 class BMVSwitch(MininetSwitch):

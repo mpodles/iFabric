@@ -8,6 +8,7 @@ from mininet.net import Mininet
 from mininet.node import Node
 from mininet.topo import Topo
 from mininet.link import TCLink
+from mininet.cli import CLI
 
    
 class SingleSwitchTopology(Topology):
@@ -17,7 +18,9 @@ class SingleSwitchTopology(Topology):
         self.endpoint_class = iFabricEndPoint
 
     def start_topology(self):
+        self.net = Mininet(topo = self.mininet_topo, link = TCLink)
         self.net.start()
+        CLI(self.net)
         self.program_nodes()
 
     def program_nodes(self):

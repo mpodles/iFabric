@@ -62,7 +62,8 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    topo_gen.initialize_topology("generate", topology_configuration_path)
+    topology = topo_gen.initialize_topology("generate", topology_configuration_path)
+    topology.start_topology()
     # 
     # topology_target_path = os.path.join(main_project_directory, build_folder, topology_file)
     # with open(topology_configuration_path, "r") as f:
