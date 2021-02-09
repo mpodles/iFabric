@@ -143,6 +143,7 @@ def clean_setup():
 if __name__ == "__main__":
     args = get_args()
     clean_setup()
+    print 
     try:
         prepare_folders()
         prepare_topology()
@@ -154,5 +155,6 @@ if __name__ == "__main__":
         # start_controller()
     except Exception as e:
         print "Exception: ", e
+        print 
     finally:
         clean_setup()

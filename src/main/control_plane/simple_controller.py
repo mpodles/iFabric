@@ -55,6 +55,14 @@ class Controller():
         flows_ids_file_path = files["flows_ids_file_path"]
         switches_mininet_connections_file_path = files["switches_connections_file_path"]
         logs_path = files["logs_path"]
+
+
+        # import julia 
+        # jl = julia.Julia(compiled_modules=False)
+        # from julia import Main
+        # Main.include('/home/mpodles/iFabric/src/main/control_plane/graphs_parsing.jl')
+        # Main.test(2)
+
         self.connections = {}
         self.switches = {}
         self.groups = {}
@@ -446,4 +454,6 @@ class Controller():
 
 
 
+if __name__ == '__main__':
+    pass
     

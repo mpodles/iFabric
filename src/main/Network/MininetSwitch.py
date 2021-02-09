@@ -18,9 +18,9 @@ class MininetSwitch(Switch):
     "BMv2 switch with gRPC support"
     next_grpc_port = 50051
     next_thrift_port = 9090
-    next_device_id = 0
+    next_device_id = 1
 
-    def __init__(self, name, sw_path = None, json_path = None,
+    def __init__(self, name, 
                  grpc_port = None,
                  thrift_port = None,
                  pcap_dump = False,
@@ -30,11 +30,11 @@ class MininetSwitch(Switch):
                  enable_debugger = False,
                  log_file = None,
                  **kwargs):
-        Switch.__init__(self, name, dpid = MininetSwitch.next_device_id, **kwargs)
-        assert (sw_path)
-        self.sw_path = sw_path
-        # make sure that the provided sw_path is valid
+        Switch.__init__(self, name, dpid = str(MininetSwitch.next_device_id), **kwargs)
+        MininetSwitch.next_device_id += 1
         pathCheck(sw_path)
+        self.sw_path = sw_path
+
 
         if json_path is not None:
             # make sure that the provided JSON file exists
