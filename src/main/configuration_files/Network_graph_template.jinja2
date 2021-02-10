@@ -1,0 +1,14 @@
+SECTION Graph
+Nodes {{ graph["nodes"] }}
+Edges {{ graph["links"] }}
+{% for edge, cost in graph["links_table"].items() -%}
+E {{edge[0]}} {{edge[1]}} {{cost]}}
+{% endfor %}END
+
+SECTION Terminals
+Terminals {{terminals["length"]}}
+{% for terminal in terminals["nodes"] -%}
+T {{terminal}}
+{% endfor %}END
+
+EOF
