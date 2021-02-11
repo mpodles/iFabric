@@ -1,59 +1,6 @@
-import json
-import rstr
-import random
-import networkx as nx
-from Topology import  Topology
-from SingleSwitchTopology import SingleSwitchTopology
-from MininetSwitch import MininetSwitch
-from MininetEndpoint import iFabricEndPoint
-
-def initialize_topology(source, *params):
-    if source == "generate":
-        return generate_topology(*params)
-    # elif: source == "read":
-    #     read_topology()
-    # elif: source == "discover":
-    #     discover_topology()
-        
-
-def generate_topology(topology_configuration_path):
-    topology_configuration = json.loads(open(topology_configuration_path).read())
-    topology_type  = topology_configuration["type"]
-    if topology_type == "SingleSwitch":
-        return SingleSwitchTopologyGenerator(topology_configuration).generate_topology()
-    
-
-class TopologyGenerator(object):
+class MininetTopologyGenerator(TopologyGenerator):
     def __init__(self, configuration):
-        self.topology = Topology()
-       
-
-    def generate_topology(self):
-        self.generate_switches()
-        self.generate_endpoints()
-        self.generate_groups()
-        self.generate_topology_with_endpoints()
-        self.generate_topology_with_groups()
-        return self.topology
-    
-    def generate_switches(self):
-        pass
-    
-    def generate_endpoints(self):
-        pass
-
-    def generate_groups(self):
-        pass
-
-    def generate_topology_with_endpoints(self):
-        pass
-
-    def generate_topology_with_groups(self):
-        pass
-
-class SingleSwitchTopologyGenerator(TopologyGenerator):
-    def __init__(self, configuration):
-        super(SingleSwitchTopologyGenerator, self).__init__(configuration)
+        super(MininetSwitchTopologyGenerator, self).__init__(configuration)
         self.topology = SingleSwitchTopology()
 
         self.endpoints = configuration["endpoints"]

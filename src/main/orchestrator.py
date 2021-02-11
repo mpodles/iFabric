@@ -62,8 +62,8 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
+    global topology
     topology = topo_gen.initialize_topology("generate", topology_configuration_path)
-    topology.start_topology()
     # 
     # topology_target_path = os.path.join(main_project_directory, build_folder, topology_file)
     # with open(topology_configuration_path, "r") as f:
@@ -107,15 +107,16 @@ def generate_policy():
     )
 
 def start_mininet_network():
-    global exercise
-    exercise = r_topo.ExerciseRunner(
-        topology_file_path = topology_file_path,
-        logs_folder = logs_folder,
-        pcaps_folder = pcaps_folder,
-        compiled_p4_file_path = compiled_p4_file_path,
-        bmv2_exe = bmv2_exe
-    )
-    exercise.run_exercise()
+    topology.start_topology()
+    # global exercise
+    # exercise = r_topo.ExerciseRunner(
+    #     topology_file_path = topology_file_path,
+    #     logs_folder = logs_folder,
+    #     pcaps_folder = pcaps_folder,
+    #     compiled_p4_file_path = compiled_p4_file_path,
+    #     bmv2_exe = bmv2_exe
+    # )
+    # exercise.run_exercise()
 
 def start_controller():
     print "Programming switches"
@@ -149,8 +150,8 @@ if __name__ == "__main__":
         prepare_topology()
         # generate_flows()
         # generate_policy()
-        # construct_p4_program()
-        # compile_p4_program()
+        construct_p4_program()
+        compile_p4_program()
         # start_mininet_network()
         # start_controller()
     except Exception as e:

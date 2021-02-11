@@ -32,9 +32,11 @@ class MininetSwitch(Switch):
                  **kwargs):
         Switch.__init__(self, name, dpid = str(MininetSwitch.next_device_id), **kwargs)
         MininetSwitch.next_device_id += 1
-        pathCheck(sw_path)
-        self.sw_path = sw_path
+        
+        self.sw_path = "simple_switch_grpc"
+        pathCheck(self.sw_path)
 
+        json_path = "/home/mpodles/iFabric/src/main/build/fabric_tunnel.json"
 
         if json_path is not None:
             # make sure that the provided JSON file exists
