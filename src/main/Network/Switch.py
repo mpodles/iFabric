@@ -1,2 +1,0 @@
-class Switch(object):
-    pass

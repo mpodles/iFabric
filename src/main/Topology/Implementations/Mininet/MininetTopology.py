@@ -1,4 +1,6 @@
-class MininetTopologyGenerator(TopologyGenerator):
+import /home/mpodles/iFabric/src/main/Network/Topology.py
+
+class MininetTopologyGenerator(Topology):
     def __init__(self, configuration):
         super(MininetSwitchTopologyGenerator, self).__init__(configuration)
         self.topology = SingleSwitchTopology()

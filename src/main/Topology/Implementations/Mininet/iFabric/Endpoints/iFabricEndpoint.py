@@ -1,9 +1,3 @@
-from mininet.net import Mininet
-from mininet.node import Switch, Host
-
-class MininetEndpoint(Host):
-    def config(self, **params):
-        return super(MininetEndpoint, self).config(**params)
 
 
 class iFabricEndPoint(MininetEndpoint):
@@ -16,4 +10,3 @@ class iFabricEndPoint(MininetEndpoint):
             self.setMAC(mac, intf=interface_name)
             self.setIP(ip, intf=interface_name)
         return r
-
