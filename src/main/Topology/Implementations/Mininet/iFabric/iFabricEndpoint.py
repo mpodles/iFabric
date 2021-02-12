@@ -1,4 +1,4 @@
-
+from Mininet import MininetEndpoint
 
 class iFabricEndPoint(MininetEndpoint):
     def config(self, **params):
