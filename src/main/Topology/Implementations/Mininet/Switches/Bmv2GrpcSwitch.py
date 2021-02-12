@@ -6,7 +6,6 @@ import tempfile
 from time import sleep
 import psutil
 import os
-
 from Mininet import MininetSwitch
 
 def check_listening_on_port(port):
@@ -20,7 +19,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
     next_grpc_port = 50051
 
     def __init__(self, switch):
-        MininetSwitch.__init__(switch)
+        Switch.__init__(switch)
         self.compiled_program = switch["compiled_program"]
         
         self.sw_program = "simple_switch_grpc"
