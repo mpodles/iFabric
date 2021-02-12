@@ -11,5 +11,3 @@ class iFabricSwitch(Bmv2GrpcSwitch):
     def __init__(self, switch):
         Bmv2GrpcSwitch.__init__(self, switch)
         self.compiled_program = "iFabric"
-
-       

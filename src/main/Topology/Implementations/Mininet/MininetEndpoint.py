@@ -1,9 +1,17 @@
 from mininet.net import Mininet
 from mininet.node import Host
-from.
+from Skeleton import OSNetDevice
 
-class MininetEndpoint(Device, Host):
-    def config(self, **params):
-        return super(MininetEndpoint, self).config(**params)
+class MininetHostEndpoint(Host):
+    def __init__(self,endpoint_params, endpoint_class):
+        Host.__init__(endpoint_class)
+        self.endpoint = endpoint_class(endpoint_params)
 
+class MininetEndpoint(OSNetDevice):
+    def __init__(self,endpoint_params, endpoint_class):
+        OSNetDevice.__init__(endpoint_class)
+        self.endpoint = endpoint_class(endpoint_params)
+
+    # def config(self, **params):
+    #     return super(MininetEndpoint, self).config(**params)
 

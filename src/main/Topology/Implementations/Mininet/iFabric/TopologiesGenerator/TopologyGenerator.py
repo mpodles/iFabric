@@ -1,3 +1,5 @@
+from iFabric.iFabricTopology import iFabricTopology
+
 class TopologyGenerator(iFabricTopology):
     
     def __init__(self, configuration):

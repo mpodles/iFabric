@@ -1,39 +1,38 @@
-import src/main/Topology/Skeleton/Topology.py as Topo
+import src/main/Topology/Skeleton/OSNetTopology.py 
 import endpoints.MininetEndpoint
 import switches.Bmv2GrpcSwitch
 from mininet.node import Switch
 from mininet.links import Link
-from mininet.topology import Topology as MNtopo
+from mininet.topology import Topology
 from Switches import Bmv2GrpcSwitch
 
-class MininetTopology(Topo, MNtopo):
-    def __init__(self,switches,endpoints,links, 
-            switch_class = MininetSwitch, 
-            endpoint_class= MininetEndpoint,
-            link_class = MininetLink):
+class P4Topology(Topology):
+    pass
+
+class iFabricTopology(P4Topology):
+    pass
+class MininetTopology(OSNetTopology):
+    def __init__(self,switches,endpoints,links,
+            mn_topology = Topology,
+            switch_class = Switch, 
+            endpoint_class= Host,
+            link_class = Link):
+        
         self.switches = switches
         self.endpoints = endpoints
         self.links = links
+        self.mn_topo = mn_topology
         self.generate_topo()
         self.generate_mininet_topo()
         self.switch_class = switch_class
-        self.endpoint_class = self.get_endpoint_class()
-        self.link_class = self.get_link_class()
-        Topology.__init__()
-
-    def get_switch_class(self):
-        return MininetSwitch
-
-    def get_endpoint_class(self):
-        return MininetEndpoint
-
-    def get_link_class(self):
-        return MininetLink
+        self.endpoint_class = endpoint_class
+        self.link_class = link_class
+        OSNetTopology.__init__()
 
     def generate_nodes(self):
         nodes = []
         for switch in self.switches:
-            nodes.append(self.switch_class(switch))
+            nodes.append(OSNetDevice(device = self.sw))
 
         for endpoint in self.endpoints:
             nodes.append(self.endpoint_class(endpoint))

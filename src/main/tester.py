@@ -1,11 +1,16 @@
-class obiekt(object):
-    def __init__(self,id):
-        self.id = id
+from mininet.link import Link as MNLink_Class
+from mininet.link import TCLink
+# from Topology import Link 
 
-nazwa = obiekt
+class MininetLink(MNLink_Class):
 
-firstobject = nazwa(1)
-second = nazwa(2)
+    def __init__(self,link , mn_link_class= MNLink_Class):
+        mn_link_class.__init__(mn_link_class())
 
-print firstobject.id
-print second.id
+class nextLink(MininetLink):
+    def __init__(self):
+        MininetLink.__init__(self,1,TCLink)
+
+
+nextLink()
+pass

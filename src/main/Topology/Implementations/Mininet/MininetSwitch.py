@@ -1,16 +1,9 @@
 from mininet.node import Switch
-from Topology import Device
+from Skeleton import OSNetDevice
 
-class MininetSwitch(Device,Switch):
+class MininetSwitch(OSNetDevice):
 
-    def __init__(self,switch_parameters):
-        Device.__init__(switch_parameters)
-        Switch.__init__(dpid= str(Device.ID))
-    #     self.generate_device_based_on_parameters(switch_parameters)
-    #     self.generate_mininet_switch_based_on_parameters(switch_parameters)
-
-    # def generate_device_based_on_parameters(self,switch_parameters):
-    #     pass
-
-    # def generate_mininet_switch_based_on_parameters(self,switch_parameters):
-    #     pass
+    def __init__(self,switch_class):
+        Device.__init__(switch_class)
+        self.switch = switch_class.__init__(dpid= str(Device.ID))
+    #     

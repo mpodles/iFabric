@@ -1,10 +1,10 @@
-class Device(object):
+class OSNetDevice(object):
     ID = 1
-    def __init__(self, device):
-        self.ID = Device.ID
-        Device.ID +=1
-        self.name = device["name"]
-        self.communicator = device["communicator"]
+    def __init__(self, device, communicator):
+        self.ID = OSNetDevice.ID
+        OSNetDevice.ID +=1
+        self.device = device
+        self.communicator = communicator
 
     def run(self):
         pass
