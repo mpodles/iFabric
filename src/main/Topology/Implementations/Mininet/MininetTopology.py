@@ -1,28 +1,56 @@
-import src/main/Topology/Skeleton/Topology.py
+import src/main/Topology/Skeleton/Topology.py as Topo
 import endpoints.MininetEndpoint
 import switches.Bmv2GrpcSwitch
 from mininet.node import Switch
 from mininet.links import Link
+from mininet.topology import Topology as MNtopo
 from Switches import Bmv2GrpcSwitch
 
-class MininetTopology(Topology):
-    def __init__(self,switches,endpoints,links):
+class MininetTopology(Topo, MNtopo):
+    def __init__(self,switches,endpoints,links, 
+            switch_class = MininetSwitch, 
+            endpoint_class= MininetEndpoint,
+            link_class = MininetLink):
         self.switches = switches
         self.endpoints = endpoints
         self.links = links
-        self.switch_class = Switch
-        self.link_class = Link
-        super(MininetTopology, self).__init__()
+        self.generate_topo()
+        self.generate_mininet_topo()
+        self.switch_class = switch_class
+        self.endpoint_class = self.get_endpoint_class()
+        self.link_class = self.get_link_class()
+        Topology.__init__()
+
+    def get_switch_class(self):
+        return MininetSwitch
+
+    def get_endpoint_class(self):
+        return MininetEndpoint
+
+    def get_link_class(self):
+        return MininetLink
 
     def generate_nodes(self):
+        nodes = []
         for switch in self.switches:
-            new_switch = MininetSwitch(switch)
+            nodes.append(self.switch_class(switch))
+
+        for endpoint in self.endpoints:
+            nodes.append(self.endpoint_class(endpoint))
+
+        return nodes
 
     def generate_links(self):
-
+        links = []
         for link in self.links:
+            links.append(self.link_class(link))
+        return links
 
-        return self.links
+    def generate_topo(self):
+        pass
+
+    def generate_mininet_topo(self):
+        pass
 
     # def generate_switches(self):
     #     self.topology.switches.add_node("SingleSwitch")

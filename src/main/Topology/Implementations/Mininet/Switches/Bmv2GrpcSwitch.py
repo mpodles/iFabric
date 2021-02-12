@@ -17,33 +17,33 @@ def check_listening_on_port(port):
 
 
 class Bmv2GrpcSwitch(MininetSwitch):
+    next_grpc_port = 50051
+
     def __init__(self, switch):
-        self.switch = switch
-        self.sw_path = "simple_switch_grpc"
-        pathCheck(self.sw_path)
+        MininetSwitch.__init__(switch)
+        self.compiled_program = switch["compiled_program"]
+        
+        self.sw_program = "simple_switch_grpc"
+        pathCheck(self.sw_program)
 
-        json_path = "/home/mpodles/iFabric/src/main/build/fabric_tunnel.json"
+        compiled_p4 = switch["compiled_p4_path"]
 
-        if json_path is not None:
+        if compiled_p4 is not None:
             # make sure that the provided JSON file exists
-            if not os.path.isfile(json_path):
-                error("Invalid JSON file: {}\n".format(json_path))
+            if not os.path.isfile(compiled_p4):
+                error("Invalid compiled P4 json file: {}\n".format(compiled_p4))
                 exit(1)
-            self.json_path = json_path
+            self.compiled_p4 = compiled_p4
         else:
-            self.json_path = None
+            self.compiled_p4 = None
 
+
+        grpc_port = switch["grpc_port"]
         if grpc_port is not None:
             self.grpc_port = grpc_port
         else:
-            self.grpc_port = MininetSwitch.next_grpc_port
-            MininetSwitch.next_grpc_port += 1
-
-        if thrift_port is not None:
-            self.thrift_port = thrift_port
-        else:
-            self.thrift_port = MininetSwitch.next_thrift_port
-            MininetSwitch.next_thrift_port += 1
+            self.grpc_port = Bmv2GrpcSwitch.next_grpc_port
+            Bmv2GrpcSwitch.next_grpc_port += 1
 
         if check_listening_on_port(self.grpc_port):
             error('%s cannot bind port %d because it is bound by another process\n' % (self.name, self.grpc_port))
@@ -78,7 +78,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
     def start(self, controllers):
         info("Starting P4 switch {}.\n".format(self.name))
-        args = [self.sw_path]
+        args = [self.sw_program]
         for port, intf in self.intfs.items():
             if not intf.IP():
                 args.extend(['-i', str(port) + "@" + intf.name])

@@ -1,4 +1,4 @@
-class TopologyGenerator(MininetTopology):
+class TopologyGenerator(iFabricTopology):
     
     def __init__(self, configuration):
         self.generate_switches()
@@ -12,8 +12,3 @@ class TopologyGenerator(MininetTopology):
     def generate_endpoints(self):
         pass
 
-    def generate_ids_for_devices(self):
-
-
-    def generate_graph(self):
-        self.
