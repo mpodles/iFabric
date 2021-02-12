@@ -7,6 +7,8 @@ from time import sleep
 import psutil
 import os
 
+from Mininet import MininetSwitch
+
 def check_listening_on_port(port):
     for c in psutil.net_connections(kind='inet'):
         if c.status == 'LISTEN' and c.laddr[1] == port:
@@ -14,25 +16,9 @@ def check_listening_on_port(port):
     return False
 
 
-class MininetSwitch(Switch):
-    "BMv2 switch with gRPC support"
-    next_grpc_port = 50051
-    next_thrift_port = 9090
-    next_device_id = 1
-
-    def __init__(self, name, 
-                 grpc_port = None,
-                 thrift_port = None,
-                 pcap_dump = False,
-                 log_console = False,
-                 verbose = False,
-                 device_id = None,
-                 enable_debugger = False,
-                 log_file = None,
-                 **kwargs):
-        Switch.__init__(self, name, dpid = str(MininetSwitch.next_device_id), **kwargs)
-        MininetSwitch.next_device_id += 1
-        
+class Bmv2GrpcSwitch(MininetSwitch):
+    def __init__(self, switch):
+        self.switch = switch
         self.sw_path = "simple_switch_grpc"
         pathCheck(self.sw_path)
 

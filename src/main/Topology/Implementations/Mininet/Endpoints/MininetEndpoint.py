@@ -1,7 +1,8 @@
 from mininet.net import Mininet
-from mininet.node import Switch, Host
+from mininet.node import Host
+from.
 
-class MininetEndpoint(Host):
+class MininetEndpoint(Device, Host):
     def config(self, **params):
         return super(MininetEndpoint, self).config(**params)
 

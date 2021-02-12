@@ -1,33 +1,27 @@
-import /home/mpodles/iFabric/src/main/Network/Topology.py
+import src/main/Topology/Skeleton/Topology.py
+import endpoints.MininetEndpoint
+import switches.Bmv2GrpcSwitch
+from mininet.node import Switch
+from mininet.links import Link
+from Switches import Bmv2GrpcSwitch
 
 class MininetTopology(Topology):
     def __init__(self,switches,endpoints,links):
         self.switches = switches
         self.endpoints = endpoints
         self.links = links
-        self._id = 0
-        self.switches_with_ids = {}
-        self.endpoints_with_ids = {}
-        self.generate_switches_with_ids()
-        self.generate_endpoints_with_ids()
+        self.switch_class = Switch
+        self.link_class = Link
         super(MininetTopology, self).__init__()
 
-    def _next_ID(self):
-        self._id+=1
-        return self._id
-
-    def generate_switches_with_ids(self):
-        for switch in self.switches:
-            self.switches_with_ids[switch] = self._next_ID()
-
-    def generate_endpoints_with_ids(self):
-        for endpoint in self.endpoints:
-            self.endpoints_with_ids[switch] = self._next_ID()
-
     def generate_nodes(self):
-        return [i for i in range(1,self._id+1)]
+        for switch in self.switches:
+            new_switch = MininetSwitch(switch)
 
-    def generate_edges(self):    
+    def generate_links(self):
+
+        for link in self.links:
+
         return self.links
 
     # def generate_switches(self):
