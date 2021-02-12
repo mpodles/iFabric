@@ -2,13 +2,13 @@ import os
 import json
 import argparse
 import timeit
-import preparing_mininet_topology.construct_p4 as c_p4
-import preparing_mininet_topology.run_topology as r_topo
-import preparing_mininet_topology.prepare_topology_file as p_topo
-import preparing_mininet_topology.configure_sample_flows as f_gen
-import preparing_mininet_topology.generate_sample_policy as p_gen
-import control_plane.simple_controller as contr
-import Network.TopologyGenerator as topo_gen
+# import preparing_mininet_topology.construct_p4 as c_p4
+# import preparing_mininet_topology.run_topology as r_topo
+# import preparing_mininet_topology.prepare_topology_file as p_topo
+# import preparing_mininet_topology.configure_sample_flows as f_gen
+# import preparing_mininet_topology.generate_sample_policy as p_gen
+# import control_plane.simple_controller as contr
+# import Network.TopologyGenerator as topo_gen
 from time import sleep
 import threading
 

@@ -14,7 +14,7 @@ from mininet.cli import CLI
 class SingleSwitch(Topology):
     def __init__(self):
         super(SingleSwitch, self).__init__()
-        self.switch_class = BMVSwitch
+        self.switch_class = iFabricSwitch
         self.endpoint_class = iFabricEndPoint
         self.endpoints = configuration["endpoints"]
         self.ports_per_endpoint = configuration["ports_per_endpoint"]
