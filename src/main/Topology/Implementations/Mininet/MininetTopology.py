@@ -64,13 +64,15 @@ class BMV2GrpcTopo(Topo):
 
 class iFabricTopology(BMV2GrpcTopology):
     pass
-class MininetTopology(OSNetTopology):
+class MininetTopology(OSNetTopology,Topology):
     def __init__(self,
                 switches,
                 endpoints,
                 links,
                 mn_topo_class = Topology):
-        
+                
+        mn_topo_class.__init__()
+        # mn_topo_class =
         self.switches = switches
         self.endpoints = endpoints
         self.links = links
@@ -91,8 +93,12 @@ class MininetTopology(OSNetTopology):
     def generate_links(self):
         links = []
         for link in self.links:
-            links.append(self.link_class(link))
-        return links
+            links.append(OSNetLink(link = link))
+
+        for endpoint in self.endpoints:
+            nodes.append(self.endpoint_class(endpoint))
+
+        return nodes
 
     def generate_topo(self):
         pass

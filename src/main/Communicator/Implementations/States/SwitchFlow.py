@@ -1,6 +1,8 @@
+import State
+
 class SwitchFlow(State):
     def __init__(self, switch_name, flow, p4info_helper, sw_conn, used_ports):
-        super(self, State).__init__()
+        State.__init__(self)
         self.switch_name = switch_name
         self.p4info_helper = p4info_helper
         self.flow_name, self.flow_id = flow
@@ -31,3 +33,6 @@ class SwitchFlow(State):
             for entity in response.entities:
                 counter = entity.counter_entry
                 return counter.data.byte_count  
+
+    def __call__(self):
+        return self.state_data

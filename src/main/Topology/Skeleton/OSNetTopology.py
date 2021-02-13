@@ -1,7 +1,7 @@
-class Topology(object):
+class OSNetTopology(object):
     def __init__(self):
-        self.nodes = self.generate_nodes()
-        self.links = self.generate_links()
+        self.OSN_nodes = self.generate_nodes()
+        self.OSN_links = self.generate_links()
         
     def generate_nodes(self):
         pass
