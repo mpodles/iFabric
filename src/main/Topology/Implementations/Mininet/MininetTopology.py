@@ -5,78 +5,64 @@ from mininet.node import Switch
 from mininet.links import Link
 from mininet.topology import Topo
 from Switches import Bmv2GrpcSwitch
+import os
 
-class BMV2GrpcTopo(Topo):
-    def __init__(self, nodes, switches, links, node_links, log_dir, bmv2_exe, pcap_dir, **opts):
+class BMV2GrpcTopo(MininetTopology):
+    def __init__(self, nodes, switches, links, node_links, log_dir, p4_code_path, p4_json_path, p4runtime_info_path, pcap_dir, **opts):
         Topo.__init__(self, **opts)
         self.log_dir = log_dir
         self.pcap_dir = pcap_dir
-        self.bmv2_exe = bmv2_exe
-        self.already_added_links = []
+        
+        self.p4_code_path = p4_code_path
+        self.p4_json_path = p4_json_path
+        self.p4runtime_info_path = p4runtime_info_path
 
         self.add_switches(switches)
         self.add_nodes(nodes)
         self.add_links(links, node_links)
 
+    def generate_p4_code(self):
+        cmd = "p4c-bm2-ss \
+        --p4v 16 \
+        --p4runtime-files "+ self.p4runtime_info +\
+        " -o "+ self.p4_json +\
+        " " + self.p4_code_path
+        os.system(cmd)
+
+
     def add_switches(self, switches):
         for sw, params in switches.iteritems():
-            if "program" in params:
-                switchClass = configureP4Switch(
-                        sw_path=self.bmv2_exe,
-                        json_path=params["program"],
-                        log_console=True,
-                        pcap_dump=self.pcap_dir)
-            else:
-                # add default switch
-                switchClass = None
-            self.addSwitch(sw, log_file="%s/%s.log" %(self.log_dir, sw), cls=Bmv2GrpcSwitch)
+            self.addSwitch(sw, cls=Bmv2GrpcSwitch)
     
     def add_nodes(self, nodes):
         for node, interfaces in nodes.items():
-            self.addNode(node, interfaces =interfaces)
+            self.addNode(node, cls= MininetEndpoint)
 
 
     def add_links(self, switch_links, node_links):
         for node, links in node_links.items():
             for node_link in links:
-                sw, sw_port, node_port = node_link["connected_switch"], node_link["connected_port"], node_link["port"]
                 self.addLink(node, sw,
                          delay='0ms', bw=None,
                          port1=node_port, port2=sw_port)
 
         for sw, links in switch_links.items():
             for switch_link in links["switchports"]:
-                sw_port, connected_sw, connected_sw_port = switch_link["port"], switch_link["connected_switch"], switch_link["connected_port"]
-                if not self.link_already_added(sw, sw_port, connected_sw, connected_sw_port):
-                    self.addLink(sw, connected_sw,
+                self.addLink(sw, connected_sw,
                         port1=sw_port, port2=connected_sw_port,
                         delay='0ms', bw=None)
 
-    def link_already_added(self, sw, sw_port, connected_sw, connected_sw_port):
-        link1 = ((sw,sw_port),(connected_sw,connected_sw_port))
-        link2 = ((connected_sw,connected_sw_port),(sw,sw_port))
-        if link1 in self.already_added_links or link2 in self.already_added_links:
-            return True
-        else: 
-            self.already_added_links.append(link1)
-            self.already_added_links.append(link2)
-            return False
 
-class iFabricTopology(BMV2GrpcTopology):
-    pass
 class MininetTopology(OSNetTopology,Topology):
     def __init__(self,
                 switches,
                 endpoints,
-                links,
-                mn_topo_class = Topology):
+                links):
                 
-        mn_topo_class.__init__()
-        # mn_topo_class =
+        Topology.__init__()
         self.switches = switches
         self.endpoints = endpoints
         self.links = links
-        self.mn_topo_class = mn_topo_class
         self.generate_mininet_topo()
         OSNetTopology.__init__()
 

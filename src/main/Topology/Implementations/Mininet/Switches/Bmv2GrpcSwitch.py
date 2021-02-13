@@ -158,8 +158,31 @@ class Bmv2GrpcSwitch(MininetSwitch):
                 self.insertCloneGroupEntry(sw, entry)
         #     sw.shutdown()
 
-    def insertForwardingRule(self, forwarding_rule):
-        pass
+    def build_table_entry(self, sw, flow):
+        table_name = flow['table']
+        match_fields = flow.get('match') # None if not found
+        action_name = flow['action_name']
+        default_action = flow.get('default_action') # None if not found
+        action_params = flow['action_params']
+        priority = flow.get('priority')  # None if not found
+
+        table_entry = self.p4info_helper.buildTableEntry(
+            table_name=table_name,
+            match_fields=match_fields,
+            default_action=default_action,
+            action_name=action_name,
+            action_params=action_params,
+            priority=priority)
+        
+        return table_entry
+    
+    def insertTableEntry(self, sw, flow):
+        table_entry = self.build_table_entry(sw, flow)
+        sw.WriteTableEntry(table_entry)
+    
+    def modifyTableEntry(self, sw, flow):
+        table_entry = self.build_table_entry(sw, flow)
+        sw.WriteTableEntry(table_entry, modify=True)
 
 
     @classmethod
@@ -184,7 +207,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
                 print e
             
 
-        def buildDeviceConfig(bmv2_json_file_path=None):
+        def buildDeviceConfig(self, bmv2_json_file_path=None):
             "Builds the device config for BMv2"
             device_config = p4config_pb2.P4DeviceConfig()
             device_config.reassign = True

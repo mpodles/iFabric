@@ -2,7 +2,7 @@ from Mininet import MininetEndpoint
 
 class iFabricEndPoint(MininetEndpoint):
     def config(self, **params):
-        r = super(iFabricEndPoint, self).config(**params)
+        r = MininetEndpoint.__init__(**params)
         for interface, int_config in params["interfaces"].items():
             interface_name = self.name+"-eth" + str(interface) 
             mac = int_config["mac"] 
