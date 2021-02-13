@@ -3,7 +3,7 @@ class Link(object):
     def __init__(self, link):
         self.ID = Link.ID
         Link.ID +=1
-        self.
+        self.name = link["name"]
         self.nodes = link["devices"]
         self.properties = link["properties"]
     

@@ -32,21 +32,6 @@ def error(msg):
 def info(msg):
     print >> sys.stdout, ' - ' + msg
 
-
-class ConfException(Exception):
-    pass
-
-
-# class SwitchState():
-#     def __init__(self, sw, used_ports):
-#         self.sw = sw
-#         self.ports = used_ports
-   
-
-# class FlowState():
-#     def __init__(self, flow):
-#         self.flow = flow
-
 class Controller():
     def __init__(self, **files):
         topology_file_path = files["topology_file_path"]

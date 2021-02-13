@@ -1,7 +1,7 @@
-from mininet.links import Link as MNLink
-from Topology import Link 
+from mininet.links import Link
+from Skeleton import OSNetLink
 
-class MininetLink(Link):
+class MininetLink(OSNetLink, Link):
 
     def __init__(self):
         Link.__init__(self.mn_link_parameters)
