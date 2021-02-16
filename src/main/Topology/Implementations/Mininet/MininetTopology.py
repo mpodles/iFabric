@@ -9,7 +9,7 @@ import os
 
 class BMV2GrpcTopo(MininetTopology):
     def __init__(self, nodes, switches, links, node_links, log_dir, p4_code_path, p4_json_path, p4runtime_info_path, pcap_dir, **opts):
-        Topo.__init__(self, **opts)
+        Mininet.__init__(self, **opts)
         self.log_dir = log_dir
         self.pcap_dir = pcap_dir
         

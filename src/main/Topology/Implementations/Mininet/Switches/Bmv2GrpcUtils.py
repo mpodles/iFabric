@@ -52,8 +52,8 @@ class P4InfoHelper(object):
     def __init__(self, p4_info_filepath):
         p4info = p4info_pb2.P4Info()
         # Load the p4info file into a skeleton P4Info object
-        with open(p4_info_filepath) as p4info_f:
-            google.protobuf.text_format.Merge(p4info_f.read(), p4info)
+        with open(p4_info_filepath) as p4info_file:
+            google.protobuf.text_format.Merge(p4info_file.read(), p4info)
         self.p4info = p4info
 
     def get(self, entity_type, name=None, id=None):

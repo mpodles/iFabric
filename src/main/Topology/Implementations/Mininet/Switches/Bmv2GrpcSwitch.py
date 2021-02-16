@@ -32,6 +32,9 @@ class Bmv2GrpcSwitch(MininetSwitch):
             self.compiled_p4 = compiled_p4
         else:
             self.compiled_p4 = None
+
+        # self.p4info_fpath = switch["p4info_fpath"]
+        self.p4info_helper = helper.P4InfoHelper(switch["p4info_fpath"])
         grpc_port = switch.get("grpc_port",None)
         self.address= '0.0.0.0'
         if grpc_port is not None:
@@ -108,54 +111,54 @@ class Bmv2GrpcSwitch(MininetSwitch):
         self.connection = self.SwitchConnection(self)
  
 
-    def program_switch(self, sw_conf_file, workdir, proto_dump_fpath):
-        sw_conf = self.json_load_byteified(sw_conf_file)
-        try:
-            self.check_switch_conf(sw_conf=sw_conf, workdir=workdir)
-        except Exception as e:
-            error("While parsing input runtime configuration: %s" % str(e))
-            return
+    def get_switch_ready(self):
+        # sw_conf = self.json_load_byteified(sw_conf_file)
+        # try:
+        #     self.check_switch_conf(sw_conf=sw_conf, workdir=workdir)
+        # except Exception as e:
+        #     error("While parsing input runtime configuration: %s" % str(e))
+        #     return
 
-        info('Using P4Info file %s...' % sw_conf['p4info'])
-        p4info_fpath = os.path.join(workdir, sw_conf['p4info'])
-        self.p4info_helper = helper.P4InfoHelper(p4info_fpath)
+        # info('Using P4Info file %s...' % sw_conf['p4info'])
+        # p4info_fpath = os.path.join(workdir, sw_conf['p4info'])
+        # self.p4info_helper = helper.P4InfoHelper(p4info_fpath)
 
-        target = sw_conf['target']
+        # target = sw_conf['target']
 
         info("Connecting to P4Runtime server on " +  str(self.address) +":"+ str(self.grpc_port))
 
-        switch_connetion = self.connect_to_switch()
+        switch_connection = self.connect_to_switch()
 
-        switch_connetion.MasterArbitrationUpdate()
+        switch_connection.MasterArbitrationUpdate()
 
-        if target == "bmv2":
-            info("Setting pipeline config (%s)..." % sw_conf['bmv2_json'])
-            bmv2_json_fpath = os.path.join(workdir, sw_conf['bmv2_json'])
-            sw.SetForwardingPipelineConfig(p4info=self.p4info_helper.p4info,
-                                        bmv2_json_file_path=bmv2_json_fpath)
-        else:
-            raise Exception("Should not be here")
+        # if target == "bmv2":
+        # info("Setting pipeline config (%s)..." % sw_conf['bmv2_json'])
+        # bmv2_json_fpath = os.path.join(workdir, sw_conf['bmv2_json'])
+        switch_connection.SetForwardingPipelineConfig(p4info=self.p4info_helper.p4info,
+                                        bmv2_json_file_path=self.compiled_p4)
+        # else:
+        #     raise Exception("Should not be here")
 
-        if 'table_entries' in sw_conf:
-            table_entries = sw_conf['table_entries']
-            info("Inserting %d table entries..." % len(table_entries))
-            for entry in table_entries:
-                info(self.tableEntryToString(entry))
-                self.insertTableEntry(sw, entry)
+        # if 'table_entries' in sw_conf:
+        #     table_entries = sw_conf['table_entries']
+        #     info("Inserting %d table entries..." % len(table_entries))
+        #     for entry in table_entries:
+        #         info(self.tableEntryToString(entry))
+        #         self.insertTableEntry(sw, entry)
 
-        if 'multicast_group_entries' in sw_conf:
-            group_entries = sw_conf['multicast_group_entries']
-            info("Inserting %d group entries..." % len(group_entries))
-            for entry in group_entries:
-                info(self.groupEntryToString(entry))
-                self.insertMulticastGroupEntry(sw, entry)
+        # if 'multicast_group_entries' in sw_conf:
+        #     group_entries = sw_conf['multicast_group_entries']
+        #     info("Inserting %d group entries..." % len(group_entries))
+        #     for entry in group_entries:
+        #         info(self.groupEntryToString(entry))
+        #         self.insertMulticastGroupEntry(sw, entry)
 
-        if 'clone_session_entries' in sw_conf:
-            clone_entries = sw_conf['clone_session_entries']
-            info("Inserting %d clone entries..." % len(clone_entries))
-            for entry in clone_entries:
-                info(self.cloneEntryToString(entry))
-                self.insertCloneGroupEntry(sw, entry)
+        # if 'clone_session_entries' in sw_conf:
+        #     clone_entries = sw_conf['clone_session_entries']
+        #     info("Inserting %d clone entries..." % len(clone_entries))
+        #     for entry in clone_entries:
+        #         info(self.cloneEntryToString(entry))
+        #         self.insertCloneGroupEntry(sw, entry)
         #     sw.shutdown()
 
     def build_table_entry(self, sw, flow):

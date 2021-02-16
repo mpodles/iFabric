@@ -1,28 +1,42 @@
 from iFabric.iFabricTopology import iFabricTopology
-
+import random
+import rstr
 class iFabricTopologyGenerator(object):
-    def __init__(self,template):
-        self.template = template
+    def __init__(self):
         self.topology = iFabricTopology()
 
     def generate_topology(self):
         self.generate_switches()
         self.generate_endpoints()
         self.generate_groups()
-
         return self.topology
-class SingleSwitchTopologyGenerator(TopologyGenerator):
+
+    def generate_switches(self):
+        pass
+
+    def generate_endpoints(self):
+        pass
+    
+    def generate_groups(self):
+        pass
+
+class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
     
     def __init__(self, configuration):
-        self.
-
+        self.configuration = configuration
+        self.endpoints = configuration["endpoints"]
+        self.groups = configuration["groups"]
+        self.avg_group_size = configuration ["avg_group_size"]
+        self.ports_per_endpoint = configuration ["ports_per_endpoint"]
+        self.ip_addressing = configuration ["ip_addressing"]
+        self.mac_addressing = configuration ["mac_addressing"]
     
     def generate_topology(self):
         self.generate_switches()
         self.generate_endpoints()
         self.generate_groups()
 
-        self.generate_topology_with_endpoints()
+        # self.generate_topology_with_endpoints()
         #self.generate_topology_with_groups()
 
         return self.topology
