@@ -195,7 +195,6 @@ class Bmv2GrpcSwitch(MininetSwitch):
     class SwitchConnection(object):
         def __init__(self, switch):
             self.switch = switch
-            self.p4info = None
             self.channel = grpc.insecure_channel(str(switch.address)+ ":" + str(switch.grpc_port))
             if switch.proto_dump_file is not None:
                 interceptor = GrpcRequestLogger(switch.proto_dump_file)
@@ -203,19 +202,18 @@ class Bmv2GrpcSwitch(MininetSwitch):
             self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
             self.requests_stream = IterableQueue()
             self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream))
-            try:
-                self.MasterArbitrationUpdate()
-                self.SetForwardingPipelineConfig()
-            except Exception as e:
-                print e
+            # try:
+            #     self.MasterArbitrationUpdate()
+            #     self.SetForwardingPipelineConfig()
+            # except Exception as e:
+            #     print e
             
 
         def buildDeviceConfig(self, bmv2_json_file_path=None):
             "Builds the device config for BMv2"
             device_config = p4config_pb2.P4DeviceConfig()
             device_config.reassign = True
-            with open(bmv2_json_file_path) as f:
-                device_config.device_data = f.read()
+            device_config.device_data = self.switch.compiled_p4
             return device_config
 
         def shutdown(self):
@@ -235,8 +233,8 @@ class Bmv2GrpcSwitch(MininetSwitch):
                 for item in self.stream_msg_resp:
                     return item # just one
 
-        def SetForwardingPipelineConfig(self, dry_run=False, **kwargs):
-            device_config = self.buildDeviceConfig(**kwargs)
+        def SetForwardingPipelineConfig(self, dry_run=False):
+            device_config = self.buildDeviceConfig()
             request = p4runtime_pb2.SetForwardingPipelineConfigRequest()
             request.election_id.low = 1
             request.device_id = self.switch.OSN_ID
