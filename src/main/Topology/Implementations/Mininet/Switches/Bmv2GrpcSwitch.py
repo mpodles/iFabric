@@ -9,33 +9,32 @@ import os
 from Mininet import MininetSwitch
 from Bmv2GrpcUtils import GrpcRequestLogger
 from Bmv2GrpcUtils import IterableQueue
-import helper
 from p4.tmp import p4config_pb2
 import grpc
 from p4.v1 import p4runtime_pb2
 from p4.v1 import p4runtime_pb2_grpc
+from Bmv2GrpcUtils import P4InfoHelper
 
 class Bmv2GrpcSwitch(MininetSwitch):
     next_grpc_port = 50051
 
-    def __init__(self, switch):
-        Switch.__init__(switch)
-        self.compiled_program = switch["compiled_program"]
+    def __init__(self, **params):
+        MininetSwitch.__init__(**params)
+        self.device_id = OSNetDevice.OSN_ID
         self.sw_program = "simple_switch_grpc"
         pathCheck(self.sw_program)
-        compiled_p4 = switch.get("compiled_p4_path",None)
-        if compiled_p4 is not None:
-            # make sure that the provided JSON file exists
-            if not os.path.isfile(compiled_p4):
-                error("Invalid compiled P4 json file: {}\n".format(compiled_p4))
-                exit(1)
-            self.compiled_p4 = compiled_p4
-        else:
-            self.compiled_p4 = None
+        self.compiled_p4 = switch.get("compiled_p4_path",None)
+        # if compiled_p4 is not None:
+        #     # make sure that the provided JSON file exists
+        #     if not os.path.isfile(compiled_p4):
+        #         error("Invalid compiled P4 json file: {}\n".format(compiled_p4))
+        #         exit(1)
+        #     self.compiled_p4 = compiled_p4
+        # else:
+        #     self.compiled_p4 = None
 
-        # self.p4info_fpath = switch["p4info_fpath"]
-        self.p4info_helper = helper.P4InfoHelper(switch["p4info_fpath"])
-        grpc_port = switch.get("grpc_port",None)
+        self.p4info_helper = P4InfoHelper(params["p4info_fpath"])
+        grpc_port = params.get("grpc_port",None)
         self.address= '0.0.0.0'
         if grpc_port is not None:
             self.grpc_port = grpc_port
@@ -51,7 +50,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # self.pcap_dump = pcap_dump
         # self.enable_debugger = enable_debugger
         # self.log_console = log_console
-        self.device_id = OSNetDevice.OSN_ID
+        
         self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device_id)
 
     

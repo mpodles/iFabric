@@ -1,15 +1,12 @@
 from Mininet import BMV2GrpcTopo
-from Mininet.Switches import Bmv2GrpcSwitch
-import os
+from iFabric import iFabricSwitch, iFabricEndpoint, iFabricLink
 
 class iFabricTopology(BMV2GrpcTopo):
 
-    def __init__(self,files):
+    def __init__(self, nodes, switches, links, node_links, log_dir, p4_code_path, p4_json_path, p4runtime_info_path, pcap_dir, **params):
         BMV2GrpcTopo.__init__()
         self.switch_class = iFabricSwitch
-        self.endpoint_class = iFabricEndPoint
+        self.endpoint_class = iFabricEndpoint
         self.link_class = iFabricLink
 
-        compiled_p4 =  files["compiled_p4"] #"./fabric_tunnel_compiled.json"
-        self.groups = {}
         

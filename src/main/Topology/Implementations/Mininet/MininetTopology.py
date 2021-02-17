@@ -8,14 +8,16 @@ from Switches import Bmv2GrpcSwitch
 import os
 
 class BMV2GrpcTopo(MininetTopology):
-    def __init__(self, nodes, switches, links, node_links, log_dir, p4_code_path, p4_json_path, p4runtime_info_path, pcap_dir, **opts):
-        Mininet.__init__(self, **opts)
+    def __init__(self, **params):
+        MininetTopology.__init__()
         self.log_dir = log_dir
         self.pcap_dir = pcap_dir
         
         self.p4_code_path = p4_code_path
         self.p4_json_path = p4_json_path
         self.p4runtime_info_path = p4runtime_info_path
+
+        self.switch_class = Bmv2GrpcSwitch
 
         self.add_switches(switches)
         self.add_nodes(nodes)
