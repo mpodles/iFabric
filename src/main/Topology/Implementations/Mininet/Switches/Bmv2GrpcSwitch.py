@@ -20,18 +20,18 @@ from Bmv2GrpcUtils import P4InfoHelper
 class Bmv2GrpcSwitch(MininetSwitch):
     next_grpc_port = 50051
 
-    def __init__(self, **params):
-        MininetSwitch.__init__(**params)
+    def __init__(self, switch, **params):
+        MininetSwitch.__init__(self, switch, **params)
         self.p4_code_path = params["p4_code_path"]
         self.p4_json_path = params["p4_json_path"]
         self.p4runtime_info_path = params["p4runtime_info_path"]
         self.log_dir = params["log_dir"]
         self.pcap_dir = params["pcap_dir"]
 
-        self.device_id = OSNetDevice.OSN_ID
+        
         self.sw_program = "simple_switch_grpc"
         pathCheck(self.sw_program)
-        self.compiled_p4 = switch.get("compiled_p4_path",None)
+        self.compiled_p4 = params.get("compiled_p4_path",None)
         # if compiled_p4 is not None:
         #     # make sure that the provided JSON file exists
         #     if not os.path.isfile(compiled_p4):

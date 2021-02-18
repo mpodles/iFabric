@@ -15,6 +15,9 @@ class SingleSwitch(iFabricTopology):
                                 endpoints=self.generator.endpoints,
                                 links = self.generator.links )
 
+        self.generate_mininet_topo()
+        self.generate_topology()
+
 
     def start_topology(self):
         self.net = Mininet(topo = self.mininet_topo, link = TCLink)

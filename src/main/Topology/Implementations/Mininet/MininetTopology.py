@@ -42,7 +42,7 @@ class MininetTopology(OSNetTopology,Topo):
     def generate_nodes(self):
         nodes = []
         for switch in self.switches:
-            nodes.append(OSNetDevice(device = switch))
+            nodes.append(self.switch_class(switch))
 
         for endpoint in self.endpoints:
             nodes.append(self.endpoint_class(endpoint))
@@ -52,14 +52,7 @@ class MininetTopology(OSNetTopology,Topo):
     def generate_links(self):
         links = []
         for link in self.links:
-            links.append(OSNetLink(link = link))
-
-        for endpoint in self.endpoints:
-            nodes.append(self.endpoint_class(endpoint))
-
-        return nodes
-
-
+            links.append(self.link_class(link))
 
     
 class BMV2GrpcTopo(MininetTopology):

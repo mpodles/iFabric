@@ -3,7 +3,7 @@ class OSNetDevice(object):
     def __init__(self,switch):
         self.ID = OSNetDevice.OSN_ID
         OSNetDevice.OSN_ID +=1
-        self.name = switch["name"]
+        self.name = switch
         self.OSN_States = {}
         self.OSN_Actions = {}
 
