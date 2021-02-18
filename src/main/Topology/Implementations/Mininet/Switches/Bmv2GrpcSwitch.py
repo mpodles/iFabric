@@ -22,6 +22,12 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
     def __init__(self, **params):
         MininetSwitch.__init__(**params)
+        self.p4_code_path = params["p4_code_path"]
+        self.p4_json_path = params["p4_json_path"]
+        self.p4runtime_info_path = params["p4runtime_info_path"]
+        self.log_dir = params["log_dir"]
+        self.pcap_dir = params["pcap_dir"]
+
         self.device_id = OSNetDevice.OSN_ID
         self.sw_program = "simple_switch_grpc"
         pathCheck(self.sw_program)

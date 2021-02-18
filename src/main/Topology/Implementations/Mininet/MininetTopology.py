@@ -65,18 +65,12 @@ class MininetTopology(OSNetTopology,Topo):
 class BMV2GrpcTopo(MininetTopology):
     def __init__(self, switches, endpoints, links, **params):
         MininetTopology.__init__(self, switches, endpoints, links)
-        self.log_dir = params["log_dir"]
-        self.pcap_dir = params["pcap_dir"]
-        
-        self.p4_code_path = params["p4_code_path"]
-        self.p4_json_path = params["p4_json_path"]
-        self.p4runtime_info_path = params["p4runtime_info_path"]
 
         self.switch_class = Bmv2GrpcSwitch
 
-        self.add_switches(switches)
-        self.add_nodes(nodes)
-        self.add_links(links, node_links)
+        # self.add_switches(switches)
+        # self.add_endpoints(endpoints)
+        # self.add_links(links)
 
     def generate_p4_code(self):
         cmd = "p4c-bm2-ss \
@@ -87,24 +81,24 @@ class BMV2GrpcTopo(MininetTopology):
         os.system(cmd)
 
 
-    def add_switches(self, switches):
-        for sw, params in switches.iteritems():
-            self.addSwitch(sw, cls=Bmv2GrpcSwitch)
+    # def add_switches(self, switches):
+    #     for sw, params in switches.iteritems():
+    #         self.addSwitch(sw, cls=Bmv2GrpcSwitch)
     
-    def add_nodes(self, nodes):
-        for node, interfaces in nodes.items():
-            self.addNode(node, cls= MininetEndpoint)
+    # def add_endpoints(self, nodes):
+    #     for node, interfaces in nodes.items():
+    #         self.addNode(node, cls= MininetEndpoint)
 
 
-    def add_links(self, switch_links, node_links):
-        for node, links in node_links.items():
-            for node_link in links:
-                self.addLink(node, sw,
-                         delay='0ms', bw=None,
-                         port1=node_port, port2=sw_port)
+    # def add_links(self, switch_links, node_links):
+    #     for node, links in node_links.items():
+    #         for node_link in links:
+    #             self.addLink(node, sw,
+    #                      delay='0ms', bw=None,
+    #                      port1=node_port, port2=sw_port)
 
-        for sw, links in switch_links.items():
-            for switch_link in links["switchports"]:
-                self.addLink(sw, connected_sw,
-                        port1=sw_port, port2=connected_sw_port,
-                        delay='0ms', bw=None)
+    #     for sw, links in switch_links.items():
+    #         for switch_link in links["switchports"]:
+    #             self.addLink(sw, connected_sw,
+    #                     port1=sw_port, port2=connected_sw_port,
+    #                     delay='0ms', bw=None)

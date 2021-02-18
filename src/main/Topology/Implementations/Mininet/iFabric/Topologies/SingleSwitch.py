@@ -1,26 +1,19 @@
-import networkx as nx   
-import json
-from Topology import Topology
-from MininetEndpoint import iFabricEndPoint
-from MininetSwitch import BMVSwitch
-
+import sys
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric')
+from iFabricTopology import iFabricTopology
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/TopologiesGenerator')
+from TopologyGenerator import SingleSwitchTopologyGenerator
 from mininet.net import Mininet
-from mininet.node import Node
-from mininet.topo import Topo
 from mininet.link import TCLink
 from mininet.cli import CLI
-
-   
 class SingleSwitch(iFabricTopology):
     def __init__(self):
-        self.switch_class = iFabricSwitch
-        self.endpoint_class = iFabricEndPoint
-        self.endpoints = configuration["endpoints"]
-        self.ports_per_endpoint = configuration["ports_per_endpoint"]
-        self.avg_group_size =configuration ["avg_group_size"]
-        self.mac_addressing = configuration["mac_addressing"]  #is it random or something else
-        self.ip_addressing = configuration["ip_addressing"]
-
+        self.generator = SingleSwitchTopologyGenerator()
+        self.generator.generate_topology()
+        iFabricTopology.__init__(self,
+                                switches = self.generator.switches, 
+                                endpoints=self.generator.endpoints,
+                                links = self.generator.links )
 
 
     def start_topology(self):
@@ -33,3 +26,6 @@ class SingleSwitch(iFabricTopology):
         for node_name in self.endpoints.nodes:
             h = self.net.get(node_name)
             h.cmd("program")
+
+if __name__ == "__main__":
+    sstg = SingleSwitch()

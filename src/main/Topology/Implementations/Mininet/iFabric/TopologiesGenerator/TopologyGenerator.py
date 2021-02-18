@@ -11,6 +11,7 @@ class iFabricTopologyGenerator(object):
     def generate_topology(self):
         self.generate_switches()
         self.generate_endpoints()
+        self.generate_links()
         self.generate_groups()
 
     def generate_switches(self):
@@ -30,6 +31,7 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         self.switches = []
         self.endpoints_count = self.configuration["endpoints"]
         self.endpoints = []
+        self.links = []
         self.groups = {}
         self.avg_group_size = self.configuration ["avg_group_size"]
         self.ports_per_endpoint = self.configuration ["ports_per_endpoint"]
@@ -53,6 +55,10 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
             self.endpoints.append(endpoint_name)
             # self.topology.mininet_topo.addNode(
             #     endpoint_name)
+
+    def generate_links(self):
+        for endpoint in self.endpoints:
+            self.links.append(("SingleSwitch",endpoint))
 
     def generate_groups(self):
         groups_count = self.endpoints_count / self.avg_group_size
