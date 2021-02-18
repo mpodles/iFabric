@@ -1,5 +1,7 @@
-from mininet.links import Link
-from Skeleton import OSNetLink
+from mininet.link import Link
+import sys
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton')
+from OSNetLink import OSNetLink
 
 class MininetLink(OSNetLink, Link):
 

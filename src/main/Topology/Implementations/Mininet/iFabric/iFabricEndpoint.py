@@ -1,6 +1,8 @@
-from Mininet import MininetEndpoint
+import sys
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet')
+from MininetEndpoint import MininetEndpoint
 
-class iFabricEndPoint(MininetEndpoint):
+class iFabricEndpoint(MininetEndpoint):
     def config(self, **params):
         r = MininetEndpoint.__init__(**params)
         for interface, int_config in params["interfaces"].items():

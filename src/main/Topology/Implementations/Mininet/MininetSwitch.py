@@ -1,5 +1,8 @@
 from mininet.node import Switch
-from Skeleton import OSNetDevice
+import sys
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton')
+from OSNetDevice import OSNetDevice
+
     
     
 class MininetSwitch(OSNetDevice,Switch):

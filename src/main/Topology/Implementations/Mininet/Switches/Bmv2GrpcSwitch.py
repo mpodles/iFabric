@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet')
 from mininet.net import Mininet
 from mininet.node import Switch, Host
 from mininet.moduledeps import pathCheck
@@ -6,7 +8,7 @@ import tempfile
 from time import sleep
 import psutil
 import os
-from Mininet import MininetSwitch
+from MininetSwitch import MininetSwitch
 from Bmv2GrpcUtils import GrpcRequestLogger
 from Bmv2GrpcUtils import IterableQueue
 from p4.tmp import p4config_pb2
