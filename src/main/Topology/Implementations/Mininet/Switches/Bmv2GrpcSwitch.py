@@ -1,14 +1,12 @@
 import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet')
-from mininet.net import Mininet
-from mininet.node import Switch, Host
+from MininetSwitch import MininetSwitch
 from mininet.moduledeps import pathCheck
 from mininet.log import info, error, debug
 import tempfile
 from time import sleep
 import psutil
 import os
-from MininetSwitch import MininetSwitch
 from Bmv2GrpcUtils import GrpcRequestLogger
 from Bmv2GrpcUtils import IterableQueue
 from p4.tmp import p4config_pb2
@@ -20,18 +18,15 @@ from Bmv2GrpcUtils import P4InfoHelper
 class Bmv2GrpcSwitch(MininetSwitch):
     next_grpc_port = 50051
 
-    def __init__(self, switch, **params):
+    def __init__(self, switch, p4_json_path, p4runtime_info_path, log_dir, pcap_dir,  **params):
         MininetSwitch.__init__(self, switch, **params)
-        self.p4_code_path = params["p4_code_path"]
-        self.p4_json_path = params["p4_json_path"]
-        self.p4runtime_info_path = params["p4runtime_info_path"]
-        self.log_dir = params["log_dir"]
-        self.pcap_dir = params["pcap_dir"]
+        self.p4_json_path = p4_json_path
+        self.p4runtime_info_path = p4runtime_info_path
+        self.log_dir = log_dir
+        self.pcap_dir = pcap_dir
 
-        
         self.sw_program = "simple_switch_grpc"
         pathCheck(self.sw_program)
-        self.compiled_p4 = params.get("compiled_p4_path",None)
         # if compiled_p4 is not None:
         #     # make sure that the provided JSON file exists
         #     if not os.path.isfile(compiled_p4):
@@ -41,7 +36,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # else:
         #     self.compiled_p4 = None
 
-        self.p4info_helper = P4InfoHelper(params["p4info_fpath"])
+        self.p4info_helper = P4InfoHelper(self.p4runtime_info_path)
         grpc_port = params.get("grpc_port",None)
         self.address= '0.0.0.0'
         if grpc_port is not None:
@@ -77,8 +72,8 @@ class Bmv2GrpcSwitch(MininetSwitch):
             args.extend(['--nanolog', self.nanomsg])
         args.extend(['--device-id', str(self.device_id)])
         MininetSwitch.device_id += 1
-        if self.compiled_p4:
-            args.append(self.compiled_p4)
+        if self.p4_json_path:
+            args.append(self.p4_json_path)
         else:
             args.append("--no-p4")
         if self.enable_debugger:
@@ -168,7 +163,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         #         self.insertCloneGroupEntry(sw, entry)
         #     sw.shutdown()
 
-    def build_table_entry(self, sw, flow):
+    def build_table_entry(self, flow):
         table_name = flow['table']
         match_fields = flow.get('match') # None if not found
         action_name = flow['action_name']
@@ -186,13 +181,13 @@ class Bmv2GrpcSwitch(MininetSwitch):
         
         return table_entry
     
-    def insertTableEntry(self, sw, flow):
-        table_entry = self.build_table_entry(sw, flow)
-        sw.WriteTableEntry(table_entry)
+    def insertTableEntry(self, flow):
+        table_entry = self.build_table_entry(flow)
+        self.connection.WriteTableEntry(table_entry)
     
-    def modifyTableEntry(self, sw, flow):
-        table_entry = self.build_table_entry(sw, flow)
-        sw.WriteTableEntry(table_entry, modify=True)
+    def modifyTableEntry(self, flow):
+        table_entry = self.build_table_entry(flow)
+        self.connection.WriteTableEntry(table_entry, modify=True)
 
 
     @classmethod
@@ -215,13 +210,6 @@ class Bmv2GrpcSwitch(MininetSwitch):
             # except Exception as e:
             #     print e
             
-
-        def buildDeviceConfig(self, bmv2_json_file_path=None):
-            "Builds the device config for BMv2"
-            device_config = p4config_pb2.P4DeviceConfig()
-            device_config.reassign = True
-            device_config.device_data = self.switch.compiled_p4
-            return device_config
 
         def shutdown(self):
             self.requests_stream.close()
@@ -255,6 +243,13 @@ class Bmv2GrpcSwitch(MininetSwitch):
                 print "P4Runtime SetForwardingPipelineConfig:", request
             else:
                 self.client_stub.SetForwardingPipelineConfig(request)
+
+        def buildDeviceConfig(self):
+            "Builds the device config for BMv2"
+            device_config = p4config_pb2.P4DeviceConfig()
+            device_config.reassign = True
+            device_config.device_data = self.switch.p4_json_path
+            return device_config
 
         def WriteTableEntry(self, table_entry, dry_run=False, modify=False):
             request = p4runtime_pb2.WriteRequest()

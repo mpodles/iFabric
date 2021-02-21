@@ -149,7 +149,7 @@ control MyEgress(inout headers hdr,
         hdr.iFabric.setInvalid();
     }
     
-    table port_checker {
+    table Port_checker {
         key = {
             standard_metadata.egress_port: range;
         }
@@ -183,9 +183,9 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.iFabric);
-        packet.emit(hdr.Ethernet);
-        packet.emit(hdr.IPv4);
-        packet.emit(hdr.TCP);
+        {% for protocol in protocols.keys() -%}
+            packet.emit(hdr.{{protocol}});
+        {% endfor %}
     }
 }
 

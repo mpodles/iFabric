@@ -26,18 +26,21 @@ class MininetTopology(OSNetTopology,Topo):
         self.endpoints = endpoints
         self.links = links
         self.switch_class = MininetSwitch
+        self.switch_constructor_parameters = {}
         self.endpoint_class = MininetEndpoint
+        self.endpoint_constructor_parameters = {}
         self.link_class = MininetLink
+        self.link_constructor_parameters = {}
         
         
     def generate_mininet_topo(self):
         for endpoint in self.endpoints:
-            self.addHost(endpoint, cls=self.endpoint_class)
+            self.addHost(endpoint, cls=self.endpoint_class, **self.endpoint_constructor_parameters)
         for switch in self.switches:
-            self.addSwitch(switch, cls=self.switch_class)
+            self.addSwitch(switch, cls=self.switch_class, **self.switch_constructor_parameters)
         for link in self.links:
             node1,node2 = link[0], link[1]
-            self.addLink(node1,node2, cls=self.link_class)
+            self.addLink(node1,node2, cls=self.link_class, **self.link_constructor_parameters)
         
     def generate_nodes(self):
         nodes = []
@@ -55,43 +58,10 @@ class MininetTopology(OSNetTopology,Topo):
             links.append(self.link_class(link))
 
     
-class BMV2GrpcTopo(MininetTopology):
-    def __init__(self, switches, endpoints, links, **params):
+class Bmv2GrpcTopo(MininetTopology):
+    def __init__(self, switches, endpoints, links, p4runtime_info, p4_json):
         MininetTopology.__init__(self, switches, endpoints, links)
-
+        self.switch_constructor_parameters = {"p4runtime_info":p4runtime_info, "p4_json": p4_json}
         self.switch_class = Bmv2GrpcSwitch
 
-        # self.add_switches(switches)
-        # self.add_endpoints(endpoints)
-        # self.add_links(links)
 
-    def generate_p4_code(self):
-        cmd = "p4c-bm2-ss \
-        --p4v 16 \
-        --p4runtime-files "+ self.p4runtime_info +\
-        " -o "+ self.p4_json +\
-        " " + self.p4_code_path
-        os.system(cmd)
-
-
-    # def add_switches(self, switches):
-    #     for sw, params in switches.iteritems():
-    #         self.addSwitch(sw, cls=Bmv2GrpcSwitch)
-    
-    # def add_endpoints(self, nodes):
-    #     for node, interfaces in nodes.items():
-    #         self.addNode(node, cls= MininetEndpoint)
-
-
-    # def add_links(self, switch_links, node_links):
-    #     for node, links in node_links.items():
-    #         for node_link in links:
-    #             self.addLink(node, sw,
-    #                      delay='0ms', bw=None,
-    #                      port1=node_port, port2=sw_port)
-
-    #     for sw, links in switch_links.items():
-    #         for switch_link in links["switchports"]:
-    #             self.addLink(sw, connected_sw,
-    #                     port1=sw_port, port2=connected_sw_port,
-    #                     delay='0ms', bw=None)

@@ -4,10 +4,7 @@ from Bmv2GrpcSwitch import Bmv2GrpcSwitch
 
 
 class iFabricSwitch(Bmv2GrpcSwitch):
-    def __init__(self, switch):
-        Bmv2GrpcSwitch.__init__(self, switch)
-        self.device_id = OSNetDevice.OSN_ID
-        self.states = {}
-        self.actions = {}
-        self.compiled_program = "iFabric"
+    def __init__(self, switch, **params):
+        Bmv2GrpcSwitch.__init__(self, switch, **params)
+
 

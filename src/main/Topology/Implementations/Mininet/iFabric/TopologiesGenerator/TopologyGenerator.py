@@ -5,7 +5,6 @@ import os
 import json
 class iFabricTopologyGenerator(object):
     def __init__(self):
-        # self.topology = iFabricTopology()
         pass
 
     def generate_topology(self):
@@ -19,6 +18,9 @@ class iFabricTopologyGenerator(object):
 
     def generate_endpoints(self):
         pass
+
+    def generate_links(self):
+        pass
     
     def generate_groups(self):
         pass
@@ -26,7 +28,7 @@ class iFabricTopologyGenerator(object):
 class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
     
     def __init__(self):
-        # self.configuration = configuration
+        iFabricTopologyGenerator.__init__(self)
         self.get_configuration()
         self.switches = []
         self.endpoints_count = self.configuration["endpoints"]
@@ -42,19 +44,13 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         Path = "/home/mpodles/iFabric/src/main/configuration_files/topology_description_test.json"
         self.configuration =  json.loads(open(Path).read())
     
-
     def generate_switches(self):
         self.switches.append("SingleSwitch")
-        # self.topology.mininet_topo.addSwitch(
-        #     "SingleSwitch", 
-        #     cls=self.topology.switch_class)
     
     def generate_endpoints(self):
         for ep_nr in range(1,self.endpoints_count+1):
             endpoint_name = "EP_" + str(ep_nr)
             self.endpoints.append(endpoint_name)
-            # self.topology.mininet_topo.addNode(
-            #     endpoint_name)
 
     def generate_links(self):
         for endpoint in self.endpoints:
@@ -65,49 +61,7 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         for gr_nr in range(1, groups_count + 1):
             endpoints = ["EP_" + str(self.avg_group_size*gr_nr - i) for i in range(self.avg_group_size)]
             self.groups["Group_" + str(gr_nr)] = endpoints
-
-    # def generate_topology_with_endpoints(self):
-    #     switch_interface = 1
-    #     for endpoint in self.topology.endpoints.nodes:
-    #         info = {"cls" : self.topology.endpoint_class}
-    #         interfaces = {}
-    #         for endpoint_interface in range(self.ports_per_endpoint):
-    #             switch_interface += 1
-    #             self.topology.mininet_topo.addLink(
-    #                 "SingleSwitch",
-    #                 endpoint, 
-    #                 delay='0ms',
-    #                 bw=None,
-    #                 port1=switch_interface,
-    #                 port2=endpoint_interface)
-    #             interface_name = endpoint + "-eth" + str(endpoint_interface)
-    #             interfaces[interface_name] = {
-    #                 "ip": self.generate_ip_addressing(endpoint),
-    #                 "mac": self.generate_mac_addressing(endpoint),
-    #                 "connected_to": "SingleSwitch",
-    #                 "connected_on": switch_interface}
-                    
-    #         info["interfaces"] = interfaces
-    #         self.topology.mininet_topo.setNodeInfo(endpoint, info = info)
-
-    #         self.topology.switches_with_endpoints.add_edge(
-    #                 "SingleSwitch",
-    #                 endpoint, 
-    #                 weight=1, 
-    #                 interfaces= interfaces)
-
-    def generate_topology_with_groups(self):
-        #TODO: finish this
-        switch_interface = 1
-        # for group in self.topology.groups.nodes:
-        #     for endpoint_interface in range(self.ports_per_endpoint):
-        #         self.topology.switches_with_endpoints.add_edge(
-        #             "SingleSwitch",
-        #             group, 
-        #             weight=1, 
-        #             interfaces= [{"SingleSwitch": switch_interface , endpoint: endpoint_interface}])
-
-    
+  
     def generate_ip_addressing(self, endpoint):
         if self.ip_addressing == "random":
             return self.generate_random_ip_addressing()
@@ -125,6 +79,3 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         return random_mac
 
 
-if __name__ == '__main__':
-    sstg = SingleSwitchTopologyGenerator()
-    sstg.generate_topology()

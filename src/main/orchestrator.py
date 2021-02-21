@@ -2,37 +2,30 @@ import os
 import json
 import argparse
 import timeit
-# import preparing_mininet_topology.construct_p4 as c_p4
-# import preparing_mininet_topology.run_topology as r_topo
-# import preparing_mininet_topology.prepare_topology_file as p_topo
-# import preparing_mininet_topology.configure_sample_flows as f_gen
-# import preparing_mininet_topology.generate_sample_policy as p_gen
-# import control_plane.simple_controller as contr
-# import Network.TopologyGenerator as topo_gen
 from time import sleep
 import threading
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/TopologiesGenerator/TopologyGenerator.py')
+from TopologyGenerator import SingleSwitchTopologyGenerator
 
-#TODO: this file already needs refactoring
 
+
+main_project_directory = os.path.dirname(os.path.realpath(__file__))
+os.chdir(main_project_directory)
+
+structure = parse_structure()
 def parse_structure():
     with open(os.path.join(main_project_directory, "folders_and_files.json"), "r") as structure_file:
         structure = json.loads(structure_file.read())
     return structure
 
-main_project_directory = os.path.dirname(os.path.realpath(__file__))
-os.chdir(main_project_directory)
-
-global exercise #TODO: do this some other way
-structure = parse_structure()
-
 build_folder = structure["build_folder"]
 pcaps_folder = structure["pcaps_folder"]
 logs_folder = structure["logs_folder"]
 topology_file = structure["topology_file"]
-p4_file_name = structure["p4_file_name"]
+p4_file_name = structure["p4_code_file_name"]
 p4runtime_file_name = structure["p4runtime_file_name"]
 compiled_p4_file_name = structure["compiled_p4_file_name"]
-p4template = structure["p4template"]
+p4template = structure["p4_code_template"]
 configuration_folder = structure["configuration_folder"]
 topology_description_file = structure["topology_description_file"]
 protocols_folder = structure["protocols_folder"]
@@ -62,73 +55,68 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    global topology
-    topology = topo_gen.initialize_topology("generate", topology_configuration_path)
-    # 
-    # topology_target_path = os.path.join(main_project_directory, build_folder, topology_file)
-    # with open(topology_configuration_path, "r") as f:
-    #     topo_config = json.loads(f.read())
-    # topology = p_topo.SpineLeaf(topo_config, topology_target_path)
+    sstg = SingleSwitchTopologyGenerator()
+    sstg.generate_topology()
     
 
-def construct_p4_program():   
-    p4_constructor =  c_p4.P4Constructor(
-        topology_file_path = topology_file_path,
-        protocols_folder_path = protocols_folder_path,
-        configuration_folder_path = configuration_folder_path,
-        flows_file_path = flows_file_path,
-        template_file_path = template_file_path,
-        p4_target_file_path = p4_target_file_path,
-        runtimes_files_path = runtimes_files_path,
-        flows_ids_file_path = flows_ids_file_path,
-        compiled_p4_file_path = compiled_p4_file_path,
-        p4runtime_target_file_path = p4runtime_target_file_path,
-        )
+# def construct_p4_program():   
+#     p4_constructor =  c_p4.P4Constructor(
+#         topology_file_path = topology_file_path,
+#         protocols_folder_path = protocols_folder_path,
+#         configuration_folder_path = configuration_folder_path,
+#         flows_file_path = flows_file_path,
+#         template_file_path = template_file_path,
+#         p4_target_file_path = p4_target_file_path,
+#         runtimes_files_path = runtimes_files_path,
+#         flows_ids_file_path = flows_ids_file_path,
+#         compiled_p4_file_path = compiled_p4_file_path,
+#         p4runtime_target_file_path = p4runtime_target_file_path,
+#         )
 
-def compile_p4_program():
-    cmd = "p4c-bm2-ss \
-        --p4v 16 \
-        --p4runtime-files "+ p4runtime_target_file_path +\
-        " -o "+ compiled_p4_file_path +\
-        " " + p4_target_file_path
-    os.system(cmd)
+# def compile_p4_program():
+#     cmd = "p4c-bm2-ss \
+#         --p4v 16 \
+#         --p4runtime-files "+ p4runtime_target_file_path +\
+#         " -o "+ compiled_p4_file_path +\
+#         " " + p4_target_file_path
+#     os.system(cmd)
     
-def generate_flows():
-    flows_generator = f_gen.DestinationFlowGenerator(
-        topology_file_path = topology_file_path,
-        flows_file_target_path = flows_file_path
-    )
+# def generate_flows():
+#     flows_generator = f_gen.DestinationFlowGenerator(
+#         topology_file_path = topology_file_path,
+#         flows_file_target_path = flows_file_path
+#     )
 
-def generate_policy():
-    policy_generator = p_gen.DestinationPolicyGenerator(
-        topology_file_path = topology_file_path,
-        flows_file_path = flows_file_path,
-        policy_file_target_path = policy_file_path
-    )
+# def generate_policy():
+#     policy_generator = p_gen.DestinationPolicyGenerator(
+#         topology_file_path = topology_file_path,
+#         flows_file_path = flows_file_path,
+#         policy_file_target_path = policy_file_path
+#     )
 
-def start_mininet_network():
-    topology.start_topology()
-    # global exercise
-    # exercise = r_topo.ExerciseRunner(
-    #     topology_file_path = topology_file_path,
-    #     logs_folder = logs_folder,
-    #     pcaps_folder = pcaps_folder,
-    #     compiled_p4_file_path = compiled_p4_file_path,
-    #     bmv2_exe = bmv2_exe
-    # )
-    # exercise.run_exercise()
+# def start_mininet_network():
+#     topology.start_topology()
+#     # global exercise
+#     # exercise = r_topo.ExerciseRunner(
+#     #     topology_file_path = topology_file_path,
+#     #     logs_folder = logs_folder,
+#     #     pcaps_folder = pcaps_folder,
+#     #     compiled_p4_file_path = compiled_p4_file_path,
+#     #     bmv2_exe = bmv2_exe
+#     # )
+#     # exercise.run_exercise()
 
-def start_controller():
-    print "Programming switches"
-    controller = contr.Controller(
-        topology_file_path = topology_file_path,
-        flows_ids_file_path = flows_ids_file_path,
-        switches_connections_file_path = switches_connections_file_path,
-        policy_file_path = policy_file_path,
-        runtimes_files_path = runtimes_files_path,
-        logs_path= logs_path
-    )
-    controller.start_state_gathering()
+# def start_controller():
+#     print "Programming switches"
+#     controller = contr.Controller(
+#         topology_file_path = topology_file_path,
+#         flows_ids_file_path = flows_ids_file_path,
+#         switches_connections_file_path = switches_connections_file_path,
+#         policy_file_path = policy_file_path,
+#         runtimes_files_path = runtimes_files_path,
+#         logs_path= logs_path
+#     )
+#     controller.start_state_gathering()
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -150,8 +138,8 @@ if __name__ == "__main__":
         prepare_topology()
         # generate_flows()
         # generate_policy()
-        construct_p4_program()
-        compile_p4_program()
+        # construct_p4_program()
+        # compile_p4_program()
         # start_mininet_network()
         # start_controller()
     except Exception as e:
