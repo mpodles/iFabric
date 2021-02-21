@@ -18,10 +18,10 @@ from Bmv2GrpcUtils import P4InfoHelper
 class Bmv2GrpcSwitch(MininetSwitch):
     next_grpc_port = 50051
 
-    def __init__(self, switch, p4_json_path, p4runtime_info_path, log_dir, pcap_dir,  **params):
+    def __init__(self, switch, p4_json_file_path, p4runtime_info_file_path, log_dir, pcap_dir, **params):
         MininetSwitch.__init__(self, switch, **params)
-        self.p4_json_path = p4_json_path
-        self.p4runtime_info_path = p4runtime_info_path
+        self.p4_json_file_path = p4_json_file_path
+        self.p4runtime_info_file_path = p4runtime_info_file_path
         self.log_dir = log_dir
         self.pcap_dir = pcap_dir
 
@@ -36,7 +36,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # else:
         #     self.compiled_p4 = None
 
-        self.p4info_helper = P4InfoHelper(self.p4runtime_info_path)
+        self.p4info_helper = P4InfoHelper(self.p4runtime_info_file_path)
         grpc_port = params.get("grpc_port",None)
         self.address= '0.0.0.0'
         if grpc_port is not None:
@@ -70,9 +70,8 @@ class Bmv2GrpcSwitch(MininetSwitch):
             args.append("--pcap %s" % self.pcap_dump)
         if self.nanomsg:
             args.extend(['--nanolog', self.nanomsg])
-        args.extend(['--device-id', str(self.device_id)])
-        MininetSwitch.device_id += 1
-        if self.p4_json_path:
+        args.extend(['--device-id', str(self.ID)])
+        if self.p4_json_file_path:
             args.append(self.p4_json_path)
         else:
             args.append("--no-p4")
@@ -109,59 +108,16 @@ class Bmv2GrpcSwitch(MininetSwitch):
                 return True
         return False
 
-    def connect_to_switch(self):
-        self.connection = self.SwitchConnection(self)
- 
-
     def get_switch_ready(self):
-        # sw_conf = self.json_load_byteified(sw_conf_file)
-        # try:
-        #     self.check_switch_conf(sw_conf=sw_conf, workdir=workdir)
-        # except Exception as e:
-        #     error("While parsing input runtime configuration: %s" % str(e))
-        #     return
-
-        # info('Using P4Info file %s...' % sw_conf['p4info'])
-        # p4info_fpath = os.path.join(workdir, sw_conf['p4info'])
-        # self.p4info_helper = helper.P4InfoHelper(p4info_fpath)
-
-        # target = sw_conf['target']
-
         info("Connecting to P4Runtime server on " +  str(self.address) +":"+ str(self.grpc_port))
-
         switch_connection = self.connect_to_switch()
 
         switch_connection.MasterArbitrationUpdate()
 
-        # if target == "bmv2":
-        # info("Setting pipeline config (%s)..." % sw_conf['bmv2_json'])
-        # bmv2_json_fpath = os.path.join(workdir, sw_conf['bmv2_json'])
-        switch_connection.SetForwardingPipelineConfig(p4info=self.p4info_helper.p4info,
-                                        bmv2_json_file_path=self.compiled_p4)
-        # else:
-        #     raise Exception("Should not be here")
+        switch_connection.SetForwardingPipelineConfig()
 
-        # if 'table_entries' in sw_conf:
-        #     table_entries = sw_conf['table_entries']
-        #     info("Inserting %d table entries..." % len(table_entries))
-        #     for entry in table_entries:
-        #         info(self.tableEntryToString(entry))
-        #         self.insertTableEntry(sw, entry)
-
-        # if 'multicast_group_entries' in sw_conf:
-        #     group_entries = sw_conf['multicast_group_entries']
-        #     info("Inserting %d group entries..." % len(group_entries))
-        #     for entry in group_entries:
-        #         info(self.groupEntryToString(entry))
-        #         self.insertMulticastGroupEntry(sw, entry)
-
-        # if 'clone_session_entries' in sw_conf:
-        #     clone_entries = sw_conf['clone_session_entries']
-        #     info("Inserting %d clone entries..." % len(clone_entries))
-        #     for entry in clone_entries:
-        #         info(self.cloneEntryToString(entry))
-        #         self.insertCloneGroupEntry(sw, entry)
-        #     sw.shutdown()
+    def connect_to_switch(self):
+        self.connection = self.SwitchConnection(self)
 
     def build_table_entry(self, flow):
         table_name = flow['table']
@@ -190,9 +146,9 @@ class Bmv2GrpcSwitch(MininetSwitch):
         self.connection.WriteTableEntry(table_entry, modify=True)
 
 
-    @classmethod
-    def setup(cls):
-        pass
+    # @classmethod
+    # def setup(cls):
+    #     pass
 
     class SwitchConnection(object):
         def __init__(self, switch):
@@ -204,13 +160,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
             self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
             self.requests_stream = IterableQueue()
             self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream))
-            # try:
-            #     self.MasterArbitrationUpdate()
-            #     self.SetForwardingPipelineConfig()
-            # except Exception as e:
-            #     print e
             
-
         def shutdown(self):
             self.requests_stream.close()
             self.stream_msg_resp.cancel()
@@ -248,12 +198,12 @@ class Bmv2GrpcSwitch(MininetSwitch):
             "Builds the device config for BMv2"
             device_config = p4config_pb2.P4DeviceConfig()
             device_config.reassign = True
-            device_config.device_data = self.switch.p4_json_path
+            device_config.device_data = self.switch.p4_json_file_path
             return device_config
 
         def WriteTableEntry(self, table_entry, dry_run=False, modify=False):
             request = p4runtime_pb2.WriteRequest()
-            request.device_id = self.device_id
+            request.device_id = self.OSN_ID
             request.election_id.low = 1
             update = request.updates.add()
             if table_entry.is_default_action or modify:
@@ -268,7 +218,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
         def ReadTableEntries(self, table_id=None, dry_run=False):
             request = p4runtime_pb2.ReadRequest()
-            request.device_id = self.device_id
+            request.device_id = self.OSN_ID
             entity = request.entities.add()
             table_entry = entity.table_entry
             if table_id is not None:
@@ -283,7 +233,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
         def ReadCounters(self, counter_id=None, index=None, dry_run=False):
             request = p4runtime_pb2.ReadRequest()
-            request.device_id = self.device_id
+            request.device_id = self.OSN_ID
             entity = request.entities.add()
             counter_entry = entity.counter_entry
             if counter_id is not None:
@@ -301,7 +251,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
         def WritePREEntry(self, pre_entry, dry_run=False, modify=False):
             request = p4runtime_pb2.WriteRequest()
-            request.device_id = self.device_id
+            request.device_id = self.OSN_ID
             request.election_id.low = 1
             update = request.updates.add()
             if modify:

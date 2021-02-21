@@ -6,8 +6,8 @@ from time import sleep
 import threading
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/TopologiesGenerator/TopologyGenerator.py')
 from TopologyGenerator import SingleSwitchTopologyGenerator
-
-
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/iFabricTopology.py')
+from iFabricTopology import iFabricTopology
 
 main_project_directory = os.path.dirname(os.path.realpath(__file__))
 os.chdir(main_project_directory)
@@ -37,11 +37,11 @@ switches_connections_file = structure["switches_connections_file"]
 
 
 topology_file_path = os.path.join(main_project_directory, build_folder, topology_file)
-topology_configuration_path = os.path.join(main_project_directory, configuration_folder, topology_description_file)
+topology_description_file_path = os.path.join(main_project_directory, configuration_folder, topology_description_file)
 logs_path = os.path.join(main_project_directory, logs_folder)
-p4_target_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
-p4runtime_target_file_path = os.path.join(main_project_directory, build_folder, p4runtime_file_name)
-compiled_p4_file_path = os.path.join(main_project_directory, build_folder, compiled_p4_file_name)
+p4_code_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
+p4runtime_info_file_path = os.path.join(main_project_directory, build_folder, p4runtime_file_name)
+p4_json_file_path = os.path.join(main_project_directory, build_folder, compiled_p4_file_name)
 configuration_folder_path =  os.path.join(main_project_directory, configuration_folder)
 protocols_folder_path = os.path.join(main_project_directory, protocols_folder)
 template_file_path =  os.path.join(main_project_directory, configuration_folder, p4template)
@@ -55,8 +55,21 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    sstg = SingleSwitchTopologyGenerator()
+    sstg = SingleSwitchTopologyGenerator(
+        topology_description_file_path = topology_description_file_path
+    )
     sstg.generate_topology()
+    topology = iFabricTopology(
+        switches = sstg.switches,
+        endpoints = sstg.endpoints,
+        links = sstg.links,
+        p4_code_file_path = p4_code_file_path, 
+        p4runtime_info_file_path = p4runtime_info_file_path, 
+        p4_json_file_path = p4_json_file_path,
+        log_dir = logs_folder, 
+        pcap_dir = pcaps_folder
+    )
+        
     
 
 # def construct_p4_program():   

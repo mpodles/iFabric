@@ -1,11 +1,15 @@
-# from iFabric.iFabricTopology import iFabricTopology
 import random
 import rstr
 import os 
 import json
 class iFabricTopologyGenerator(object):
-    def __init__(self):
-        pass
+    def __init__(self, topology_description_file_path):
+        self.topology_description_file_path = topology_description_file_path
+        self.get_configuration()
+
+    
+    def get_configuration(self):
+        self.configuration =  json.loads(open(self.topology_description_file_path).read())
 
     def generate_topology(self):
         self.generate_switches()
@@ -27,9 +31,8 @@ class iFabricTopologyGenerator(object):
 
 class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
     
-    def __init__(self):
-        iFabricTopologyGenerator.__init__(self)
-        self.get_configuration()
+    def __init__(self, topology_description_file_path):
+        iFabricTopologyGenerator.__init__(self, topology_description_file_path)
         self.switches = []
         self.endpoints_count = self.configuration["endpoints"]
         self.endpoints = []
@@ -39,10 +42,6 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         self.ports_per_endpoint = self.configuration ["ports_per_endpoint"]
         self.ip_addressing = self.configuration ["ip_addressing"]
         self.mac_addressing = self.configuration ["mac_addressing"]
-
-    def get_configuration(self):
-        Path = "/home/mpodles/iFabric/src/main/configuration_files/topology_description_test.json"
-        self.configuration =  json.loads(open(Path).read())
     
     def generate_switches(self):
         self.switches.append("SingleSwitch")

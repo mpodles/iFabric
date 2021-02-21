@@ -59,9 +59,21 @@ class MininetTopology(OSNetTopology,Topo):
 
     
 class Bmv2GrpcTopo(MininetTopology):
-    def __init__(self, switches, endpoints, links, p4runtime_info, p4_json):
+    def __init__(self, switches, endpoints, links, p4_code_file_path, p4runtime_info_file_path, p4_json_file_path, log_dir, pcap_dir):
         MininetTopology.__init__(self, switches, endpoints, links)
-        self.switch_constructor_parameters = {"p4runtime_info":p4runtime_info, "p4_json": p4_json}
+        self.p4_code_file_path = p4_code_file_path
+        self.p4runtime_info_file_path = p4runtime_info_file_path
+        self.p4_json_file_path = p4_json_file_path
+        self.compile_p4_code()
+        self.switch_constructor_parameters = {"p4runtime_info_path":p4runtime_info_file_path, "p4_json_file_path": p4_json_file_path, "log_dir": log_dir, "pcap_dir": pcap_dir}
         self.switch_class = Bmv2GrpcSwitch
+    
+    def compile_p4_code(self):
+        cmd = "p4c-bm2-ss \
+        --p4v 16 \
+        --p4runtime-files "+ self.p4runtime_info_file_path +\
+        " -o "+ self.p4_json_file_path +\
+        " " + self.p4_code_file_path
+        os.system(cmd)
 
 
