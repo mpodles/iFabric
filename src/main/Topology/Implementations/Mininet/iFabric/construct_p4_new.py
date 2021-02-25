@@ -9,7 +9,7 @@ import os
 class P4Constructor():
     def __init__(self, **files):
         protocols_folder_path = files["protocols_folder_path"] 
-        protocols_required_file_path = files["protocols_required_file_path"] 
+        protocols_description_file_path = files["protocols_description_file_path"] 
         template_file_path = files["template_file_path"] 
         p4_file_target_path = files["p4_file_target_path"]
 
@@ -19,19 +19,19 @@ class P4Constructor():
         # self.tables_action = {"MyIngress.Flow_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
         # self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyEgress.strip_header": [] }
 
-        self.read_protocols(protocols_folder_path, protocols_required_file_path)
+        self.read_protocols(protocols_folder_path, protocols_description_file_path)
         self.construct_p4_program(template_file_path, p4_file_target_path)
        
 
             
-    def read_protocols(self, protocols_folder_path, protocols_required_file_path):
-        with open(protocols_required_file_path, "r") as f:
+    def read_protocols(self, protocols_folder_path, protocols_description_file_path):
+        with open(protocols_description_file_path, "r") as f:
             protocols_file = json.loads(f.read())
             self.protocols_used = protocols_file["protocols_used"]
-            self.protocols_stack = protocols_file["stacks"]
-            self.next_protocols_fields = protocols_file["next_prot_fields"]
+            self.protocols_stack = protocols_file["protocols_stacks"]
+            self.next_protocols_fields = protocols_file["next_protocols_fields"]
             self.match_fields_used = protocols_file["match_fields_used"]
-            self.fields_to_learn = protocols_file["fields_to_learn"] 
+            self.match_fields_to_learn = protocols_file["match_fields_to_learn"] 
         
         for filename in os.listdir(protocols_folder_path):
             if filename in self.protocols_used:
@@ -43,8 +43,10 @@ class P4Constructor():
         env = jinja2.Environment(loader=file_loader)
 
         template=env.get_template(os.path.basename(template_file_path))
-        output = template.render(match_fields_used=self.match_fields_used,\
-                protocols=self.protocols, next_protocols_fields = self.next_protocols_fields)
+        output = template.render(match_fields_used=self.match_fields_used,
+                                protocols=self.protocols, 
+                                next_protocols_fields = self.next_protocols_fields,
+                                match_fields_to_learn = self.match_fields_to_learn)
 
         with open(p4_target_file_path,'w+')  as f:
              f.write(output)

@@ -4,6 +4,7 @@
     "configuration_folder": "configuration_files",
     "simulator_folder": "preparing_mininet_topology",
     "protocols_folder": "protocols",
+    "protocols_description_file": "protocol_stack.json",
     "p4_code_template" : "iFabric_switch_template.jinja2",
     "p4_code_file_name" : "iFabric_switch.p4",
     "compiled_p4_file_name": "iFabric_switch.json",

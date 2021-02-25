@@ -3,6 +3,7 @@
 #include <v1model.p4>
 
 const bit<16> TYPE_iFabric = 0x1212;
+const bit<16> TYPE_iFabric_flood = 0x1213;
 const bit<32> MAX_iFabric_ID = 1 << 15;
 const bit<16> iFabric_next_protocol_TYPE_ETHERNET = 0x0001;
 
@@ -13,10 +14,11 @@ const bit<16> iFabric_next_protocol_TYPE_ETHERNET = 0x0001;
 
 header iFabric_t {
     bit<16> header_type;
+    bit<16> header_subtype;
     bit<16> next_protocol;
     bit<16> flow_id;
-    bit<16> node_id;
-    bit<16> group_id;
+    bit<16> source_id;
+    bit<16> destination_id;
     bit<128> reserved;
 }
 
@@ -63,12 +65,12 @@ parser MyParser(packet_in packet,
     {% for protocol_name, protocol_data in next_protocols_fields.items() -%}
     state parse_{{protocol_name}} {
         packet.extract(hdr.{{protocol_name}});
-        {% if protocol_data.get("next_prot_field") %}
-        transition select(hdr.{{protocol_name}}.{{protocol_data["next_prot_field"]}}) {
-            {% for next_protocol, field_value in protocol_data["next_prot_value"].items() -%}
+        {% if protocol_data.get("next_protocol_field") %}
+        transition select(hdr.{{protocol_name}}.{{protocol_data["next_protocol_field"]}}) {
+            {% for next_protocol, field_value in protocol_data["next_protocol_value"].items() -%}
             {{field_value}}: parse_{{next_protocol}};{% endfor %}
             default: accept;
-        }{% endif %}{% if not protocol_data.get("next_prot_field")%}transition accept;{% endif %}
+        }{% endif %}{% if not protocol_data.get("next_protocol_field")%}transition accept;{% endif %}
     }
     {% endfor %}
 
@@ -98,9 +100,9 @@ control MyIngress(inout headers hdr,
     }
     
     action append_iFabric_header(
-        bit<16> flow_id,
-        bit<16> node_id,
-        bit<16> group_id) {
+                bit<16> flow_id,
+                bit<16> node_id,
+                bit<16> group_id) {
         meta.priority = 0;
         hdr.iFabric.setValid();
         hdr.iFabric.header_type = TYPE_iFabric;
@@ -109,6 +111,26 @@ control MyIngress(inout headers hdr,
         hdr.iFabric.node_id = node_id;
         hdr.iFabric.group_id = group_id;
     }
+
+    action punt_to_cpu() {
+        hdr.iFabric.setInvalid();
+    }
+
+    table CPU_punter {
+        key = {
+            {% for match_field_name in match_fields_to_learn -%}
+            {{match_field_name}}: range;
+            {% endfor %}
+        }
+        actions = {
+            punt_to_cpu;
+            NoAction;
+            drop;
+        }
+        size = 1024;
+        default_action = punt_to_cpu();
+    }
+
 
     table Flow_classifier {
         key = {
@@ -128,8 +150,13 @@ control MyIngress(inout headers hdr,
 
     apply {
         if (!hdr.iFabric.isValid()){
+            CPU_punter.apply();
             Flow_classifier.apply();
-        }         
+        }  
+        else if (hdr.iFabric.header_subtype == 1){
+            punt_to_cpu();
+        }
+
         ingress_byte_cnt.count((bit<32>) ((bit<16>)standard_metadata.ingress_port + (hdr.iFabric.flow_id - 1)* 48));
         standard_metadata.mcast_grp = (bit<16>)hdr.iFabric.flow_id;
         }
