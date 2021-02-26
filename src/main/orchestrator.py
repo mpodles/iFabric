@@ -4,8 +4,9 @@ import argparse
 import timeit
 from time import sleep
 import threading
-sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/TopologiesGenerator/TopologyGenerator.py')
-from TopologyGenerator import SingleSwitchTopologyGenerator
+import sys
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Topologies')
+from SingleSwitch import SingleSwitch
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/iFabricTopology.py')
 from iFabricTopology import iFabricTopology
 

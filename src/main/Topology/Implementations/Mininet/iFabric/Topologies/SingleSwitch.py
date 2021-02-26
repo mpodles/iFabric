@@ -15,20 +15,20 @@ class SingleSwitch(iFabricTopology):
                                 endpoints=self.generator.endpoints,
                                 links = self.generator.links )
 
-        self.generate_mininet_topo()
-        self.generate_topology()
+        # self.generate_mininet_topo()
+        # self.generate_topology()
 
 
-    def start_topology(self):
-        self.net = Mininet(topo = self.mininet_topo, link = TCLink)
-        self.net.start()
-        CLI(self.net)
-        self.program_nodes()
+#     def start_topology(self):
+#         self.net = Mininet(topo = self.mininet_topo, link = TCLink)
+#         self.net.start()
+#         CLI(self.net)
+#         self.program_nodes()
 
-    def program_nodes(self):
-        for node_name in self.endpoints.nodes:
-            h = self.net.get(node_name)
-            h.cmd("program")
+#     def program_nodes(self):
+#         for node_name in self.endpoints.nodes:
+#             h = self.net.get(node_name)
+#             h.cmd("program")
 
-if __name__ == "__main__":
-    sstg = SingleSwitch()
+# if __name__ == "__main__":
+#     sstg = SingleSwitch()

@@ -4,8 +4,11 @@ class OSNetDevice(object):
         self.OSN_ID = OSNetDevice.next_OSN_ID
         OSNetDevice.next_OSN_ID +=1
         self.name = switch
-        self.OSN_States = {}
+        self.connections = []
+        self.OSN_States = {name:OSNetState}
         self.OSN_Actions = {}
+
+    def connect_to_device(self)
 
     def run(self):
         pass
