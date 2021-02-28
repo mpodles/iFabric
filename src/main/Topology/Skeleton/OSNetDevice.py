@@ -5,9 +5,3 @@ class OSNetDevice(object):
         OSNetDevice.next_OSN_ID +=1
         self.name = device.name
         self.OSNetCommunicator = device.communicator 
-
-    def run(self):
-        pass
-
-    def stop(self):
-        pass

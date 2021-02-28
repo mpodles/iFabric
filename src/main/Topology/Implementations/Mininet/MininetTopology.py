@@ -57,6 +57,12 @@ class MininetTopology(OSNetTopology,Topo):
         for link in self.links:
             links.append(self.link_class(link))
 
+    def run(self):
+        pass
+
+    def stop(self):
+        pass
+
     
 class Bmv2GrpcTopo(MininetTopology):
     def __init__(self, switches, endpoints, links, p4_code_file_path, p4runtime_info_file_path, p4_json_file_path, log_dir, pcap_dir):

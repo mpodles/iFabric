@@ -8,6 +8,10 @@ class MininetEndpoint(OSNetDevice,Host):
     def __init__(self,endpoint):
         OSNetDevice.__init__(endpoint)
         Host.__init__(endpoint)
-    # def config(self, **params):
-    #     return super(MininetEndpoint, self).config(**params)
+    
+    def run(self):
+        pass
+
+    def stop(self):
+        pass
 
