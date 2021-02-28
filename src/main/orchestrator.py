@@ -58,7 +58,7 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    sstg = SingleSwitchTopologyGenerator(
+    sstg = SingleSwitch(
         topology_description_file_path = topology_description_file_path
     )
     sstg.generate_topology()

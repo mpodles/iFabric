@@ -12,7 +12,7 @@ from Bmv2GrpcUtils import P4InfoHelper
 from mininet.log import info, error, debug
 
 class Bmv2Communicator(OSNetCommunicator):
-    def __init__(self, address, ID, grpc_port, p4runtime_info_file_path, p4_json_file_path, **params):
+    def __init__(self, switch, address, ID, grpc_port, p4runtime_info_file_path, p4_json_file_path, **params):
         OSNetCommunicator.__init__(self)
         self.ID = ID
         self.address = address

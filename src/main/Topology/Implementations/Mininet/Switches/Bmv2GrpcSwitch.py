@@ -1,6 +1,8 @@
 import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet')
 from MininetSwitch import MininetSwitch
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator')
+from Bmv2Communicator import Bmv2Communicator
 from mininet.moduledeps import pathCheck
 from mininet.log import info, error, debug
 import tempfile
@@ -14,6 +16,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
     def __init__(self, switch, p4_json_file_path, p4runtime_info_file_path, log_dir, pcap_dir, **params):
         MininetSwitch.__init__(self, switch, **params)
+        self.OSNetCommunicator_class = Bmv2Communicator
         self.p4_json_file_path = p4_json_file_path
         self.p4runtime_info_file_path = p4runtime_info_file_path
         self.log_dir = log_dir
