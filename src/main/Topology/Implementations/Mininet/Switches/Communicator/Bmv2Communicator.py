@@ -1,3 +1,7 @@
+import sys 
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton/Communicator')
+from OSNetCommunicator import OSNetCommunicator
+
 from Bmv2GrpcUtils import GrpcRequestLogger
 from Bmv2GrpcUtils import IterableQueue
 from p4.tmp import p4config_pb2
@@ -7,19 +11,22 @@ from p4.v1 import p4runtime_pb2_grpc
 from Bmv2GrpcUtils import P4InfoHelper
 from mininet.log import info, error, debug
 
-class Bmv2Communicator(object):
-    def __init__(self, address, ID, grpc_port, p4runtime_info_file_path):
+class Bmv2Communicator(OSNetCommunicator):
+    def __init__(self, address, ID, grpc_port, p4runtime_info_file_path, p4_json_file_path, **params):
+        OSNetCommunicator.__init__(self)
         self.ID = ID
         self.address = address
         self.grpc_port = grpc_port
         self.p4info_helper = P4InfoHelper(p4runtime_info_file_path)
+        self.p4_json_file_path = p4_json_file_path
+        self.proto_dump_file = params.get("proto_dump_file", None)
         
     def connect(self):
         combined_address = str(self.address)+ ":" + str(self.grpc_port)
         info("Connecting to P4Runtime server on " +  combined_address)
         self.channel = grpc.insecure_channel(combined_address)
         if self.proto_dump_file is not None:
-            interceptor = GrpcRequestLogger(self.switch.proto_dump_file)
+            interceptor = GrpcRequestLogger(self.proto_dump_file)
             self.channel = grpc.intercept_channel(self.channel, interceptor)
         self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
         self.requests_stream = IterableQueue()
@@ -85,11 +92,11 @@ class Bmv2Communicator(object):
     
     def insertTableEntry(self, flow):
         table_entry = self.build_table_entry(flow)
-        self.connection.WriteTableEntry(table_entry)
+        self.WriteTableEntry(table_entry)
     
     def modifyTableEntry(self, flow):
         table_entry = self.build_table_entry(flow)
-        self.connection.WriteTableEntry(table_entry, modify=True)
+        self.WriteTableEntry(table_entry, modify=True)
             
 
     def WriteTableEntry(self, table_entry, dry_run=False, modify=False):
@@ -155,6 +162,6 @@ class Bmv2Communicator(object):
             for response in self.client_stub.Read(request):
                 yield response
 
-    def shutdown(self):
+    def disconnect(self):
         self.requests_stream.close()
         self.stream_msg_resp.cancel()

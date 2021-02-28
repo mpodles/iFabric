@@ -1,4 +1,4 @@
-from iFabric import iFabricEndpoint
+from iFabricEndpoint import iFabricEndpoint
 
 class iFabricMainframe(iFabricEndpoint):
     def config(self, **params):

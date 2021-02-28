@@ -16,6 +16,12 @@ class OSNetCommunicator(object):
         for conn in connections_with_actions:
             for action in conn:
                 self.OSN_Actions.append(action)
+
+    def connect(self, connection):
+        connection.connect()
+
+    def disconnect(self, connection):
+        connection.disconnect()
             
     def connect_all(self):
         for connection in self.connections:

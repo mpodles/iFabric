@@ -19,3 +19,9 @@ class OSNetController(object):
 
     def connect(self):
         self.OSNet_device.OSNetCommunicator.connect_all()
+        
+    def get_state_data(self, state, **params):
+        self.OSNet_device.OSNetCommunicator.get_state(state, **params)
+
+    def take_action(self, action, **params):
+        self.OSNet_device.OSNetCommunicator.take_action(action, **params)

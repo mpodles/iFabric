@@ -4,3 +4,6 @@ class OSNetConnection(object):
 
     def connect(self):
         pass    
+
+    def disconnect(self):
+        pass
