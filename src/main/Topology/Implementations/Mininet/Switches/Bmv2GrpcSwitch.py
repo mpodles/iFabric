@@ -32,24 +32,22 @@ class Bmv2GrpcSwitch(MininetSwitch):
         #     self.compiled_p4 = compiled_p4
         # else:
         #     self.compiled_p4 = None
-        grpc_port = params.get("grpc_port",None)
-        self.address= '0.0.0.0'
-        if grpc_port is not None:
-            self.grpc_port = grpc_port
-        else:
+        try: 
+            self.grpc_port = self.device.grpc_port
+        except:
             self.grpc_port = Bmv2GrpcSwitch.next_grpc_port
             Bmv2GrpcSwitch.next_grpc_port += 1
 
         if self.check_listening_on_port():
-            error('%s cannot bind port %d because it is bound by another process\n' % (self.name, self.grpc_port))
+            error('%s cannot bind port %d because it is bound by another process\n' % (self.device.name, self.grpc_port))
             exit(1)
-        logfile = "/tmp/p4s.{}.log".format(self.name)
+        logfile = "/tmp/p4s.{}.log".format(self.device.name)
         self.output = open(logfile, 'w')
         # self.pcap_dump = pcap_dump
         # self.enable_debugger = enable_debugger
         # self.log_console = log_console
         
-        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device_id)
+        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.ID)
 
     
     def run(self):
@@ -67,7 +65,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
             args.extend(['--nanolog', self.nanomsg])
         args.extend(['--device-id', str(self.ID)])
         if self.p4_json_file_path:
-            args.append(self.p4_json_path)
+            args.append(self.p4_json_file_path)
         else:
             args.append("--no-p4")
         if self.enable_debugger:
@@ -82,11 +80,11 @@ class Bmv2GrpcSwitch(MininetSwitch):
         with tempfile.NamedTemporaryFile() as f:
             self.cmd(cmd + ' >' + self.log_file + ' 2>&1 & echo $! >> ' + f.name)
             pid = int(f.read())
-        debug("P4 switch {} PID is {}.\n".format(self.name, pid))
+        debug("P4 switch {} PID is {}.\n".format(self.device.name, pid))
         if not self.check_switch_started(pid):
-            error("P4 switch {} did not start correctly.\n".format(self.name))
+            error("P4 switch {} did not start correctly.\n".format(self.device.name))
             exit(1)
-        info("P4 switch {} has been started.\n".format(self.name))
+        info("P4 switch {} has been started.\n".format(self.device.name))
 
 
     def check_switch_started(self, pid):

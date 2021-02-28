@@ -9,7 +9,7 @@ class MininetSwitch(OSNetDevice,Switch):
 
     def __init__(self,switch):
         OSNetDevice.__init__(self, device = switch)
-        Switch.__init__(self, switch.name, dpid = str(self.OSN_ID))
+        Switch.__init__(self, self.device.name, dpid = str(self.OSN_ID))
 
     def run(self):
         pass

@@ -2,6 +2,9 @@ import random
 import rstr
 import os 
 import json
+from SwitchData import SwitchData
+from LinkData import LinkData
+from EndpointData import EndpointData
 class iFabricTopologyGenerator(object):
     def __init__(self, topology_description_file_path):
         self.topology_description_file_path = topology_description_file_path
@@ -44,16 +47,17 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         self.mac_addressing = self.configuration ["mac_addressing"]
     
     def generate_switches(self):
-        self.switches["SingleSwitch"] = {}
+        self.switches["SingleSwitch"] = SwitchData("SingleSwitch")
     
     def generate_endpoints(self):
         for ep_nr in range(1,self.endpoints_count+1):
             endpoint_name = "EP_" + str(ep_nr)
-            self.endpoints[endpoint_name] = {"ip":self.generate_ip_addressing, "mac": self.generate_mac_addressing}
+            self.endpoints[endpoint_name] = EndpointData(endpoint_name, self.generate_ip_address(endpoint_name) , self.generate_mac_address(endpoint_name) )
 
     def generate_links(self):
-        for endpoint in self.endpoints:
-            self.links[("SingleSwitch",endpoint)] = {"latency": "1ms", "bandwidth": "1000Mbts"}
+        for endpoint in self.endpoints.keys():
+            link_name = "SingleSwitch" + " - " + endpoint
+            self.links[link_name] = LinkData(link_name, "1ms", "1000Mbs")
 
     def generate_groups(self):
         groups_count = self.endpoints_count / self.avg_group_size
@@ -61,18 +65,18 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
             endpoints = ["EP_" + str(self.avg_group_size*gr_nr - i) for i in range(self.avg_group_size)]
             self.groups["Group_" + str(gr_nr)] = endpoints
   
-    def generate_ip_addressing(self, endpoint):
+    def generate_ip_address(self, endpoint):
         if self.ip_addressing == "random":
-            return self.generate_random_ip_addressing()
+            return self.generate_random_ip_address()
 
-    def generate_random_ip_addressing(self):
+    def generate_random_ip_address(self):
         return str(random.randint(10, 223)) + "." + str(random.randint(0, 255))+ "." +str(random.randint(0, 255))+ "." +str(random.randint(0, 255))
 
-    def generate_mac_addressing(self, endpoint):
+    def generate_mac_address(self, endpoint):
         if self.ip_addressing == "random":
-            return self.generate_random_mac_addressing()
+            return self.generate_random_mac_address()
 
-    def generate_random_mac_addressing(self):
+    def generate_random_mac_address(self):
         #TODO: verify rstr licence
         random_mac=rstr.xeger('[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]')
         return random_mac

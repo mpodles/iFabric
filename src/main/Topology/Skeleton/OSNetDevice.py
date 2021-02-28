@@ -11,4 +11,4 @@ class OSNetDevice(object):
         self.OSNetCommunicator_class = OSNetCommunicator
 
     def initiate_communicator(self):
-        self.OSNetCommunicator = self.OSNetCommunicator_class(OSN_ID, self.device)
+        self.OSNetCommunicator = self.OSNetCommunicator_class(self.OSN_ID, self.device)
