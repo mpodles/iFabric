@@ -1,5 +1,6 @@
 class OSNetConnection(object):
-    def __init__(self, name):
+    def __init__(self, communicator, name):
+        self.communicator = communicator
         self.name = name
         self.OSN_States = {}
         self.OSN_Actions = {}

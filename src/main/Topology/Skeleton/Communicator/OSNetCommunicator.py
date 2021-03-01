@@ -1,9 +1,9 @@
 class OSNetCommunicator(object):
-    def __init__(self):
+    def __init__(self, device, **params):
+        self.device = device
         self.connections = {}
-        self.OSN_States = []
-        self.OSN_Actions = []
-
+        self.OSN_States = {}
+        self.OSN_Actions = {}
 
     def connect(self, connection):
         connection.connect()
