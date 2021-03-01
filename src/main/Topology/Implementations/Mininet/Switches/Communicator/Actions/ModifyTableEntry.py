@@ -1,3 +1,5 @@
+def get_function():
+    return perform_action
 def perform_action(self, **params):
     flow = params["flow"]
     table_entry = self.build_table_entry(flow)

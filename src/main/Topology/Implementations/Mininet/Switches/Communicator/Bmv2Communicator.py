@@ -26,7 +26,7 @@ class Bmv2Communicator(OSNetCommunicator):
     def add_actions(self):
         for filename in os.listdir("./Actions"):
             module = import_module(filename, "Actions")
-            self.OSN_Actions.append(OSNetAction(filename, module.perform_action))
+            self.OSN_Actions.append(OSNetAction(filename, module.get_function()))
     
     def add_states(self):
         for filename in os.listdir("./States"):

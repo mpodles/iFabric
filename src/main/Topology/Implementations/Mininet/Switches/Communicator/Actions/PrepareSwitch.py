@@ -1,11 +1,13 @@
+def get_function():
+    return perform_action
 def perform_action(self, **params):
     self.get_switch_ready()
 def get_switch_ready(self):
     self.MasterArbitrationUpdate()
     self.SetForwardingPipelineConfig()
-def MasterArbitrationUpdate(self, dry_run=False, **kwargs):
+def MasterArbitrationUpdate(id, dry_run=False, **kwargs):
     request = p4runtime_pb2.StreamMessageRequest()
-    request.arbitration.device_id = self.ID
+    request.arbitration.device_id = id
     request.arbitration.election_id.high = 0
     request.arbitration.election_id.low = 1
     if dry_run:

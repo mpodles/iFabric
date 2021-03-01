@@ -1,9 +1,8 @@
-def get_state_data(self):
-    self.latest_state_data = self.ReadCounters()
-    return self.latest_state_data
-def ReadCounters(self, counter_id=None, index=None, dry_run=False):
+def get_function():
+    return ReadCounters
+def ReadCounters(id, client_stub, counter_id=None, index=None, dry_run=False):
     request = p4runtime_pb2.ReadRequest()
-    request.device_id = self.ID
+    request.device_id = id
     entity = request.entities.add()
     counter_entry = entity.counter_entry
     if counter_id is not None:
@@ -15,5 +14,5 @@ def ReadCounters(self, counter_id=None, index=None, dry_run=False):
     if dry_run:
         print "P4Runtime Read:", request
     else:
-        for response in self.client_stub.Read(request):
+        for response in client_stub.Read(request):
             yield response
