@@ -6,6 +6,7 @@ from iFabricConnection import iFabricConnection
 class iFabricSwitchCommunicator(Bmv2Communicator):
     def __init__(self, device, **params):
         Bmv2Communicator.__init__(device, **params)
-        self.connections_classes.append(iFabricConnection)
+
+    
     
         

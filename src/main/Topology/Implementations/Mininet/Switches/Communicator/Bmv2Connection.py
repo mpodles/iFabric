@@ -30,7 +30,7 @@ class Bmv2Connection(OSNetConnection):
     def add_states(self):
         for filename in os.listdir("./States"):
             module = import_module(filename, "States")
-            self.OSN_State.append(OSNetState(filename, module.get_state_data))
+            self.OSN_State.append(OSNetState(filename, module.get_function()))
      
     def connect(self):
         combined_address = str(self.address)+ ":" + str(self.grpc_port)
