@@ -1,4 +1,4 @@
-class OSNetAction():
+class OSNetAction(object):
     def __init__(self,action):
         self.name = action.name
         self.action_log = {}

@@ -8,8 +8,8 @@ from p4.v1 import p4runtime_pb2
 from p4.v1 import p4runtime_pb2_grpc
 class PrepareSwitch(OSNetAction):
 
-    def __init__(self):
-        OSNetAction.__init__(self)    
+    def __init__(self, connection):
+        OSNetAction.__init__(self, connection)    
 
     def perform_action(self, **params):
         self.get_switch_ready()

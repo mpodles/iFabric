@@ -1,4 +1,4 @@
-class OSNetState():
+class OSNetState(object):
     def __init__(self):
         self.state_name = None
         self.latest_state_data = None
