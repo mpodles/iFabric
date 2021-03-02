@@ -14,13 +14,13 @@ import os
 class Bmv2GrpcSwitch(MininetSwitch):
     next_grpc_port = 50051
 
-    def __init__(self, switch, p4_json_file_path, p4runtime_info_file_path, log_dir, pcap_dir, **params):
+    def __init__(self, switch, **params):
         MininetSwitch.__init__(self, switch, **params)
         self.OSNetCommunicator_class = Bmv2Communicator
-        self.p4_json_file_path = p4_json_file_path
-        self.p4runtime_info_file_path = p4runtime_info_file_path
-        self.log_dir = log_dir
-        self.pcap_dir = pcap_dir
+        self.p4_json_file_path = self.device.p4_json_file_path
+        self.p4runtime_info_file_path = self.device.p4runtime_info_file_path
+        self.log_dir = self.device.log_dir
+        self.pcap_dir = self.device.pcap_dir
 
         self.sw_program = "simple_switch_grpc"
         pathCheck(self.sw_program)
@@ -47,7 +47,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # self.enable_debugger = enable_debugger
         # self.log_console = log_console
         
-        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.ID)
+        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.OSN_ID)
 
     
     def run(self):
@@ -63,7 +63,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
             args.append("--pcap %s" % self.pcap_dump)
         if self.nanomsg:
             args.extend(['--nanolog', self.nanomsg])
-        args.extend(['--device-id', str(self.ID)])
+        args.extend(['--device-id', str(self.OSN_ID)])
         if self.p4_json_file_path:
             args.append(self.p4_json_file_path)
         else:

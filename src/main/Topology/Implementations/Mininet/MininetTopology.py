@@ -15,13 +15,13 @@ from MininetLink import MininetLink
 import os
 
 
-class MininetTopology(OSNetTopology,Topo):
+class MininetTopology(OSNetTopology):
     def __init__(self,
                 switches,
                 endpoints,
                 links):
                 
-        Topo.__init__(self)
+        # Topo.__init__(self)
         OSNetTopology.__init__(self)
         self.switches = switches
         self.endpoints = endpoints
@@ -32,20 +32,23 @@ class MininetTopology(OSNetTopology,Topo):
         # self.endpoint_constructor_parameters = {}
         self.link_class = MininetLink
         # self.link_constructor_parameters = {}
+        self.mininet_topo = None
         self.mininet = None
         
         
     def generate_mininet_topo(self):
+        self.mininet_topo = Topo()
         for endpoint in self.endpoints.values():
-            self.addHost(endpoint.name, cls=self.endpoint_class, params_object = endpoint)
+            self.mininet_topo.addHost(endpoint.name, cls=self.endpoint_class, params_object = endpoint)
         for switch in self.switches.values():
-            self.addSwitch(switch.name, cls=self.switch_class, params_object = switch)
+            self.mininet_topo.addSwitch(switch.name, cls=self.switch_class, params_object = switch)
         for link in self.links.values():
             node1,node2 = link.node1.name, link.node2.name
-            self.addLink(node1,node2, cls=self.link_class, params_object = link)
+            self.mininet_topo.addLink(node1,node2, cls=self.link_class, params_object = link)
     
     def generate_mininet_net(self):
-        self.mininet = Mininet(topo = self) #, switch = self.switch_class, host = self.endpoint_class, link = self.link_class
+        self.mininet = Mininet(topo = self.mininet_topo) #, switch = self.switch_class, host = self.endpoint_class, link = self.link_class
+
         
     def generate_nodes(self):
         nodes = []
@@ -62,6 +65,9 @@ class MininetTopology(OSNetTopology,Topo):
         for link in self.links:
             links.append(self.link_class(link))
 
+    def start(self):
+        self.mininet.start()
+
     def run(self):
         self.mininet.start()
 
@@ -72,6 +78,15 @@ class MininetTopology(OSNetTopology,Topo):
 class Bmv2GrpcTopo(MininetTopology):
     def __init__(self, switches, endpoints, links, p4_code_file_path, p4runtime_info_file_path, p4_json_file_path, log_dir, pcap_dir):
         MininetTopology.__init__(self, switches, endpoints, links)
+        for switch in switches.values():
+            switch.p4_json_file_path = p4_json_file_path
+            switch.p4runtime_info_file_path = p4runtime_info_file_path
+            switch.log_dir = log_dir
+            switch.pcap_dir = pcap_dir
+        # for endpoint in endpoints.values():
+
+        # for link in links.values():
+
         self.p4_code_file_path = p4_code_file_path
         self.p4runtime_info_file_path = p4runtime_info_file_path
         self.p4_json_file_path = p4_json_file_path
