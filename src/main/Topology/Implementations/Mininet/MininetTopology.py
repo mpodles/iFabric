@@ -5,6 +5,7 @@ sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet
 from OSNetDevice import OSNetDevice
 from OSNetTopology import OSNetTopology
 from mininet.node import Switch
+from mininet.net import Mininet
 from mininet.link import Link
 from mininet.topo import Topo
 from Bmv2GrpcSwitch import Bmv2GrpcSwitch
@@ -31,6 +32,7 @@ class MininetTopology(OSNetTopology,Topo):
         self.endpoint_constructor_parameters = {}
         self.link_class = MininetLink
         self.link_constructor_parameters = {}
+        self.mininet = None
         
         
     def generate_mininet_topo(self):
@@ -41,6 +43,9 @@ class MininetTopology(OSNetTopology,Topo):
         for link in self.links:
             node1,node2 = link[0], link[1]
             self.addLink(node1,node2, cls=self.link_class, **self.link_constructor_parameters)
+    
+    def generate_mininet_net(self):
+        self.mininet = Mininet(topo = self, switch = self.switch_class, host = self.endpoint_class, link = self.link_class)
         
     def generate_nodes(self):
         nodes = []
@@ -58,10 +63,10 @@ class MininetTopology(OSNetTopology,Topo):
             links.append(self.link_class(link))
 
     def run(self):
-        pass
+        self.mininet.start()
 
     def stop(self):
-        pass
+        self.mininet.stop()
 
     
 class Bmv2GrpcTopo(MininetTopology):

@@ -58,24 +58,10 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    sstg = SingleSwitch(
-        topology_description_file_path = topology_description_file_path
-    )
-    sstg.generate_topology()
-    topology = iFabricTopology(
-        switches = sstg.switches,
-        endpoints = sstg.endpoints,
-        links = sstg.links,
-        p4_template_file_path = p4_template_file_path,
-        p4_code_file_path = p4_code_file_path,
-        protocols_description_file_path = protocols_description_file_path,
-        protocols_folder_path = protocols_folder_path,
-        p4runtime_info_file_path = p4runtime_info_file_path, 
-        p4_json_file_path = p4_json_file_path,
-        log_dir = logs_folder, 
-        pcap_dir = pcaps_folder
-    )
-        
+    sstg = SingleSwitch(topology_description_file_path = topology_description_file_path)
+    return sstg
+    
+
     
 
 # def construct_p4_program():   
@@ -113,17 +99,9 @@ def prepare_topology():
 #         policy_file_target_path = policy_file_path
 #     )
 
-# def start_mininet_network():
-#     topology.start_topology()
-#     # global exercise
-#     # exercise = r_topo.ExerciseRunner(
-#     #     topology_file_path = topology_file_path,
-#     #     logs_folder = logs_folder,
-#     #     pcaps_folder = pcaps_folder,
-#     #     compiled_p4_file_path = compiled_p4_file_path,
-#     #     bmv2_exe = bmv2_exe
-#     # )
-#     # exercise.run_exercise()
+def start_mininet_network(topology):
+    topology.generate_mininet_net()
+    topology.start()
 
 # def start_controller():
 #     print "Programming switches"
@@ -154,12 +132,12 @@ if __name__ == "__main__":
     print 
     try:
         prepare_folders()
-        prepare_topology()
+        topo = prepare_topology()
         # generate_flows()
         # generate_policy()
         # construct_p4_program()
         # compile_p4_program()
-        # start_mininet_network()
+        start_mininet_network(topo)
         # start_controller()
     except Exception as e:
         print "Exception: ", e

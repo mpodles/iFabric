@@ -5,9 +5,9 @@ def perform_action(self, **params):
 def get_switch_ready(self):
     self.MasterArbitrationUpdate()
     self.SetForwardingPipelineConfig()
-def MasterArbitrationUpdate(id, dry_run=False, **kwargs):
+def MasterArbitrationUpdate(self, dry_run=False, **kwargs):
     request = p4runtime_pb2.StreamMessageRequest()
-    request.arbitration.device_id = id
+    request.arbitration.device_id = self.OSN_ID
     request.arbitration.election_id.high = 0
     request.arbitration.election_id.low = 1
     if dry_run:
@@ -20,7 +20,7 @@ def SetForwardingPipelineConfig(self, dry_run=False):
     device_config = self.buildDeviceConfig()
     request = p4runtime_pb2.SetForwardingPipelineConfigRequest()
     request.election_id.low = 1
-    request.device_id = self.ID
+    request.device_id = self.OSN_ID
     config = request.config
     config.p4info.CopyFrom(self.p4info_helper)
     config.p4_device_config = device_config.SerializeToString()
