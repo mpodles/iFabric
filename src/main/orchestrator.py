@@ -7,6 +7,7 @@ import threading
 import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Topologies')
 from SingleSwitch import SingleSwitch
+import traceback
 
 
 main_project_directory = os.path.dirname(os.path.realpath(__file__))
@@ -150,8 +151,9 @@ if __name__ == "__main__":
         # compile_p4_program()
         start_mininet_network(topo)
         # start_controller()
-    except Exception as e:
-        print "Exception: ", e
+    except Exception, err:
+        print "Exception: ", err
         print 
+        print traceback.print_exc()
     finally:
         clean_setup()

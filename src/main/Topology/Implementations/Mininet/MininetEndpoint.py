@@ -5,9 +5,10 @@ from mininet.node import Host
 
 
 class MininetEndpoint(OSNetDevice,Host):
-    def __init__(self,endpoint):
-        OSNetDevice.__init__(endpoint)
-        Host.__init__(endpoint)
+    def __init__(self,endpoint, **params):
+        endpoint = params["params_object"]
+        OSNetDevice.__init__(self, endpoint)
+        Host.__init__(self, endpoint.name)
     
     def run(self):
         pass

@@ -102,8 +102,7 @@ control MyIngress(inout headers hdr,
     
     action append_iFabric_header(
                 bit<16> flow_id,
-                bit<16> node_id,
-                bit<16> group_id) {
+                bit<16> node_id) {
         meta.priority = 0;
         hdr.iFabric.setValid();
         hdr.iFabric.header_type = TYPE_iFabric;

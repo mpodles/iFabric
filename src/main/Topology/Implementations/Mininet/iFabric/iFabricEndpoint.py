@@ -4,7 +4,7 @@ from MininetEndpoint import MininetEndpoint
 
 class iFabricEndpoint(MininetEndpoint):
     def __init__(self, name, **params):
-        self.name = name
+        MininetEndpoint.__init__(self, name, **params)
 
     def config(self, **params):
         r = MininetEndpoint.__init__(**params)

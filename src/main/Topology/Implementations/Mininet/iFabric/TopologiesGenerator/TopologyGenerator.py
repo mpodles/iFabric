@@ -47,7 +47,7 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         self.mac_addressing = self.configuration ["mac_addressing"]
     
     def generate_switches(self):
-        self.switches["SingleSwitch"] = SwitchData("SingleSwitch")
+        self.switches["sw"] = SwitchData("sw")
     
     def generate_endpoints(self):
         for ep_nr in range(1,self.endpoints_count+1):
@@ -56,8 +56,8 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
 
     def generate_links(self):
         for endpoint in self.endpoints.values():
-            link_name = "SingleSwitch" + " - " + endpoint.name
-            self.links[link_name] = LinkData(link_name, "1ms", "1000Mbs", endpoint, self.switches["SingleSwitch"])
+            link_name = "sw" + " - " + endpoint.name
+            self.links[link_name] = LinkData(link_name, "1ms", "1000Mbs", endpoint, self.switches["sw"])
 
     def generate_groups(self):
         groups_count = self.endpoints_count / self.avg_group_size
@@ -78,7 +78,7 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
 
     def generate_random_mac_address(self):
         #TODO: verify rstr licence
-        random_mac=rstr.xeger('[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]')
+        random_mac=rstr.xeger('[0-9A-F]0:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]:[0-9A-F][0-9A-F]')
         return random_mac
 
 
