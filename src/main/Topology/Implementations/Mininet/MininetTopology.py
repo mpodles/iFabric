@@ -27,25 +27,25 @@ class MininetTopology(OSNetTopology,Topo):
         self.endpoints = endpoints
         self.links = links
         self.switch_class = MininetSwitch
-        self.switch_constructor_parameters = {}
+        # self.switch_constructor_parameters = {}
         self.endpoint_class = MininetEndpoint
-        self.endpoint_constructor_parameters = {}
+        # self.endpoint_constructor_parameters = {}
         self.link_class = MininetLink
-        self.link_constructor_parameters = {}
+        # self.link_constructor_parameters = {}
         self.mininet = None
         
         
     def generate_mininet_topo(self):
-        for endpoint in self.endpoints:
-            self.addHost(endpoint, cls=self.endpoint_class, **self.endpoint_constructor_parameters)
-        for switch in self.switches:
-            self.addSwitch(switch, cls=self.switch_class, **self.switch_constructor_parameters)
-        for link in self.links:
-            node1,node2 = link[0], link[1]
-            self.addLink(node1,node2, cls=self.link_class, **self.link_constructor_parameters)
+        for endpoint in self.endpoints.values():
+            self.addHost(endpoint.name, cls=self.endpoint_class, params_object = endpoint)
+        for switch in self.switches.values():
+            self.addSwitch(switch.name, cls=self.switch_class, params_object = switch)
+        for link in self.links.values():
+            node1,node2 = link.node1.name, link.node2.name
+            self.addLink(node1,node2, cls=self.link_class, params_object = link)
     
     def generate_mininet_net(self):
-        self.mininet = Mininet(topo = self, switch = self.switch_class, host = self.endpoint_class, link = self.link_class)
+        self.mininet = Mininet(topo = self) #, switch = self.switch_class, host = self.endpoint_class, link = self.link_class
         
     def generate_nodes(self):
         nodes = []
@@ -76,7 +76,7 @@ class Bmv2GrpcTopo(MininetTopology):
         self.p4runtime_info_file_path = p4runtime_info_file_path
         self.p4_json_file_path = p4_json_file_path
         self.compile_p4_code()
-        self.switch_constructor_parameters = {"p4runtime_info_path":p4runtime_info_file_path, "p4_json_file_path": p4_json_file_path, "log_dir": log_dir, "pcap_dir": pcap_dir}
+        # self.switch_constructor_parameters = {"p4runtime_info_path":p4runtime_info_file_path, "p4_json_file_path": p4_json_file_path, "log_dir": log_dir, "pcap_dir": pcap_dir}
         self.switch_class = Bmv2GrpcSwitch
     
     def compile_p4_code(self):

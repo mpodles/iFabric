@@ -29,11 +29,11 @@ class iFabricTopology(Bmv2GrpcTopo):
             p4_file_target_path = p4_code_file_path
         )
         Bmv2GrpcTopo.__init__(self, switches, endpoints, links, 
-        p4runtime_info_file_path, 
-        p4_code_file_path,
-        p4_json_file_path,
-        log_dir, 
-        pcap_dir, 
+        p4runtime_info_file_path = p4runtime_info_file_path, 
+        p4_code_file_path = p4_code_file_path,
+        p4_json_file_path = p4_json_file_path,
+        log_dir = log_dir, 
+        pcap_dir = pcap_dir, 
         **kwargs)
         self.switch_class = iFabricSwitch
         self.endpoint_class = iFabricEndpoint

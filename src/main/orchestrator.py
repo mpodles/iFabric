@@ -110,6 +110,7 @@ def prepare_topology():
 #     )
 
 def start_mininet_network(topology):
+    topology.generate_mininet_topo()
     topology.generate_mininet_net()
     topology.start()
 

@@ -109,8 +109,7 @@ control MyIngress(inout headers hdr,
         hdr.iFabric.header_type = TYPE_iFabric;
         hdr.iFabric.next_protocol = iFabric_next_protocol_TYPE_ETHERNET;
         hdr.iFabric.flow_id = flow_id;
-        hdr.iFabric.node_id = node_id;
-        hdr.iFabric.group_id = group_id;
+        hdr.iFabric.source_id = node_id;
     }
 
     action punt_to_cpu() {
@@ -120,7 +119,7 @@ control MyIngress(inout headers hdr,
     table CPU_punter {
         key = {
             {% for match_field_name in match_fields_to_learn -%}
-            {{match_field_name}}: range;
+            hdr.{{match_field_name}}: range;
             {% endfor %}
         }
         actions = {
@@ -136,7 +135,7 @@ control MyIngress(inout headers hdr,
     table Flow_classifier {
         key = {
             {% for match_field_name in match_fields_used -%}
-            {{match_field_name}}: range;
+            hdr.{{match_field_name}}: range;
             {% endfor %}
         }
         actions = {
@@ -191,7 +190,7 @@ control MyEgress(inout headers hdr,
 
     apply {
         egress_byte_cnt.count((bit<32>) ((bit<16>)standard_metadata.egress_port + (hdr.iFabric.flow_id - 1)* 48));
-        port_checker.apply();       
+        Port_checker.apply();       
     }
 }
 
