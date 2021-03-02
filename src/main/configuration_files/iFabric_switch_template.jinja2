@@ -68,7 +68,8 @@ parser MyParser(packet_in packet,
         {% if protocol_data.get("next_protocol_field") %}
         transition select(hdr.{{protocol_name}}.{{protocol_data["next_protocol_field"]}}) {
             {% for next_protocol, field_value in protocol_data["next_protocol_value"].items() -%}
-            {{field_value}}: parse_{{next_protocol}};{% endfor %}
+            {{field_value}}: parse_{{next_protocol}};
+            {% endfor %}
             default: accept;
         }{% endif %}{% if not protocol_data.get("next_protocol_field")%}transition accept;{% endif %}
     }

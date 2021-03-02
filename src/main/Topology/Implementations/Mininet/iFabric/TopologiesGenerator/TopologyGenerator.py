@@ -56,7 +56,7 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
 
     def generate_links(self):
         for endpoint in self.endpoints.values():
-            link_name = "SingleSwitch" + " - " + endpoint
+            link_name = "SingleSwitch" + " - " + endpoint.name
             self.links[link_name] = LinkData(link_name, "1ms", "1000Mbs", endpoint, self.switches["SingleSwitch"])
 
     def generate_groups(self):

@@ -7,17 +7,18 @@ import threading
 import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Topologies')
 from SingleSwitch import SingleSwitch
-sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/iFabricTopology.py')
-from iFabricTopology import iFabricTopology
+
 
 main_project_directory = os.path.dirname(os.path.realpath(__file__))
 os.chdir(main_project_directory)
 
-structure = parse_structure()
 def parse_structure():
     with open(os.path.join(main_project_directory, "folders_and_files.json"), "r") as structure_file:
         structure = json.loads(structure_file.read())
     return structure
+
+structure = parse_structure()
+
 
 build_folder = structure["build_folder"]
 pcaps_folder = structure["pcaps_folder"]
@@ -41,6 +42,7 @@ switches_connections_file = structure["switches_connections_file"]
 topology_file_path = os.path.join(main_project_directory, build_folder, topology_file)
 topology_description_file_path = os.path.join(main_project_directory, configuration_folder, topology_description_file)
 logs_path = os.path.join(main_project_directory, logs_folder)
+pcaps_path = os.path.join(main_project_directory, pcaps_folder)
 p4_code_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
 p4runtime_info_file_path = os.path.join(main_project_directory, build_folder, p4runtime_file_name)
 p4_json_file_path = os.path.join(main_project_directory, build_folder, compiled_p4_file_name)
@@ -58,7 +60,15 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    sstg = SingleSwitch(topology_description_file_path = topology_description_file_path)
+    sstg = SingleSwitch(topology_description_file_path = topology_description_file_path,
+                        p4_template_file_path = p4_template_file_path, 
+                        p4_code_file_path = p4_code_file_path, 
+                        protocols_description_file_path = protocols_description_file_path, 
+                        protocols_folder_path = protocols_folder_path,
+                        p4runtime_info_file_path =p4runtime_info_file_path, 
+                        p4_json_file_path = p4_json_file_path, 
+                        log_dir = logs_path, 
+                        pcap_dir = pcaps_path)
     return sstg
     
 

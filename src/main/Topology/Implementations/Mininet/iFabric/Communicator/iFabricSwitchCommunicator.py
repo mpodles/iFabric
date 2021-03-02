@@ -1,7 +1,7 @@
 import sys 
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator')
 from Bmv2Communicator import Bmv2Communicator
-from iFabricConnection import iFabricConnection
+
 
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton/Communicator')
 from OSNetAction import OSNetAction

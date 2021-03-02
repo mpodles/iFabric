@@ -1,7 +1,7 @@
 import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches')
 from Bmv2GrpcSwitch import Bmv2GrpcSwitch
-sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Communicator')
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Communicator')
 from iFabricSwitchCommunicator import iFabricSwitchCommunicator
 
 
