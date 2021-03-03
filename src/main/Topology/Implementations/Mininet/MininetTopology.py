@@ -54,7 +54,8 @@ class MininetTopology(OSNetTopology):
             self.mininet.addSwitch(switch.name, cls=self.switch_class, params_object = switch)
         for link in self.links.values():
             node1,node2 = link.node1.name, link.node2.name
-            self.mininet.addLink(node1, node2, 
+            self.mininet.addLink(self.mininet.nameToNode[node1],
+                                self.mininet.nameToNode[node2], 
                                 cls=self.link_class, 
                                 params_object = link)
         
@@ -62,7 +63,10 @@ class MininetTopology(OSNetTopology):
         return self.mininet.nameToNode
 
     def generate_links(self):
-        return self.mininet.links
+        links = {}
+        for link in self.mininet.links:
+            links[link.link.name] = link
+        return links
 
     def start(self):
         self.mininet.start()

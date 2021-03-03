@@ -114,6 +114,7 @@ def start_mininet_network(topology):
     # topology.generate_mininet_topo()
     topology.generate_mininet_net()
     topology.generate_topology()
+    print topology.mininet.controllers
     topology.start()
 
 # def start_controller():

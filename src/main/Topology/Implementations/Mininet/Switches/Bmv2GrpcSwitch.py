@@ -43,9 +43,9 @@ class Bmv2GrpcSwitch(MininetSwitch):
             exit(1)
         logfile = "/tmp/p4s.{}.log".format(self.device.name)
         self.output = open(logfile, 'w')
-        # self.pcap_dump = pcap_dump
-        # self.enable_debugger = enable_debugger
-        # self.log_console = log_console
+        self.pcap_dump = True
+        self.enable_debugger = True
+        self.log_console = True
         
         self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.OSN_ID)
 
@@ -53,12 +53,12 @@ class Bmv2GrpcSwitch(MininetSwitch):
     def run(self):
         self.start()
 
-    def start(self):
-        info("Starting P4 switch {}.\n".format(self.name))
+    def start(self, controllers=None):
+        info("Starting P4 switch {}.\n".format(self.device.name))
         args = [self.sw_program]
-        for port, intf in self.intfs.items():
-            if not intf.IP():
-                args.extend(['-i', str(port) + "@" + intf.name])
+        # for port, intf in self.intfs.items():
+        #     if not intf.IP():
+        #         args.extend(['-i', str(port) + "@" + intf.name])
         if self.pcap_dump:
             args.append("--pcap %s" % self.pcap_dump)
         if self.nanomsg:

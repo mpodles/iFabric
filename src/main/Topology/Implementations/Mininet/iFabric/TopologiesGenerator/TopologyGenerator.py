@@ -59,10 +59,12 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
         for endpoint in self.endpoints.values():
             link_name = "sw" + " - " + endpoint.name
             ip, mac = self.generate_ip_address() , self.generate_mac_address()
-            endpoint.interfaces[endpoint.name +"-sw-0"] = {"ip" : ip, "mac" : mac}
+            int1 = endpoint.name +"-sw-0"
+            endpoint.interfaces[int1] = {"ip" : ip, "mac" : mac}
             ip, mac = self.generate_ip_address() , self.generate_mac_address()
-            switch.interfaces["sw-"+ endpoint.name +"-" + str(len(switch.interfaces))] = {"ip" : ip, "mac" : mac}
-            self.links[link_name] = LinkData(endpoint, switch, link_name, "1ms", "1000Mbs")
+            int2= "sw-"+ endpoint.name +"-" + str(len(switch.interfaces))
+            switch.interfaces[int2] = {"ip" : ip, "mac" : mac}
+            self.links[link_name] = LinkData(endpoint, switch, int1, int2, link_name, "1ms", "1000Mbs")
 
     def generate_groups(self):
         groups_count = self.endpoints_count / self.avg_group_size
