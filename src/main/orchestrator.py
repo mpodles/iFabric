@@ -8,6 +8,7 @@ import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Topologies')
 from SingleSwitch import SingleSwitch
 import traceback
+from mininet.cli import CLI
 
 
 main_project_directory = os.path.dirname(os.path.realpath(__file__))
@@ -116,6 +117,7 @@ def start_mininet_network(topology):
     topology.generate_topology()
     print topology.mininet.controllers
     topology.start()
+    CLI(topology.mininet)
 
 # def start_controller():
 #     print "Programming switches"

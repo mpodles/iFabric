@@ -32,6 +32,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         #     self.compiled_p4 = compiled_p4
         # else:
         #     self.compiled_p4 = None
+        self.address = "0.0.0.0"
         try: 
             self.grpc_port = self.device.grpc_port
         except:
@@ -41,8 +42,8 @@ class Bmv2GrpcSwitch(MininetSwitch):
         if self.check_listening_on_port():
             error('%s cannot bind port %d because it is bound by another process\n' % (self.device.name, self.grpc_port))
             exit(1)
-        logfile = "/tmp/p4s.{}.log".format(self.device.name)
-        self.output = open(logfile, 'w')
+        self.log_file = "/tmp/p4s.{}.log".format(self.device.name)
+        self.output = open(self.log_file, 'w')
         self.pcap_dump = True
         self.enable_debugger = True
         self.log_console = True
@@ -59,38 +60,39 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # for port, intf in self.intfs.items():
         #     if not intf.IP():
         #         args.extend(['-i', str(port) + "@" + intf.name])
-        if self.pcap_dump:
-            args.append("--pcap %s" % self.pcap_dump)
-        if self.nanomsg:
-            args.extend(['--nanolog', self.nanomsg])
+        # if self.pcap_dump:
+        #     args.append("--pcap %s" % self.pcap_dump)
+        # if self.nanomsg:
+        #     args.extend(['--nanolog', self.nanomsg])
         args.extend(['--device-id', str(self.OSN_ID)])
         if self.p4_json_file_path:
             args.append(self.p4_json_file_path)
         else:
             args.append("--no-p4")
-        if self.enable_debugger:
-            args.append("--debugger")
-        if self.log_console:
-            args.append("--log-console")
+        # if self.enable_debugger:
+        #     args.append("--debugger")
+        # if self.log_console:
+        #     args.append("--log-console")
         if self.grpc_port:
             args.append("-- --grpc-server-addr " + str(self.address) +":"+ str(self.grpc_port))
         cmd = ' '.join(args)
         info(cmd + "\n")
         pid = None
-        with tempfile.NamedTemporaryFile() as f:
-            self.cmd(cmd + ' >' + self.log_file + ' 2>&1 & echo $! >> ' + f.name)
-            pid = int(f.read())
-        debug("P4 switch {} PID is {}.\n".format(self.device.name, pid))
-        if not self.check_switch_started(pid):
-            error("P4 switch {} did not start correctly.\n".format(self.device.name))
-            exit(1)
+        self.cmd(cmd + " &")
+        # with tempfile.NamedTemporaryFile() as f:
+        #     self.cmd(cmd + ' >' + self.log_file + ' 2>&1 & echo $! >> ' + f.name)
+        #     pid = int(f.read())
+        # debug("P4 switch {} PID is {}.\n".format(self.device.name, pid))
+        # if not self.check_switch_started(pid):
+        #     error("P4 switch {} did not start correctly.\n".format(self.device.name))
+        #     exit(1)
         info("P4 switch {} has been started.\n".format(self.device.name))
 
 
     def check_switch_started(self, pid):
         for _ in range(10 * 2):
-            if not os.path.exists(os.path.join("/proc", str(pid))):
-                return False
+            # if not os.path.exists(os.path.join("/proc", str(pid))):
+            #     return False
             if self.check_listening_on_port():
                 return True
             sleep(0.5)
