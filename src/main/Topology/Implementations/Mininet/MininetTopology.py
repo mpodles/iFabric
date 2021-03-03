@@ -32,38 +32,37 @@ class MininetTopology(OSNetTopology):
         # self.endpoint_constructor_parameters = {}
         self.link_class = MininetLink
         # self.link_constructor_parameters = {}
-        self.mininet_topo = None
+        # self.mininet_topo = None
         self.mininet = None
         
         
-    def generate_mininet_topo(self):
-        self.mininet_topo = Topo()
-        for endpoint in self.endpoints.values():
-            self.mininet_topo.addHost(endpoint.name, cls=self.endpoint_class, params_object = endpoint)
-        for switch in self.switches.values():
-            self.mininet_topo.addSwitch(switch.name, cls=self.switch_class, params_object = switch)
-        for link in self.links.values():
-            node1,node2 = link.node1.name, link.node2.name
-            self.mininet_topo.addLink(node1,node2, cls=self.link_class, params_object = link)
+    # def generate_mininet_topo(self):
+    #     self.mininet_topo = Topo()
+    #     for endpoint in self.endpoints.values():
+    #         self.mininet_topo.addHost(endpoint.name, cls=self.endpoint_class, params_object = endpoint)
+    #     for switch in self.switches.values():
+    #         self.mininet_topo.addSwitch(switch.name, cls=self.switch_class, params_object = switch)
+    #     for link in self.links.values():
+    #         node1,node2 = link.node1.name, link.node2.name
+    #         self.mininet_topo.addLink(node1,node2, cls=self.link_class, params_object = link)
     
     def generate_mininet_net(self):
-        self.mininet = Mininet(topo = self.mininet_topo) #, switch = self.switch_class, host = self.endpoint_class, link = self.link_class
-
+        self.mininet = Mininet(switch = self.switch_class, host = self.endpoint_class, link = self.link_class)
+        for endpoint in self.endpoints.values():
+            self.mininet.addHost(endpoint.name, cls=self.endpoint_class, params_object = endpoint)
+        for switch in self.switches.values():
+            self.mininet.addSwitch(switch.name, cls=self.switch_class, params_object = switch)
+        for link in self.links.values():
+            node1,node2 = link.node1.name, link.node2.name
+            self.mininet.addLink(node1, node2, 
+                                cls=self.link_class, 
+                                params_object = link)
         
     def generate_nodes(self):
-        nodes = []
-        for switch in self.switches:
-            nodes.append(self.switch_class(switch))
-
-        for endpoint in self.endpoints:
-            nodes.append(self.endpoint_class(endpoint))
-
-        return nodes
+        return self.mininet.nameToNode
 
     def generate_links(self):
-        links = []
-        for link in self.links:
-            links.append(self.link_class(link))
+        return self.mininet.links
 
     def start(self):
         self.mininet.start()

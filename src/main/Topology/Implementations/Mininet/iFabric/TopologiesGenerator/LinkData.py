@@ -1,6 +1,6 @@
 class LinkData(object):
 
-    def __init__(self, name, latency, bandwidth, node1, node2, **params):
+    def __init__(self, node1, node2, name=None, latency=None, bandwidth=None, **params):
         self.name = name
         self.latency = latency
         self.bandwidth = bandwidth

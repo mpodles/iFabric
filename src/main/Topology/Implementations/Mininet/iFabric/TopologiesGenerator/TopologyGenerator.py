@@ -52,12 +52,17 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
     def generate_endpoints(self):
         for ep_nr in range(1,self.endpoints_count+1):
             endpoint_name = "EP_" + str(ep_nr)
-            self.endpoints[endpoint_name] = EndpointData(endpoint_name, self.generate_ip_address(endpoint_name) , self.generate_mac_address(endpoint_name) )
+            self.endpoints[endpoint_name] = EndpointData(endpoint_name)
 
     def generate_links(self):
+        switch = self.switches["sw"]
         for endpoint in self.endpoints.values():
             link_name = "sw" + " - " + endpoint.name
-            self.links[link_name] = LinkData(link_name, "1ms", "1000Mbs", endpoint, self.switches["sw"])
+            ip, mac = self.generate_ip_address() , self.generate_mac_address()
+            endpoint.interfaces[endpoint.name +"-sw-0"] = {"ip" : ip, "mac" : mac}
+            ip, mac = self.generate_ip_address() , self.generate_mac_address()
+            switch.interfaces["sw-"+ endpoint.name +"-" + str(len(switch.interfaces))] = {"ip" : ip, "mac" : mac}
+            self.links[link_name] = LinkData(endpoint, switch, link_name, "1ms", "1000Mbs")
 
     def generate_groups(self):
         groups_count = self.endpoints_count / self.avg_group_size
@@ -65,14 +70,14 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
             endpoints = [self.endpoints["EP_" + str(self.avg_group_size*gr_nr - i)] for i in range(self.avg_group_size)]
             self.groups["Group_" + str(gr_nr)] = endpoints
   
-    def generate_ip_address(self, endpoint):
+    def generate_ip_address(self, endpoint=None):
         if self.ip_addressing == "random":
             return self.generate_random_ip_address()
 
     def generate_random_ip_address(self):
         return str(random.randint(10, 223)) + "." + str(random.randint(0, 255))+ "." +str(random.randint(0, 255))+ "." +str(random.randint(0, 255))
 
-    def generate_mac_address(self, endpoint):
+    def generate_mac_address(self, endpoint=None):
         if self.ip_addressing == "random":
             return self.generate_random_mac_address()
 
