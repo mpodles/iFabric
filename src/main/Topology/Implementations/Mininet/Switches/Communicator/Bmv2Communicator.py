@@ -5,9 +5,7 @@ from OSNetCommunicator import OSNetCommunicator
 
 from Bmv2GrpcUtils import GrpcRequestLogger
 from Bmv2GrpcUtils import IterableQueue
-from p4.tmp import p4config_pb2
 import grpc
-from p4.v1 import p4runtime_pb2
 from p4.v1 import p4runtime_pb2_grpc
 from Bmv2GrpcUtils import P4InfoHelper
 from mininet.log import info, error, debug
@@ -18,8 +16,8 @@ class Bmv2Communicator(OSNetCommunicator):
     def __init__(self, device, **params):
         OSNetCommunicator.__init__(self, device, **params)
         self.device = device
-        self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
-        self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
+        # self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
+        # self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
      
     def connect(self):
         combined_address = str(self.device.address)+ ":" + str(self.device.grpc_port)
@@ -35,5 +33,15 @@ class Bmv2Communicator(OSNetCommunicator):
     def disconnect(self):
         self.requests_stream.close()
         self.stream_msg_resp.cancel()
-        
 
+if __name__ == '__main__':
+    class a:
+        pass
+    device = a()
+    device.address = "0.0.0.0"
+    device.grpc_port = 50051
+
+
+    comm = Bmv2Communicator(device)
+    comm.connect()
+    print comm.stream_msg_resp._state.details

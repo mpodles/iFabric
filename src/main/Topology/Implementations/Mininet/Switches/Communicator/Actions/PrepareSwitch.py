@@ -1,7 +1,5 @@
 from p4.tmp import p4config_pb2
-import grpc
 from p4.v1 import p4runtime_pb2
-from p4.v1 import p4runtime_pb2_grpc
 def get_function():
     return perform_action
 def perform_action(action, communicator, **params):
@@ -37,5 +35,5 @@ def buildDeviceConfig(communicator):
     "Builds the device config for BMv2"
     device_config = p4config_pb2.P4DeviceConfig()
     device_config.reassign = True
-    device_config.device_data = communicator.devuce.p4_json_file_path
+    device_config.device_data = communicator.device.p4_json_file_path
     return device_config

@@ -32,7 +32,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         #     self.compiled_p4 = compiled_p4
         # else:
         #     self.compiled_p4 = None
-        self.address = "127.0.0.1"
+        self.address = "0.0.0.0"
         try: 
             self.grpc_port = self.device.grpc_port
         except:
