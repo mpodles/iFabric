@@ -83,9 +83,9 @@ class Bmv2GrpcSwitch(MininetSwitch):
         #     self.cmd(cmd + ' >' + self.log_file + ' 2>&1 & echo $! >> ' + f.name)
         #     pid = int(f.read())
         # debug("P4 switch {} PID is {}.\n".format(self.device.name, pid))
-        # if not self.check_switch_started(pid):
-        #     error("P4 switch {} did not start correctly.\n".format(self.device.name))
-        #     exit(1)
+        if not self.check_switch_started(pid):
+            error("P4 switch {} did not start correctly.\n".format(self.device.name))
+            exit(1)
         info("P4 switch {} has been started.\n".format(self.device.name))
 
 
@@ -98,9 +98,12 @@ class Bmv2GrpcSwitch(MininetSwitch):
             sleep(0.5)
     
     def check_listening_on_port(self):
-        for c in psutil.net_connections(kind='inet'):
-            if c.status == 'LISTEN' and c.laddr[1] == self.grpc_port:
-                return True
+        output = self.cmd("netstat --listen | grep " + str(self.grpc_port))
+        if "LISTEN" in output and str(self.grpc_port) in output:
+            return True #TODO: do something with this xd
+        # for c in psutil.net_connections(kind='inet'):
+        #     if c.status == 'LISTEN' and c.laddr[1] == self.grpc_port:
+        #         return True
         return False
     
 
