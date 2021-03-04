@@ -21,19 +21,23 @@ class OSNetCommunicator(object):
     def add_actions(self, actions_folder):
         sys.path.append(actions_folder)
         for filename in os.listdir(actions_folder):
-            path = os.path.join(actions_folder, filename)
-            module = imp.load_source(filename, path)
-            self.OSN_Actions[filename]=(OSNetAction(filename, module.get_function()))
+            if filename.endswith("py"):
+                path = os.path.join(actions_folder, filename)
+                module = imp.load_source(filename, path)
+                name = os.path.splitext(filename)[0]
+                self.OSN_Actions[name]=(OSNetAction(name, module.get_function()))
     
     def add_states(self, states_folder):
         sys.path.append(states_folder)
         for filename in os.listdir(states_folder):
-            path = os.path.join(states_folder, filename)
-            module = imp.load_source(filename, path)
-            self.OSN_States[filename]=(OSNetState(filename, module.get_function()))
+            if filename.endswith("py"):
+                path = os.path.join(states_folder, filename)
+                module = imp.load_source(filename, path)
+                name = os.path.splitext(filename)[0]
+                self.OSN_States[name]=(OSNetState(name, module.get_function()))
 
     def get_state(self, state, **params):
-        self.OSN_States[state](**params)
+        self.OSN_States[state](self, **params)
 
     def take_action(self, action, **params):
-        self.OSN_Actions[action](**params)
+        self.OSN_Actions[action](self, **params)

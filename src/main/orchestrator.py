@@ -118,6 +118,8 @@ def start_mininet_network(topology):
     topology.start()
     switch = topology.node("sw")
     switch.initiate_communicator()
+    switch.OSNetCommunicator.connect()
+    switch.OSNetCommunicator.take_action("PrepareSwitch")
 
 # def start_controller():
 #     print "Programming switches"

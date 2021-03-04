@@ -32,7 +32,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         #     self.compiled_p4 = compiled_p4
         # else:
         #     self.compiled_p4 = None
-        self.address = "0.0.0.0"
+        self.address = "127.0.0.1"
         try: 
             self.grpc_port = self.device.grpc_port
         except:
@@ -47,7 +47,6 @@ class Bmv2GrpcSwitch(MininetSwitch):
         self.pcap_dump = True
         self.enable_debugger = True
         self.log_console = True
-        
         self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.OSN_ID)
 
     
