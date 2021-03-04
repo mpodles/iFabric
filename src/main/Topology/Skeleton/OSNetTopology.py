@@ -14,6 +14,11 @@ class OSNetTopology(object):
     def generate_links(self):
         pass
        
-   
+    def node(self, node_name):
+        return self.OSN_nodes[node_name]
+
+    def link(self, link_name):
+        return self.OSN_links[link_name]
+
 
         

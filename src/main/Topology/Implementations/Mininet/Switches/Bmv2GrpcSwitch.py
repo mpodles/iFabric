@@ -8,7 +8,7 @@ from mininet.log import info, error, debug
 import tempfile
 from time import sleep
 import psutil
-import os
+
 
 
 class Bmv2GrpcSwitch(MininetSwitch):

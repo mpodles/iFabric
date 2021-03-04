@@ -1,8 +1,6 @@
 import sys 
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton/Communicator')
 from OSNetCommunicator import OSNetCommunicator
-from OSNetAction import OSNetAction
-from OSNetState import OSNetState
 
 
 from Bmv2GrpcUtils import GrpcRequestLogger
@@ -15,23 +13,12 @@ from Bmv2GrpcUtils import P4InfoHelper
 from mininet.log import info, error, debug
 import os
 
-from importlib import import_module
 
 class Bmv2Communicator(OSNetCommunicator):
     def __init__(self, device, **params):
         OSNetCommunicator.__init__(self, device, **params)
-        self.add_actions()
-        self.add_states()
-
-    def add_actions(self):
-        for filename in os.listdir("./Actions"):
-            module = import_module(filename, "Actions")
-            self.OSN_Actions.append(OSNetAction(filename, module.get_function()))
-    
-    def add_states(self):
-        for filename in os.listdir("./States"):
-            module = import_module(filename, "States")
-            self.OSN_State.append(OSNetState(filename, module.get_function()))
+        self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
+        self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
      
     def connect(self):
         combined_address = str(self.address)+ ":" + str(self.grpc_port)

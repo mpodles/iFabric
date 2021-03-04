@@ -1,8 +1,8 @@
 def get_function():
     return ReadCounters
-def ReadCounters(id, client_stub, counter_id=None, index=None, dry_run=False):
+def ReadCounters(self, client_stub, counter_id=None, index=None, dry_run=False):
     request = p4runtime_pb2.ReadRequest()
-    request.device_id = id
+    request.device_id = self.OSN_ID
     entity = request.entities.add()
     counter_entry = entity.counter_entry
     if counter_id is not None:

@@ -1,10 +1,10 @@
 def get_function():
     return perform_action
 
-def perform_action(**params):
+def perform_action(self, **params):
     mc_entry = self.p4info_helper.buildMulticastGroupEntry(params["multicast_group_id"], params['replicas'])
     self.WritePREEntry(mc_entry)
-def WritePREEntry(pre_entry, dry_run=False, modify=False):
+def WritePREEntry(self, pre_entry, dry_run=False, modify=False):
     request = p4runtime_pb2.WriteRequest()
     request.device_id = self.ID
     request.election_id.low = 1
