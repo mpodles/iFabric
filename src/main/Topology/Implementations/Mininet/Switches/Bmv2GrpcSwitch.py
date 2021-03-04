@@ -17,13 +17,13 @@ class Bmv2GrpcSwitch(MininetSwitch):
     def __init__(self, switch, **params):
         MininetSwitch.__init__(self, switch, **params)
         self.OSNetCommunicator_class = Bmv2Communicator
-        self.p4_json_file_path = self.device.p4_json_file_path
-        self.p4runtime_info_file_path = self.device.p4runtime_info_file_path
-        self.log_dir = self.device.log_dir
-        self.pcap_dir = self.device.pcap_dir
+        # self.p4_json_file_path = self.device.p4_json_file_path
+        # self.p4runtime_info_file_path = self.device.p4runtime_info_file_path
+        # self.log_dir = self.device.log_dir
+        # self.pcap_dir = self.device.pcap_dir
 
-        self.sw_program = "simple_switch_grpc"
-        pathCheck(self.sw_program)
+        self.device.sw_program = "simple_switch_grpc"
+        pathCheck(self.device.sw_program)
         # if compiled_p4 is not None:
         #     # make sure that the provided JSON file exists
         #     if not os.path.isfile(compiled_p4):
@@ -32,22 +32,26 @@ class Bmv2GrpcSwitch(MininetSwitch):
         #     self.compiled_p4 = compiled_p4
         # else:
         #     self.compiled_p4 = None
-        self.address = "0.0.0.0"
-        try: 
-            self.grpc_port = self.device.grpc_port
+        try:
+            self.device.address = self.device.address
         except:
-            self.grpc_port = Bmv2GrpcSwitch.next_grpc_port
+            self.device.address = "0.0.0.0"
+            
+        try: 
+            self.device.grpc_port = self.device.grpc_port
+        except:
+            self.device.grpc_port = Bmv2GrpcSwitch.next_grpc_port
             Bmv2GrpcSwitch.next_grpc_port += 1
 
         if self.check_listening_on_port():
-            error('%s cannot bind port %d because it is bound by another process\n' % (self.device.name, self.grpc_port))
+            error('%s cannot bind port %d because it is bound by another process\n' % (self.device.name, self.device.grpc_port))
             exit(1)
-        self.log_file = "/tmp/p4s.{}.log".format(self.device.name)
-        self.output = open(self.log_file, 'w')
-        self.pcap_dump = True
-        self.enable_debugger = True
-        self.log_console = True
-        self.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.OSN_ID)
+        self.device.log_file = "/tmp/p4s.{}.log".format(self.device.name)
+        self.device.output = open(self.log_file, 'w')
+        self.device.pcap_dump = True
+        self.device.enable_debugger = True
+        self.device.log_console = True
+        self.device.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device.id)
 
     
     def run(self):
@@ -55,7 +59,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
     def start(self, controllers=None):
         info("Starting P4 switch {}.\n".format(self.device.name))
-        args = [self.sw_program]
+        args = [self.device.sw_program]
         # for port, intf in self.intfs.items():
         #     if not intf.IP():
         #         args.extend(['-i', str(port) + "@" + intf.name])
@@ -64,23 +68,23 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # if self.nanomsg:
         #     args.extend(['--nanolog', self.nanomsg])
         args.extend(['--device-id', str(self.OSN_ID)])
-        if self.p4_json_file_path:
-            args.append(self.p4_json_file_path)
+        if self.device.p4_json_file_path:
+            args.append(self.device.p4_json_file_path)
         else:
             args.append("--no-p4")
         # if self.enable_debugger:
         #     args.append("--debugger")
         # if self.log_console:
         #     args.append("--log-console")
-        if self.grpc_port:
-            args.append("-- --grpc-server-addr " + str(self.address) +":"+ str(self.grpc_port))
+        if self.device.grpc_port:
+            args.append("-- --grpc-server-addr " + str(self.device.address) +":"+ str(self.device.grpc_port))
         cmd = ' '.join(args)
         info(cmd + "\n")
         pid = None
-        self.cmd(cmd + " &")
-        # with tempfile.NamedTemporaryFile() as f:
-        #     self.cmd(cmd + ' >' + self.log_file + ' 2>&1 & echo $! >> ' + f.name)
-        #     pid = int(f.read())
+        # self.cmd(cmd + " &")
+        with tempfile.NamedTemporaryFile() as f:
+            self.cmd(cmd + ' >' + self.device.log_file + ' 2>&1 & echo $! >> ' + f.name)
+            self.device.pid = int(f.read())
         # debug("P4 switch {} PID is {}.\n".format(self.device.name, pid))
         if not self.check_switch_started(pid):
             error("P4 switch {} did not start correctly.\n".format(self.device.name))
@@ -97,8 +101,8 @@ class Bmv2GrpcSwitch(MininetSwitch):
             sleep(0.5)
     
     def check_listening_on_port(self):
-        output = self.cmd("netstat --listen | grep " + str(self.grpc_port))
-        if "LISTEN" in output and str(self.grpc_port) in output:
+        output = self.cmd("netstat --listen | grep " + str(self.device.grpc_port))
+        if "LISTEN" in output and str(self.device.grpc_port) in output:
             return True #TODO: do something with this xd
         # for c in psutil.net_connections(kind='inet'):
         #     if c.status == 'LISTEN' and c.laddr[1] == self.grpc_port:

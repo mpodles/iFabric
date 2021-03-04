@@ -44,4 +44,3 @@ if __name__ == '__main__':
 
     comm = Bmv2Communicator(device)
     comm.connect()
-    print comm.stream_msg_resp._state.details
