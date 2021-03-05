@@ -16,8 +16,8 @@ class Bmv2Communicator(OSNetCommunicator):
     def __init__(self, device, **params):
         OSNetCommunicator.__init__(self, device, **params)
         self.device = device
-        # self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
-        # self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
+        self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
+        self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
      
     def connect(self):
         combined_address = str(self.device.address)+ ":" + str(self.device.grpc_port)
@@ -29,6 +29,7 @@ class Bmv2Communicator(OSNetCommunicator):
         self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
         self.requests_stream = IterableQueue()
         self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream))
+        print "connect done"
 
     def disconnect(self):
         self.requests_stream.close()
@@ -40,7 +41,11 @@ if __name__ == '__main__':
     device = a()
     device.address = "0.0.0.0"
     device.grpc_port = 50051
+    device.id = 21
+    device.p4_json_file_path = '/home/mpodles/iFabric/src/main/build/iFabric_switch.json'
+    device.p4info_helper = None
 
 
     comm = Bmv2Communicator(device)
     comm.connect()
+    comm.take_action("PrepareSwitch")

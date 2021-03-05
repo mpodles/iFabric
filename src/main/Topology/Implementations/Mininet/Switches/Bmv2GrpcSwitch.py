@@ -36,7 +36,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
             self.device.address = self.device.address
         except:
             self.device.address = "0.0.0.0"
-            
+
         try: 
             self.device.grpc_port = self.device.grpc_port
         except:
@@ -47,7 +47,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
             error('%s cannot bind port %d because it is bound by another process\n' % (self.device.name, self.device.grpc_port))
             exit(1)
         self.device.log_file = "/tmp/p4s.{}.log".format(self.device.name)
-        self.device.output = open(self.log_file, 'w')
+        self.output = open(self.device.log_file, 'w')
         self.device.pcap_dump = True
         self.device.enable_debugger = True
         self.device.log_console = True
@@ -59,15 +59,17 @@ class Bmv2GrpcSwitch(MininetSwitch):
 
     def start(self, controllers=None):
         info("Starting P4 switch {}.\n".format(self.device.name))
+        self.cmd("ip link set lo up")
+        # self.cmd("ip link set lo address A0:A0:AB:AB:AB:AB")
         args = [self.device.sw_program]
-        # for port, intf in self.intfs.items():
-        #     if not intf.IP():
-        #         args.extend(['-i', str(port) + "@" + intf.name])
+        for port, intf in self.intfs.items():
+            if not intf.IP():
+                args.extend(['-i', str(port) + "@" + intf.name])
         # if self.pcap_dump:
         #     args.append("--pcap %s" % self.pcap_dump)
         # if self.nanomsg:
         #     args.extend(['--nanolog', self.nanomsg])
-        args.extend(['--device-id', str(self.OSN_ID)])
+        args.extend(['--device-id', str(self.device.id)])
         if self.device.p4_json_file_path:
             args.append(self.device.p4_json_file_path)
         else:
