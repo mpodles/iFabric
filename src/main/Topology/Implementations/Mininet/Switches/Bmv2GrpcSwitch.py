@@ -3,6 +3,7 @@ sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet
 from MininetSwitch import MininetSwitch
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator')
 from Bmv2Communicator import Bmv2Communicator
+from Bmv2GrpcUtils import P4InfoHelper
 from mininet.moduledeps import pathCheck
 from mininet.log import info, error, debug
 import tempfile
@@ -17,25 +18,13 @@ class Bmv2GrpcSwitch(MininetSwitch):
     def __init__(self, switch, **params):
         MininetSwitch.__init__(self, switch, **params)
         self.OSNetCommunicator_class = Bmv2Communicator
-        # self.p4_json_file_path = self.device.p4_json_file_path
-        # self.p4runtime_info_file_path = self.device.p4runtime_info_file_path
-        # self.log_dir = self.device.log_dir
-        # self.pcap_dir = self.device.pcap_dir
-
         self.device.sw_program = "simple_switch_grpc"
         pathCheck(self.device.sw_program)
-        # if compiled_p4 is not None:
-        #     # make sure that the provided JSON file exists
-        #     if not os.path.isfile(compiled_p4):
-        #         error("Invalid compiled P4 json file: {}\n".format(compiled_p4))
-        #         exit(1)
-        #     self.compiled_p4 = compiled_p4
-        # else:
-        #     self.compiled_p4 = None
+
         try:
             self.device.address = self.device.address
         except:
-            self.device.address = "0.0.0.0"
+            self.device.address = "localhost"
 
         try: 
             self.device.grpc_port = self.device.grpc_port
@@ -52,14 +41,14 @@ class Bmv2GrpcSwitch(MininetSwitch):
         self.device.enable_debugger = True
         self.device.log_console = True
         self.device.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device.id)
-
-    
+        self.device.p4info_helper = P4InfoHelper("/home/mpodles/iFabric/src/main/build/iFabric_switch.p4.p4info.txt").p4info
+ 
     def run(self):
         self.start()
 
     def start(self, controllers=None):
         info("Starting P4 switch {}.\n".format(self.device.name))
-        self.cmd("ip link set lo up")
+        # self.cmd("ip link set lo up")
         # self.cmd("ip link set lo address A0:A0:AB:AB:AB:AB")
         args = [self.device.sw_program]
         for port, intf in self.intfs.items():
@@ -70,6 +59,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # if self.nanomsg:
         #     args.extend(['--nanolog', self.nanomsg])
         args.extend(['--device-id', str(self.device.id)])
+        print self.device.id
         if self.device.p4_json_file_path:
             args.append(self.device.p4_json_file_path)
         else:

@@ -39,11 +39,11 @@ if __name__ == '__main__':
     class a:
         pass
     device = a()
-    device.address = "0.0.0.0"
+    device.address = "localhost"
     device.grpc_port = 50051
     device.id = 21
     device.p4_json_file_path = '/home/mpodles/iFabric/src/main/build/iFabric_switch.json'
-    device.p4info_helper = None
+    device.p4info_helper = P4InfoHelper("/home/mpodles/iFabric/src/main/build/iFabric_switch.p4.p4info.txt").p4info
 
 
     comm = Bmv2Communicator(device)

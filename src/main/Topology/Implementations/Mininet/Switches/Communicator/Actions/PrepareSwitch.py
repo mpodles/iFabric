@@ -36,5 +36,6 @@ def buildDeviceConfig(communicator):
     "Builds the device config for BMv2"
     device_config = p4config_pb2.P4DeviceConfig()
     device_config.reassign = True
-    device_config.device_data = communicator.device.p4_json_file_path
+    with open(communicator.device.p4_json_file_path) as f:
+        device_config.device_data = f.read()
     return device_config
