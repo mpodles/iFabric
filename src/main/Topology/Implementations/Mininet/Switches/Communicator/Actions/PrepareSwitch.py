@@ -1,14 +1,18 @@
 from p4.tmp import p4config_pb2
 from p4.v1 import p4runtime_pb2
-def get_function():
-    return perform_action
-def perform_action(action, communicator, **params):
-    print "performing prepareswitch"
-    get_switch_ready(communicator)
-def get_switch_ready(communicator):
-    MasterArbitrationUpdate(communicator)
-    SetForwardingPipelineConfig(communicator)
+
+
+
+def buildDeviceConfig(communicator):
+    "Builds the device config for BMv2"
+    device_config = p4config_pb2.P4DeviceConfig()
+    device_config.reassign = True
+    with open(communicator.device.p4_json_file_path) as f:
+        device_config.device_data = f.read()
+    return device_config
+
 def MasterArbitrationUpdate(communicator, dry_run=False, **kwargs):
+    print "MasterArbitrationUpdate"
     request = p4runtime_pb2.StreamMessageRequest()
     request.arbitration.device_id = communicator.device.id
     request.arbitration.election_id.high = 0
@@ -20,6 +24,7 @@ def MasterArbitrationUpdate(communicator, dry_run=False, **kwargs):
         for item in communicator.stream_msg_resp:
             return item # just one
 def SetForwardingPipelineConfig(communicator, dry_run=False):
+    print "SetForwardingPipelineConfig"
     device_config = buildDeviceConfig(communicator)
     request = p4runtime_pb2.SetForwardingPipelineConfigRequest()
     request.election_id.low = 1
@@ -32,10 +37,11 @@ def SetForwardingPipelineConfig(communicator, dry_run=False):
         print "P4Runtime SetForwardingPipelineConfig:", request
     else:
         communicator.client_stub.SetForwardingPipelineConfig(request)
-def buildDeviceConfig(communicator):
-    "Builds the device config for BMv2"
-    device_config = p4config_pb2.P4DeviceConfig()
-    device_config.reassign = True
-    with open(communicator.device.p4_json_file_path) as f:
-        device_config.device_data = f.read()
-    return device_config
+def get_switch_ready(communicator):
+    MasterArbitrationUpdate(communicator)
+    SetForwardingPipelineConfig(communicator)
+def perform_action(action, communicator, **params):
+    get_switch_ready(communicator)
+def get_function():
+    return perform_action
+

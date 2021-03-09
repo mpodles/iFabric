@@ -1,7 +1,7 @@
 def get_function():
     return ReadTableEntries
 
-def ReadTableEntries(self, client_stub, table_id=None, dry_run=False):
+def ReadTableEntries(self, table_id=None, dry_run=False):
     request = p4runtime_pb2.ReadRequest()
     request.device_id =  self.OSN_ID
     entity = request.entities.add()
@@ -13,5 +13,5 @@ def ReadTableEntries(self, client_stub, table_id=None, dry_run=False):
     if dry_run:
         print "P4Runtime Read:", request
     else:
-        for response in client_stub.Read(request):
+        for response in self.client_stub.Read(request):
             yield response

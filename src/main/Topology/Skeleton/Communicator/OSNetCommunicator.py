@@ -36,7 +36,7 @@ class OSNetCommunicator(object):
                 self.OSN_States[name]=(OSNetState(name, module.get_function()))
 
     def get_state(self, state, **params):
-        self.OSN_States[state](self, **params)
+        return self.OSN_States[state](self, **params)
 
     def take_action(self, action, **params):
         self.OSN_Actions[action](self, **params)

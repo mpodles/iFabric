@@ -1,4 +1,4 @@
-from ubuntu:18.04
+FROM ubuntu:18.04
 
 RUN mkdir -p /iFabric
 
@@ -175,7 +175,35 @@ RUN cd behavioral-model/targets/simple_switch_grpc && \
     make install
 
 ENV LD_LIBRARY_PATH="/usr/local/lib"
+
+RUN mkdir -p /home/mpodles/
+
+
+RUN mkdir -p /home/mpodles/iFabric
+
+WORKDIR /home/mpodles/iFabric
+
+RUN apt-get install -y python-pip && \
+    pip install jinja2\
+    grpcio \
+    psutil \
+    rstr
+
+RUN cd /iFabric/protobuf/python && \
+    python setup.py build && \
+    python setup.py test && \
+    python setup.py install && \ 
+    cp -R google/protobuf /usr/local/lib/python2.7/dist-packages/google
+
+RUN apt-get install -y \
+    iproute2 \
+    iputils-ping \
+    net-tools \
+    vim \
+    x11-xserver-utils \
+    xterm 
+
 COPY . .
 EXPOSE 6379
 
-# CMD ["find", "/", "|", "grep", "libbmpi"]    
+ENTRYPOINT [ "/bin/bash" ]  

@@ -1,6 +1,6 @@
-def get_function():
-    return ReadCounters
-def ReadCounters(self, client_stub, counter_id=None, index=None, dry_run=False):
+def ReadCounters(communicator, port=None, flow_id = None, dry_run=False):
+    index = port + (flow_id-1)*48
+    counter_id = communicator.device.p4info_helper.get_counters_id("MyIngress.ingress_byte_cnt")
     request = p4runtime_pb2.ReadRequest()
     request.device_id = self.OSN_ID
     entity = request.entities.add()
@@ -14,5 +14,18 @@ def ReadCounters(self, client_stub, counter_id=None, index=None, dry_run=False):
     if dry_run:
         print "P4Runtime Read:", request
     else:
-        for response in client_stub.Read(request):
+        for response in communicator.client_stub.Read(request):
             yield response
+
+def get_state(action, communicator, **params):
+    state = ReadCounters(communicator, **params)
+    for response in state:
+        for entity in state.entities:
+            counter = entity.counter_entry
+            return counter.data.byte_count
+
+
+def get_function():
+    return get_state
+
+

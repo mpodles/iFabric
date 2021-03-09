@@ -5,8 +5,8 @@ class OSNetState(object):
         self.latest_state_data = None
         self.state_log = None
 
-    def __call__(self, **params):
-        self.state_function(**params)
+    def __call__(self, communicator, **params):
+        return self.state_function(self, communicator, **params)
 
     def get_state_data(self):
         pass
