@@ -1,8 +1,10 @@
+from p4.v1 import p4runtime_pb2
+
 def ReadCounters(communicator, port=None, flow_id = None, dry_run=False):
     index = port + (flow_id-1)*48
     counter_id = communicator.device.p4info_helper.get_counters_id("MyIngress.ingress_byte_cnt")
     request = p4runtime_pb2.ReadRequest()
-    request.device_id = self.OSN_ID
+    request.device_id = communicator.device.id
     entity = request.entities.add()
     counter_entry = entity.counter_entry
     if counter_id is not None:
@@ -20,7 +22,7 @@ def ReadCounters(communicator, port=None, flow_id = None, dry_run=False):
 def get_state(action, communicator, **params):
     state = ReadCounters(communicator, **params)
     for response in state:
-        for entity in state.entities:
+        for entity in response.entities:
             counter = entity.counter_entry
             return counter.data.byte_count
 

@@ -41,7 +41,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         self.device.enable_debugger = True
         self.device.log_console = True
         self.device.nanomsg = "ipc:///tmp/bm-{}-log.ipc".format(self.device.id)
-        self.device.p4info_helper = P4InfoHelper("/home/mpodles/iFabric/src/main/build/iFabric_switch.p4.p4info.txt").p4info
+        self.device.p4info_helper = P4InfoHelper("/home/mpodles/iFabric/src/main/build/iFabric_switch.p4.p4info.txt")
  
     def run(self):
         self.start()

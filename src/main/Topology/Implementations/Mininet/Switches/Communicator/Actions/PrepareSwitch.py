@@ -30,7 +30,7 @@ def SetForwardingPipelineConfig(communicator, dry_run=False):
     request.election_id.low = 1
     request.device_id = communicator.device.id
     config = request.config
-    config.p4info.CopyFrom(communicator.device.p4info_helper)
+    config.p4info.CopyFrom(communicator.device.p4info_helper.p4info)
     config.p4_device_config = device_config.SerializeToString()
     request.action = p4runtime_pb2.SetForwardingPipelineConfigRequest.VERIFY_AND_COMMIT
     if dry_run:
