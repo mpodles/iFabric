@@ -69,7 +69,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # if self.log_console:
         #     args.append("--log-console")
         if self.device.grpc_port:
-            args.append("-- --grpc-server-addr " + str(self.device.address) +":"+ str(self.device.grpc_port))
+            args.append("-- --cpu-port 255 --grpc-server-addr " + str(self.device.address) +":"+ str(self.device.grpc_port))
         cmd = ' '.join(args)
         info(cmd + "\n")
         pid = None

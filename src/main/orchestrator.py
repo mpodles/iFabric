@@ -123,7 +123,8 @@ def start_mininet_network(topology):
     switch.OSNetCommunicator.take_action("PrepareSwitch")
     print switch.OSNetCommunicator.get_state("Counter", port = 1, flow_id = 1)
     while True:
-        packetin = switch.OSNetCommunicator.take_action("PrepareSwitch")
+        packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
+        print packetin
 
 
 # def start_controller():

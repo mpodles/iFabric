@@ -25,14 +25,15 @@ header iFabric_t {
 
 @controller_header("packet_in")
 header packet_in_t {
-    bit<9> ingress_port;
-    bit<7> padding;
+    bit<16> ingress_port;
+    bit<8> padding;
 }
 
 @controller_header("packet_out")
 header packet_out_t {
-    bit<9> egress_port;
-    bit<7> padding;
+    bit<16> egress_port;
+    bit<16> mcast_grp;
+    bit<8> padding;
 }
 
 {% for protocol in protocols.values() -%}
@@ -44,8 +45,8 @@ struct metadata {
 }
 
 struct headers {
-    packet_out_header_t     packet_out;
-    packet_in_header_t      packet_in;
+    packet_out_t     packet_out;
+    packet_in_t      packet_in;
     iFabric_t   iFabric;
     {% for protocol in protocols.keys() -%}
     {{protocol}}_t  {{protocol}};  
@@ -166,6 +167,7 @@ control MyIngress(inout headers hdr,
     
 
     apply {
+        punt_to_cpu();
         if  (standard_metadata.ingress_port == CPU_PORT){
             standard_metadata.egress_spec = (bit<9>)hdr.packet_out.egress_port;
             standard_metadata.mcast_grp = hdr.packet_out.mcast_grp;

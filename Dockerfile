@@ -204,13 +204,12 @@ RUN apt-get install -y \
     xterm 
 
 RUN apt-get install -y openssh-server
-# RUN make root password
+RUN echo 'root:eldo' | sudo chpasswd
 
-# RUN replace line in /etc/ssh/sshd_config
+RUN  echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
 
-# RUN service ssh start
+RUN service ssh start
 
-# RUN service ssh restart
 
 COPY . .
 EXPOSE 22
