@@ -39,4 +39,4 @@ class OSNetCommunicator(object):
         return self.OSN_States[state](self, **params)
 
     def take_action(self, action, **params):
-        self.OSN_Actions[action](self, **params)
+        return self.OSN_Actions[action](self, **params)

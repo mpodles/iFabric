@@ -5,7 +5,7 @@ class OSNetAction(object):
         self.action_log = {}
 
     def __call__(self, communicator, **params):
-        self.action_function(self, communicator, **params)
+        return self.action_function(self, communicator, **params)
 
     def log_message(self):
         pass #TODO: think of good loging system maybe with decorators

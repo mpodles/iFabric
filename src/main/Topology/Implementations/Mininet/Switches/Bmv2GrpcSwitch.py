@@ -59,7 +59,7 @@ class Bmv2GrpcSwitch(MininetSwitch):
         # if self.nanomsg:
         #     args.extend(['--nanolog', self.nanomsg])
         args.extend(['--device-id', str(self.device.id)])
-        print self.device.id
+        # print self.device.id
         if self.device.p4_json_file_path:
             args.append(self.device.p4_json_file_path)
         else:

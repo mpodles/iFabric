@@ -203,7 +203,16 @@ RUN apt-get install -y \
     x11-xserver-utils \
     xterm 
 
+RUN apt-get install -y openssh-server
+# RUN make root password
+
+# RUN replace line in /etc/ssh/sshd_config
+
+# RUN service ssh start
+
+# RUN service ssh restart
+
 COPY . .
-EXPOSE 6379
+EXPOSE 22
 
 ENTRYPOINT [ "/bin/bash" ]  

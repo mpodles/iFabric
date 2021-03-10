@@ -6,6 +6,7 @@ const bit<16> TYPE_iFabric = 0x1212;
 const bit<16> TYPE_iFabric_flood = 0x1213;
 const bit<32> MAX_iFabric_ID = 1 << 15;
 const bit<16> iFabric_next_protocol_TYPE_ETHERNET = 0x0001;
+#define CPU_PORT 255
 
 
 /*************************************************************************
@@ -22,6 +23,18 @@ header iFabric_t {
     bit<128> reserved;
 }
 
+@controller_header("packet_in")
+header packet_in_t {
+    bit<9> ingress_port;
+    bit<7> padding;
+}
+
+@controller_header("packet_out")
+header packet_out_t {
+    bit<9> egress_port;
+    bit<7> padding;
+}
+
 {% for protocol in protocols.values() -%}
 {{protocol}}  
 {% endfor %}
@@ -31,6 +44,8 @@ struct metadata {
 }
 
 struct headers {
+    packet_out_header_t     packet_out;
+    packet_in_header_t      packet_in;
     iFabric_t   iFabric;
     {% for protocol in protocols.keys() -%}
     {{protocol}}_t  {{protocol}};  
@@ -112,7 +127,9 @@ control MyIngress(inout headers hdr,
     }
 
     action punt_to_cpu() {
-        hdr.iFabric.setInvalid();
+        standard_metadata.egress_spec = CPU_PORT;
+        hdr.packet_in.setValid();
+        hdr.packet_in.ingress_port = (bit<16>)standard_metadata.ingress_port;
     }
 
     table CPU_punter {
@@ -133,6 +150,7 @@ control MyIngress(inout headers hdr,
 
     table Flow_classifier {
         key = {
+            standard_metadata.ingress_port: range;
             {% for match_field_name in match_fields_used -%}
             hdr.{{match_field_name}}: range;
             {% endfor %}
@@ -148,6 +166,11 @@ control MyIngress(inout headers hdr,
     
 
     apply {
+        if  (standard_metadata.ingress_port == CPU_PORT){
+            standard_metadata.egress_spec = (bit<9>)hdr.packet_out.egress_port;
+            standard_metadata.mcast_grp = hdr.packet_out.mcast_grp;
+            hdr.packet_out.setInvalid();
+        }
         if (!hdr.iFabric.isValid()){
             CPU_punter.apply();
             Flow_classifier.apply();
@@ -188,6 +211,10 @@ control MyEgress(inout headers hdr,
     }
 
     apply {
+        if (standard_metadata.egress_port == CPU_PORT) {
+            hdr.packet_in.setValid();
+            hdr.packet_in.ingress_port = (bit<16>)standard_metadata.ingress_port;
+        }
         egress_byte_cnt.count((bit<32>) ((bit<16>)standard_metadata.egress_port + (hdr.iFabric.flow_id - 1)* 48));
         Port_checker.apply();       
     }
@@ -208,6 +235,8 @@ control MyComputeChecksum(inout headers  hdr, inout metadata meta) {
 
 control MyDeparser(packet_out packet, in headers hdr) {
     apply {
+        packet.emit(hdr.packet_out);
+        packet.emit(hdr.packet_in);
         packet.emit(hdr.iFabric);
         {% for protocol in protocols.keys() -%}
             packet.emit(hdr.{{protocol}});
