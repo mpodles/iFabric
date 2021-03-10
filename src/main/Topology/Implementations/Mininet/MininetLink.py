@@ -19,5 +19,5 @@ class MininetLink(OSNetLink, Link):
                     port1 = port1,
                     port2 = port2,
                     addr1 = link.node1.interfaces[link.int1]["mac"],
-                    addr2 = link.node1.interfaces[link.int1]["mac"])
+                    addr2 = link.node2.interfaces[link.int2]["mac"])
         

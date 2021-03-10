@@ -9,6 +9,7 @@ sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet
 from SingleSwitch import SingleSwitch
 import traceback
 from mininet.cli import CLI
+from scapy.all import *
 
 
 main_project_directory = os.path.dirname(os.path.realpath(__file__))
@@ -124,7 +125,18 @@ def start_mininet_network(topology):
     print switch.OSNetCommunicator.get_state("Counter", port = 1, flow_id = 1)
     while True:
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
-        print packetin
+        packet = packetin.packet.payload
+        pkt = Ether(_pkt=packet)
+        metadata = packetin.packet.metadata 
+        for meta in metadata:
+            metadata_id = meta.metadata_id 
+            value = meta.value 
+
+        pkt_eth_src = pkt.getlayer(Ether).src 
+        pkt_eth_dst = pkt.getlayer(Ether).dst 
+        ether_type = pkt.getlayer(Ether).type 
+        print pkt_eth_dst, pkt_eth_src, ether_type
+        CLI(topology.mininet)
 
 
 # def start_controller():
