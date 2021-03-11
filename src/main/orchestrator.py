@@ -112,6 +112,9 @@ def prepare_topology():
 #         policy_file_target_path = policy_file_path
 #     )
 
+def to_bits(payload):
+    return ' '.join(format(ord(x), 'b') for x in payload)
+
 def start_mininet_network(topology):
     # topology.generate_mininet_topo()
     topology.generate_mininet_net()
@@ -122,7 +125,7 @@ def start_mininet_network(topology):
     switch.initiate_communicator()
     switch.OSNetCommunicator.connect()
     switch.OSNetCommunicator.take_action("PrepareSwitch")
-    switch.OSNetCommunicator.take_action("ReceivePackets", interface="sw-EP_1-0")
+    # switch.OSNetCommunicator.take_action("ReceivePackets", interface="sw-EP_1-0")
     while True:
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
         print packetin
@@ -137,6 +140,7 @@ def start_mininet_network(topology):
         pkt_eth_dst = pkt.getlayer(Ether).dst 
         ether_type = pkt.getlayer(Ether).type 
         print pkt_eth_dst, pkt_eth_src, ether_type
+        print to_bits(packet)
         CLI(topology.mininet)
 
 
