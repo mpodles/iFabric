@@ -2,9 +2,13 @@ import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet')
 from MininetEndpoint import MininetEndpoint
 
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Communicator')
+from HostCommunicator import HostCommunicator
+
 class iFabricEndpoint(MininetEndpoint):
     def __init__(self, name, **params):
         MininetEndpoint.__init__(self, name, **params)
+        self.OSNetCommunicator_class = HostCommunicator
 
     def config(self, **params):
         # r = MininetEndpoint.__init__(**params)

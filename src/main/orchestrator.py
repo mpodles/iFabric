@@ -122,15 +122,16 @@ def start_mininet_network(topology):
     switch.initiate_communicator()
     switch.OSNetCommunicator.connect()
     switch.OSNetCommunicator.take_action("PrepareSwitch")
-    print switch.OSNetCommunicator.get_state("Counter", port = 1, flow_id = 1)
+    switch.OSNetCommunicator.take_action("ReceivePackets", interface="sw-EP_1-0")
     while True:
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
+        print packetin
         packet = packetin.packet.payload
         pkt = Ether(_pkt=packet)
         metadata = packetin.packet.metadata 
         for meta in metadata:
             metadata_id = meta.metadata_id 
-            value = meta.value 
+            value = meta.value
 
         pkt_eth_src = pkt.getlayer(Ether).src 
         pkt_eth_dst = pkt.getlayer(Ether).dst 
