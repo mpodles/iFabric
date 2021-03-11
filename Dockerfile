@@ -203,15 +203,6 @@ RUN apt-get install -y \
     x11-xserver-utils \
     xterm 
 
-RUN apt-get install -y openssh-server
-RUN echo 'root:eldo' | sudo chpasswd
 
-RUN  echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
-
-RUN service ssh start
-
-
-COPY . .
-EXPOSE 22
 
 ENTRYPOINT [ "/bin/bash" ]  
