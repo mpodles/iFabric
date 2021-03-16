@@ -7,14 +7,14 @@ def buildDeviceConfig(communicator):
     "Builds the device config for BMv2"
     device_config = p4config_pb2.P4DeviceConfig()
     device_config.reassign = True
-    with open(communicator.device.p4_json_file_path) as f:
+    with open(communicator.device_data.p4_json_file_path) as f:
         device_config.device_data = f.read()
     return device_config
 
 def MasterArbitrationUpdate(communicator, dry_run=False, **kwargs):
     print "MasterArbitrationUpdate"
     request = p4runtime_pb2.StreamMessageRequest()
-    request.arbitration.device_id = communicator.device.id
+    request.arbitration.device_id = communicator.device.OSN_ID
     request.arbitration.election_id.high = 0
     request.arbitration.election_id.low = 1
     if dry_run:
@@ -28,9 +28,9 @@ def SetForwardingPipelineConfig(communicator, dry_run=False):
     device_config = buildDeviceConfig(communicator)
     request = p4runtime_pb2.SetForwardingPipelineConfigRequest()
     request.election_id.low = 1
-    request.device_id = communicator.device.id
+    request.device_id = communicator.device.OSN_ID
     config = request.config
-    config.p4info.CopyFrom(communicator.device.p4info_helper.p4info)
+    config.p4info.CopyFrom(communicator.device_data.p4info_helper.p4info)
     config.p4_device_config = device_config.SerializeToString()
     request.action = p4runtime_pb2.SetForwardingPipelineConfigRequest.VERIFY_AND_COMMIT
     if dry_run:

@@ -113,6 +113,8 @@ def prepare_topology():
 #     )
 
 def to_bits(payload):
+    for x in payload:
+        print format(ord(x), 'b')
     return ' '.join(format(ord(x), 'b') for x in payload)
 
 def start_mininet_network(topology):

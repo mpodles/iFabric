@@ -12,7 +12,7 @@ class iFabricEndpoint(MininetEndpoint):
 
     def config(self, **params):
         # r = MininetEndpoint.__init__(**params)
-        for interface, int_config in self.device.interfaces.items():
+        for interface, int_config in self.device_data.interfaces.items():
             mac = int_config["mac"] 
             ip = int_config["ip"]
             self.setMAC(mac, intf=interface)
