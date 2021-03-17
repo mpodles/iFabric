@@ -9,8 +9,8 @@ class MininetLink(OSNetLink, Link):
     def __init__(self, *args, **kwargs):
         link = kwargs["params_object"]
         OSNetLink.__init__(self, link, args[0], args[1])
-        port1 = int(link.int1.split("-")[-1])
-        port2 = int(link.int2.split("-")[-1])
+        port1 = link.node1.interfaces[link.int1]["port"]
+        port2 = link.node2.interfaces[link.int2]["port"]
         Link.__init__(self, 
                     node1 = args[0], 
                     node2 = args[1],

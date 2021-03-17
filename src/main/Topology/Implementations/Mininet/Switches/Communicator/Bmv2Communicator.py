@@ -30,7 +30,6 @@ class Bmv2Communicator(OSNetCommunicator):
         self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
         self.requests_stream = IterableQueue()
         self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream))
-        print "connect done"
 
     def disconnect(self):
         self.requests_stream.close()

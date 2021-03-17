@@ -56,15 +56,34 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
 
     def generate_links(self):
         switch = self.switches["sw"]
-        for endpoint in self.endpoints.values():
-            link_name = "sw" + " - " + endpoint.name
-            ip, mac = self.generate_ip_address() , self.generate_mac_address()
-            int1 = endpoint.name +"-sw-0"
-            endpoint.interfaces[int1] = {"ip" : ip, "mac" : mac}
-            ip, mac = self.generate_ip_address() , self.generate_mac_address()
-            int2= "sw-"+ endpoint.name +"-" + str(len(switch.interfaces))
-            switch.interfaces[int2] = {"ip" : ip, "mac" : mac}
-            self.links[link_name] = LinkData(endpoint, switch, int1, int2, link_name, "1ms", "1000Mbs")
+        for port in range(self.ports_per_endpoint):
+            for endpoint in self.endpoints.values():
+                current_switch_interface = len(switch.interfaces) + port
+                link_name = "{switch}_{sw_int}-{endpoint}_{ep_int}".format(
+                    switch = switch.name,
+                    sw_int = current_switch_interface,
+                    endpoint = endpoint.name,
+                    ep_int = port
+                )
+
+                ep_int_name ="{ep_int}-{switch}_{sw_int}".format(
+                    switch = switch.name,
+                    sw_int = current_switch_interface,
+                    ep_int = port
+                )
+                ip, mac = self.generate_ip_address() , self.generate_mac_address()
+                endpoint.interfaces[ep_int_name] = {"ip" : ip, "mac" : mac, "port": port}
+                
+
+                sw_int_name= "{sw_int}-{endpoint}_{ep_int}".format(
+                    sw_int = current_switch_interface,
+                    endpoint = endpoint.name,
+                    ep_int = port
+                )
+                ip, mac = self.generate_ip_address() , self.generate_mac_address()
+                switch.interfaces[sw_int_name] = {"ip" : ip, "mac" : mac, "port": current_switch_interface}
+
+                self.links[link_name] = LinkData(endpoint, switch, ep_int_name, sw_int_name, link_name, "1ms", "1000Mbs")
 
     def generate_groups(self):
         groups_count = self.endpoints_count / self.avg_group_size

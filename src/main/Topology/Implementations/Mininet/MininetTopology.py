@@ -77,6 +77,12 @@ class MininetTopology(OSNetTopology):
     def stop(self):
         self.mininet.stop()
 
+    def __del__(self): 
+        for link in self.links.values():
+            os.system("ip link del " + link.int1)
+            os.system("ip link del " + link.int2)
+        print('Links cleared') 
+
     
 class Bmv2GrpcTopo(MininetTopology):
     def __init__(self, switches, endpoints, links, p4_code_file_path, p4runtime_info_file_path, p4_json_file_path, log_dir, pcap_dir):
