@@ -1,5 +1,66 @@
 {
     "protocols_used":["Ethernet", "IPv4", "TCP", "UDP"],
+    "protocols_definition":{
+        "Ethernet": {
+            "fields": [
+                {"name": "dstAddr", "size": 48},
+                {"name": "srcAddr", "size": 48},
+                {"name": "etherType", "size": 16}
+            ],
+            "variables": [
+                {"name": "Ethernet_etherType_TYPE_IPv4", "size": 16, "value":"0x800"}
+            ]
+        },
+        "IPv4": {
+            "fields": [
+                {"name": "dstAddr", "size": 32},
+                {"name": "srcAddr", "size": 32},
+                {"name": "version", "size": 4},
+                {"name": "ihl", "size": 4},
+                {"name": "diffserv", "size": 8},
+                {"name": "totalLen", "size": 16},
+                {"name": "identification", "size": 16},
+                {"name": "flags", "size": 3},
+                {"name": "fragOffset", "size": 13},
+                {"name": "ttl", "size": 8},
+                {"name": "protocol", "size": 8},
+                {"name": "hdrChecksum", "size": 16}
+            ],
+            "variables": [
+                {"name": "IPv4_protocol_TYPE_TCP", "size": 8, "value":"6"},
+                {"name": "IPv4_protocol_TYPE_UDP", "size": 8, "value":"17"}
+            ]
+        },
+        "TCP": {
+            "fields": [
+                {"name": "srcPort", "size": 16},
+                {"name": "dstPort", "size": 16},
+                {"name": "seqNo", "size": 32},
+                {"name": "ackNo", "size": 32},
+                {"name": "dataOffset", "size": 4},
+                {"name": "res", "size": 4},
+                {"name": "cwr", "size": 1},
+                {"name": "ece", "size": 1},
+                {"name": "urg", "size": 1},
+                {"name": "ack", "size": 1},
+                {"name": "psh", "size": 1},
+                {"name": "rst", "size": 1},
+                {"name": "syn", "size": 1},
+                {"name": "fin", "size": 1},
+                {"name": "window", "size": 16},
+                {"name": "checksum", "size": 16},
+                {"name": "urgentPtr", "size": 16}
+            ]
+        },
+        "UDP": {
+            "fields": [
+                {"name": "srcPort", "size": 32},
+                {"name": "dstPort", "size": 32},
+                {"name": "length", "size": 16},
+                {"name": "checksum", "size": 16}
+            ]
+        }
+    },
     "protocols_stacks":[
         ["Ethernet", "IPv4", "TCP"],
         ["Ethernet", "IPv4", "UDP"],
