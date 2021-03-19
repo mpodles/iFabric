@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 import timeit
+import re
 from time import sleep
 import threading
 import sys
@@ -9,7 +10,7 @@ sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet
 from SingleSwitch import SingleSwitch
 import traceback
 from mininet.cli import CLI
-from scapy.all import *
+# from scapy.all import *
 
 
 main_project_directory = os.path.dirname(os.path.realpath(__file__))
@@ -63,41 +64,18 @@ def prepare_folders():
     os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
 
 def prepare_topology():
-    sstg = SingleSwitch(topology_description_file_path = topology_description_file_path,
-                        p4_template_file_path = p4_template_file_path, 
-                        p4_code_file_path = p4_code_file_path, 
-                        protocols_description_file_path = protocols_description_file_path, 
-                        protocols_folder_path = protocols_folder_path,
-                        p4runtime_info_file_path =p4runtime_info_file_path, 
-                        p4_json_file_path = p4_json_file_path, 
-                        log_dir = logs_path, 
-                        pcap_dir = pcaps_path)
+    sstg = SingleSwitch(
+        topology_description_file_path = topology_description_file_path,
+        p4_template_file_path = p4_template_file_path, 
+        p4_code_file_path = p4_code_file_path, 
+        protocols_description_file_path = protocols_description_file_path, 
+        protocols_folder_path = protocols_folder_path,
+        p4runtime_info_file_path =p4runtime_info_file_path, 
+        p4_json_file_path = p4_json_file_path, 
+        log_dir = logs_path, 
+        pcap_dir = pcaps_path
+        )
     return sstg
-    
-
-    
-
-# def construct_p4_program():   
-#     p4_constructor =  c_p4.P4Constructor(
-#         topology_file_path = topology_file_path,
-#         protocols_folder_path = protocols_folder_path,
-#         configuration_folder_path = configuration_folder_path,
-#         flows_file_path = flows_file_path,
-#         template_file_path = template_file_path,
-#         p4_target_file_path = p4_target_file_path,
-#         runtimes_files_path = runtimes_files_path,
-#         flows_ids_file_path = flows_ids_file_path,
-#         compiled_p4_file_path = compiled_p4_file_path,
-#         p4runtime_target_file_path = p4runtime_target_file_path,
-#         )
-
-# def compile_p4_program():
-#     cmd = "p4c-bm2-ss \
-#         --p4v 16 \
-#         --p4runtime-files "+ p4runtime_target_file_path +\
-#         " -o "+ compiled_p4_file_path +\
-#         " " + p4_target_file_path
-#     os.system(cmd)
     
 # def generate_flows():
 #     flows_generator = f_gen.DestinationFlowGenerator(
@@ -112,44 +90,58 @@ def prepare_topology():
 #         policy_file_target_path = policy_file_path
 #     )
 
+
 def start_mininet_network(topology):
-    # topology.generate_mininet_topo()
     topology.generate_mininet_net()
     topology.generate_topology()
     topology.start()
-    # CLI(topology.mininet)
+    return topology
+    
+def to_bits(payload):
+    payload_bytes = []
+    for x in payload:
+        payload_bytes.append(format(ord(x), 'b'))
+    return payload_bytes
+    # return ' '.join(format(ord(x), 'b') for x in payload)
+
+def read_protocols(self, protocols_folder_path, protocols_description_file_path):
+        with open(protocols_description_file_path, "r") as f:
+            protocols_file = json.loads(f.read())
+            self.protocols_used = protocols_file["protocols_used"]
+            self.protocols_stack = protocols_file["protocols_stacks"]
+            self.next_protocols_fields = protocols_file["next_protocols_fields"]
+            self.match_fields_used = protocols_file["match_fields_used"]
+            self.match_fields_to_learn = protocols_file["match_fields_to_learn"] 
+        
+        for filename in os.listdir(protocols_folder_path):
+            if filename in self.protocols_used:
+                with open(os.path.join(protocols_folder_path, filename)) as f:
+                    self.protocols[filename] = f.read()
+
+        for protocol, definition in next_protocols_fields.items():
+            re_string = "{field} *= *([a-zA-Z0-9]*)".format(field = field)
+            re.match(re_string, self.protocols[protocol]).group(1)
+
+def start_controller(topology):
     switch = topology.node("sw")
     switch.initiate_communicator()
     switch.OSNetCommunicator.connect()
     switch.OSNetCommunicator.take_action("PrepareSwitch")
-    print switch.OSNetCommunicator.get_state("Counter", port = 1, flow_id = 1)
     while True:
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
-        packet = packetin.packet.payload
-        pkt = Ether(_pkt=packet)
+        payload = packetin.packet.payload
         metadata = packetin.packet.metadata 
         for meta in metadata:
             metadata_id = meta.metadata_id 
-            value = meta.value 
-
-        pkt_eth_src = pkt.getlayer(Ether).src 
-        pkt_eth_dst = pkt.getlayer(Ether).dst 
-        ether_type = pkt.getlayer(Ether).type 
-        print pkt_eth_dst, pkt_eth_src, ether_type
-        CLI(topology.mininet)
-
-
-# def start_controller():
-#     print "Programming switches"
-#     controller = contr.Controller(
-#         topology_file_path = topology_file_path,
-#         flows_ids_file_path = flows_ids_file_path,
-#         switches_connections_file_path = switches_connections_file_path,
-#         policy_file_path = policy_file_path,
-#         runtimes_files_path = runtimes_files_path,
-#         logs_path= logs_path
-#     )
-#     controller.start_state_gathering()
+            value = ord(meta.value)
+        payload = to_bits(payload)
+        # pkt = Ether(_pkt=packet)
+        # pkt_eth_src = pkt.getlayer(Ether).src 
+        # pkt_eth_dst = pkt.getlayer(Ether).dst 
+        # ether_type = pkt.getlayer(Ether).type 
+        # print pkt_eth_dst, pkt_eth_src, ether_type
+        
+          
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -171,10 +163,8 @@ if __name__ == "__main__":
         topo = prepare_topology()
         # generate_flows()
         # generate_policy()
-        # construct_p4_program()
-        # compile_p4_program()
-        start_mininet_network(topo)
-        # start_controller()
+        started_topo = start_mininet_network(topo)
+        start_controller(started_topo)
     except Exception, err:
         print "Exception: ", err
         print 

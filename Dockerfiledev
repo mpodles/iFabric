@@ -1,0 +1,15 @@
+from osnet:env
+
+RUN apt-get install -y openssh-server
+RUN echo 'root:eldo' | sudo chpasswd
+
+RUN  echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+
+RUN service ssh start
+
+RUN cd /home/mpodles/ &&\
+    git clone https://github.com/mpodles/iFabric && \ 
+    git config --global user.email "mp@kpodles.pl" && \
+    git config --global user.name "mpodles"
+
+EXPOSE 22

@@ -6,10 +6,9 @@ class OSNetDevice(object):
     def __init__(self,device):
         self.OSN_ID = OSNetDevice.next_OSN_ID
         OSNetDevice.next_OSN_ID +=1
-        self.device = device
-        self.device.id = self.OSN_ID
+        self.device_data = device
         self.OSNetCommunicator = None
         self.OSNetCommunicator_class = OSNetCommunicator
 
     def initiate_communicator(self):
-        self.OSNetCommunicator = self.OSNetCommunicator_class(self.device)
+        self.OSNetCommunicator = self.OSNetCommunicator_class(self)

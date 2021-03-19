@@ -16,11 +16,12 @@ class Bmv2Communicator(OSNetCommunicator):
     def __init__(self, device, **params):
         OSNetCommunicator.__init__(self, device, **params)
         self.device = device
+        self.device_data = device.device_data
         self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
         self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
      
     def connect(self):
-        combined_address = str(self.device.address)+ ":" + str(self.device.grpc_port)
+        combined_address = str(self.device_data.address)+ ":" + str(self.device_data.grpc_port)
         info("Connecting to P4Runtime server on " +  combined_address)
         self.channel = grpc.insecure_channel(combined_address)
         # if proto_dump_file is not None: #TODO: fix this later
@@ -29,7 +30,6 @@ class Bmv2Communicator(OSNetCommunicator):
         self.client_stub = p4runtime_pb2_grpc.P4RuntimeStub(self.channel)
         self.requests_stream = IterableQueue()
         self.stream_msg_resp = self.client_stub.StreamChannel(iter(self.requests_stream))
-        print "connect done"
 
     def disconnect(self):
         self.requests_stream.close()

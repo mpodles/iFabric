@@ -8,7 +8,7 @@ class MininetEndpoint(OSNetDevice,Host):
     def __init__(self,endpoint, **params):
         endpoint = params["params_object"]
         OSNetDevice.__init__(self, endpoint)
-        Host.__init__(self, endpoint.name)
+        Host.__init__(self, endpoint.name, inNamespace=True)
     
     def run(self):
         pass
