@@ -19,20 +19,40 @@ class P4Constructor():
         # self.tables_action = {"MyIngress.Flow_classifier": "MyIngress.append_myTunnel_header", "MyEgress.port_checker": "MyIngress.strip_header"}
         # self.actions_parameters = {"MyIngress.append_myTunnel_header": ["flow_id", "node_id", "group_id"], "MyEgress.strip_header": [] }
 
-        self.read_protocols(protocols_folder_path, protocols_description_file_path)
+        self.read_protocols_description(protocols_description_file_path)
+        self.generate_protocols(
+            "/home/mpodles/iFabric/src/main/configuration_files/protocol_template.jinja2",
+             protocols_folder_path)
+        self.read_protocols(protocols_folder_path)
         self.construct_p4_program(template_file_path, p4_file_target_path)
        
 
             
-    def read_protocols(self, protocols_folder_path, protocols_description_file_path):
+    def read_protocols_description(self, protocols_description_file_path):
         with open(protocols_description_file_path, "r") as f:
             protocols_file = json.loads(f.read())
             self.protocols_used = protocols_file["protocols_used"]
             self.protocols_stack = protocols_file["protocols_stacks"]
+            self.protocols_definition = protocols_file["protocols_definition"]
             self.next_protocols_fields = protocols_file["next_protocols_fields"]
             self.match_fields_used = protocols_file["match_fields_used"]
             self.match_fields_to_learn = protocols_file["match_fields_to_learn"] 
-        
+
+
+    def generate_protocols(self, protocol_template_file_path, protocols_target_folder_path):
+        file_loader = jinja2.FileSystemLoader(os.path.dirname(protocol_template_file_path))
+        env = jinja2.Environment(loader=file_loader)
+
+        template=env.get_template(os.path.basename(protocol_template_file_path))
+        for protocol, definition in self.protocols_definition.items():
+            output = template.render(protocol = protocol, 
+                                    fields = definition["fields"],
+                                    variables = definition.get("variables", [])
+                                    )
+            with open(os.path.join(protocols_target_folder_path, protocol),'w+')  as f:
+                f.write(output)
+
+    def read_protocols(self, protocols_folder_path):
         for filename in os.listdir(protocols_folder_path):
             if filename in self.protocols_used:
                 with open(os.path.join(protocols_folder_path, filename)) as f:

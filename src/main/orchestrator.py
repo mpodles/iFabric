@@ -43,15 +43,16 @@ policy_file = structure["policy_file"]
 switches_connections_file = structure["switches_connections_file"]
 
 
+build_path = os.path.join(main_project_directory, build_folder)
 topology_file_path = os.path.join(main_project_directory, build_folder, topology_file)
 topology_description_file_path = os.path.join(main_project_directory, configuration_folder, topology_description_file)
-logs_path = os.path.join(main_project_directory, logs_folder)
-pcaps_path = os.path.join(main_project_directory, pcaps_folder)
+logs_path = os.path.join(main_project_directory, build_folder, logs_folder)
+pcaps_path = os.path.join(main_project_directory, build_folder, pcaps_folder)
 p4_code_file_path = os.path.join(main_project_directory, build_folder, p4_file_name)
 p4runtime_info_file_path = os.path.join(main_project_directory, build_folder, p4runtime_file_name)
 p4_json_file_path = os.path.join(main_project_directory, build_folder, compiled_p4_file_name)
 configuration_folder_path =  os.path.join(main_project_directory, configuration_folder)
-protocols_folder_path = os.path.join(main_project_directory, configuration_folder, protocols_folder)
+protocols_folder_path = os.path.join(main_project_directory, build_folder, protocols_folder)
 protocols_description_file_path = os.path.join(main_project_directory, configuration_folder, protocols_description_file_name)
 p4_template_file_path =  os.path.join(main_project_directory, configuration_folder, p4template)
 flows_file_path =  os.path.join(main_project_directory, build_folder, flows_file)
@@ -61,7 +62,7 @@ policy_file_path = os.path.join(main_project_directory, build_folder, policy_fil
 switches_connections_file_path = os.path.join(main_project_directory, build_folder, switches_connections_file)
 
 def prepare_folders():
-    os.system(" ".join(["mkdir -p", build_folder, pcaps_folder, logs_folder]))
+    os.system(" ".join(["mkdir -p", build_path, pcaps_path, logs_path, protocols_folder_path]))
 
 def prepare_topology():
     sstg = SingleSwitch(
@@ -133,8 +134,9 @@ def start_controller(topology):
         metadata = packetin.packet.metadata 
         for meta in metadata:
             metadata_id = meta.metadata_id 
-            value = ord(meta.value)
+            value = to_bits(meta.value)
         payload = to_bits(payload)
+        print value, payload
         # pkt = Ether(_pkt=packet)
         # pkt_eth_src = pkt.getlayer(Ether).src 
         # pkt_eth_dst = pkt.getlayer(Ether).dst 

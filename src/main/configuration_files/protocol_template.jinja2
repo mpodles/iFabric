@@ -1,0 +1,9 @@
+{% for variable in variables -%}   
+    const bit<{{variable["size"]}}>  {{variable["name"]}}  = {{variable["value"]}};
+{% endfor %}
+
+header {{protocol}}_t {
+    {% for field in fields -%}   
+    bit<{{field["size"]}}>    {{field["name"]}};
+    {% endfor %}
+}

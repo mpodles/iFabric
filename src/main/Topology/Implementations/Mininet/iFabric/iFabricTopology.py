@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet')
-from construct_p4_new import P4Constructor
+from construct_p4 import P4Constructor
 from MininetTopology import Bmv2GrpcTopo
 
 from iFabricEndpoint import iFabricEndpoint
