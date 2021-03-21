@@ -152,10 +152,20 @@ def prepare_parser():
 
         def parse_packet(self, packet):
             parsed_packet = Parser.Packet()
-            parsed_packet.__setattr__("Ethernet", Parser.Packet())
-            iterator = 0
-            for x in packet:
-                payload_bytes.append(format(ord(x), 'b'))
+            protocol = "Ethernet"
+            while len(packet) > 0:
+                parsed_packet.__setattr__(protocol, Parser.Packet())
+
+                for field_name, field_size in self.fields[protocol]:
+                    field_value = packet[0:field_size]
+                    packet = packet[field_size:]
+                    parsed_packet.Ethernet.__setattr__(field_name, field_value)
+
+                next_field = self.next_protocols_fields[protocol].get("next_protocol_field", None)
+                if next_field is not None:
+                    next_field_value = parsed_packet[protocol][next_field]
+                    protocol = self.next_protocol[next_field][next_field_value]
+
             return parsed_packet
             
     return Parser(protocols_description_file_path)
@@ -187,7 +197,7 @@ def start_controller(topology, parser):
         for meta in metadata:
             metadata_id = meta.metadata_id 
             value = to_bits(meta.value)
-        payload = to_bits(payload)
+        payload = parser.parse_packet(payload)
         print value, payload
 
 
