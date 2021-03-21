@@ -6,4 +6,4 @@ class iFabricSwitchCommunicator(Bmv2Communicator):
     def __init__(self, device, **params):
         Bmv2Communicator.__init__(self, device, **params)
         self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Communicator/Actions")
-        self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Communicator/States")
+        # self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/iFabric/Communicator/States")

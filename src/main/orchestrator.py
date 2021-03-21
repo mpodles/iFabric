@@ -93,9 +93,15 @@ def prepare_topology():
 
 def prepare_parser():
     class Parser(object):
+        
+        class Packet(object):
+            def __getitem__(self, item):
+                return self.__getattribute__(item)
+
         def __init__(self, protocols_description_file_path):
             self.read_protocols(protocols_description_file_path)
-            self.load_varaibles()
+            self.load_variables_and_fields()
+            self.translate_next_protocols_fields()
 
         def read_protocols(self, protocols_description_file_path):
             with open(protocols_description_file_path, "r") as f:
@@ -107,12 +113,17 @@ def prepare_parser():
                 self.match_fields_used = protocols_file["match_fields_used"]
                 self.match_fields_to_learn = protocols_file["match_fields_to_learn"] 
 
-        def load_variables(self):
+        def load_variables_and_fields(self):
             self.variables = {}
+            self.fields = {}
             for protocol, definition in self.protocols_definition.items():
-                for variable in definition["variables"]:
+                for variable in definition.get("variables",[]):
                     parsed_variable = self.parse_variable(variable["value"])
                     self.variables[variable["name"]] = parsed_variable
+
+                self.fields[protocol] = []
+                for field in definition["fields"]:
+                    self.fields[protocol].append((field["name"],field["size"]))
 
         def parse_variable(self,variable):
             try:
@@ -120,21 +131,32 @@ def prepare_parser():
             except:
                 pass
             try:
-                variable = int(variable, base=2)
+                variable = int(variable, base = 2)
             except:
                 pass
             try:
-                variable = int(variable, base =16)
+                variable = int(variable, base = 16)
             except:
                 pass
             return variable
 
-        def translate_fields(self):
-            
-            
+        def translate_next_protocols_fields(self):
+            self.next_protocol = {}
+            for protocol, description in self.next_protocols_fields.items():
+                next_field = description.get("next_protocol_field", None)
+                if next_field is not None:
+                    self.next_protocol[next_field] = {}
+                    for next_protocol, value in description.get("next_protocol_value",{}).items():
+                        value = self.variables.get(value, value)
+                        self.next_protocol[next_field][value] = next_protocol
 
         def parse_packet(self, packet):
-            pass
+            parsed_packet = Parser.Packet()
+            parsed_packet.__setattr__("Ethernet", Parser.Packet())
+            iterator = 0
+            for x in packet:
+                payload_bytes.append(format(ord(x), 'b'))
+            return parsed_packet
             
     return Parser(protocols_description_file_path)
 
@@ -148,12 +170,12 @@ def start_mininet_network(topology):
 def to_bits(payload):
     payload_bytes = []
     for x in payload:
-        payload_bytes.append(format(ord(x), 'b'))
+        payload_bytes.append(ord(x))
     return payload_bytes
     # return ' '.join(format(ord(x), 'b') for x in payload)
 
 
-def start_controller(topology):
+def start_controller(topology, parser):
     switch = topology.node("sw")
     switch.initiate_communicator()
     switch.OSNetCommunicator.connect()
@@ -167,13 +189,7 @@ def start_controller(topology):
             value = to_bits(meta.value)
         payload = to_bits(payload)
         print value, payload
-        # pkt = Ether(_pkt=packet)
-        # pkt_eth_src = pkt.getlayer(Ether).src 
-        # pkt_eth_dst = pkt.getlayer(Ether).dst 
-        # ether_type = pkt.getlayer(Ether).type 
-        # print pkt_eth_dst, pkt_eth_src, ether_type
-        
-          
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -197,7 +213,7 @@ if __name__ == "__main__":
         # generate_flows()
         # generate_policy()
         started_topo = start_mininet_network(topo)
-        start_controller(started_topo)
+        start_controller(started_topo, parser)
     except Exception, err:
         print "Exception: ", err
         print 
