@@ -91,6 +91,53 @@ def prepare_topology():
 #         policy_file_target_path = policy_file_path
 #     )
 
+def prepare_parser():
+    class Parser(object):
+        def __init__(self, protocols_description_file_path):
+            self.read_protocols(protocols_description_file_path)
+            self.load_varaibles()
+
+        def read_protocols(self, protocols_description_file_path):
+            with open(protocols_description_file_path, "r") as f:
+                protocols_file = json.loads(f.read())
+                self.protocols_used = protocols_file["protocols_used"]
+                self.protocols_stack = protocols_file["protocols_stacks"]
+                self.protocols_definition = protocols_file["protocols_definition"]
+                self.next_protocols_fields = protocols_file["next_protocols_fields"]
+                self.match_fields_used = protocols_file["match_fields_used"]
+                self.match_fields_to_learn = protocols_file["match_fields_to_learn"] 
+
+        def load_variables(self):
+            self.variables = {}
+            for protocol, definition in self.protocols_definition.items():
+                for variable in definition["variables"]:
+                    parsed_variable = self.parse_variable(variable["value"])
+                    self.variables[variable["name"]] = parsed_variable
+
+        def parse_variable(self,variable):
+            try:
+                variable = int(variable)
+            except:
+                pass
+            try:
+                variable = int(variable, base=2)
+            except:
+                pass
+            try:
+                variable = int(variable, base =16)
+            except:
+                pass
+            return variable
+
+        def translate_fields(self):
+            
+            
+
+        def parse_packet(self, packet):
+            pass
+            
+    return Parser(protocols_description_file_path)
+
 
 def start_mininet_network(topology):
     topology.generate_mininet_net()
@@ -105,23 +152,6 @@ def to_bits(payload):
     return payload_bytes
     # return ' '.join(format(ord(x), 'b') for x in payload)
 
-def read_protocols(self, protocols_folder_path, protocols_description_file_path):
-        with open(protocols_description_file_path, "r") as f:
-            protocols_file = json.loads(f.read())
-            self.protocols_used = protocols_file["protocols_used"]
-            self.protocols_stack = protocols_file["protocols_stacks"]
-            self.next_protocols_fields = protocols_file["next_protocols_fields"]
-            self.match_fields_used = protocols_file["match_fields_used"]
-            self.match_fields_to_learn = protocols_file["match_fields_to_learn"] 
-        
-        for filename in os.listdir(protocols_folder_path):
-            if filename in self.protocols_used:
-                with open(os.path.join(protocols_folder_path, filename)) as f:
-                    self.protocols[filename] = f.read()
-
-        for protocol, definition in next_protocols_fields.items():
-            re_string = "{field} *= *([a-zA-Z0-9]*)".format(field = field)
-            re.match(re_string, self.protocols[protocol]).group(1)
 
 def start_controller(topology):
     switch = topology.node("sw")
@@ -163,6 +193,7 @@ if __name__ == "__main__":
     try:
         prepare_folders()
         topo = prepare_topology()
+        parser = prepare_parser()
         # generate_flows()
         # generate_policy()
         started_topo = start_mininet_network(topo)
