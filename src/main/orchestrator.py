@@ -153,19 +153,27 @@ def prepare_parser():
         def parse_packet(self, packet):
             parsed_packet = Parser.Packet()
             protocol = "Ethernet"
-            while len(packet) > 0:
+            still_parsing = True
+            packet = to_bits(packet)
+            while still_parsing:
                 parsed_packet.__setattr__(protocol, Parser.Packet())
 
                 for field_name, field_size in self.fields[protocol]:
+                    # field_size /= 8
                     field_value = packet[0:field_size]
                     packet = packet[field_size:]
                     parsed_packet.Ethernet.__setattr__(field_name, field_value)
-
+                
+                still_parsing = False
                 next_field = self.next_protocols_fields[protocol].get("next_protocol_field", None)
                 if next_field is not None:
+                    still_parsing = True
                     next_field_value = parsed_packet[protocol][next_field]
-                    protocol = self.next_protocol[next_field][next_field_value]
-
+                    try:
+                        protocol = self.next_protocol[next_field][int(next_field_value, 2)]
+                    except:
+                        still_parsing = False
+                    
             return parsed_packet
             
     return Parser(protocols_description_file_path)
@@ -178,11 +186,11 @@ def start_mininet_network(topology):
     return topology
     
 def to_bits(payload):
-    payload_bytes = []
-    for x in payload:
-        payload_bytes.append(ord(x))
-    return payload_bytes
-    # return ' '.join(format(ord(x), 'b') for x in payload)
+    # payload_bytes = []
+    # for x in payload:
+    #     payload_bytes.append(ord(x))
+    # return payload_bytes
+    return ''.join(format(ord(x), '08b') for x in payload)
 
 
 def start_controller(topology, parser):
@@ -198,7 +206,8 @@ def start_controller(topology, parser):
             metadata_id = meta.metadata_id 
             value = to_bits(meta.value)
         payload = parser.parse_packet(payload)
-        print value, payload
+        print payload.Ethernet.dstAddr
+        # print value, to_bits(payload)
 
 
 def get_args():
