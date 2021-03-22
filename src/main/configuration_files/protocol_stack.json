@@ -1,5 +1,5 @@
 {
-    "protocols_used":["Ethernet", "IPv4", "TCP", "UDP"],
+    "protocols_used":["Ethernet", "IPv4", "TCP", "UDP", "IPv6"],
     "protocols_definition":{
         "Ethernet": {
             "fields": [
@@ -8,13 +8,12 @@
                 {"name": "etherType", "size": 16}
             ],
             "variables": [
-                {"name": "Ethernet_etherType_TYPE_IPv4", "size": 16, "value":"0x800"}
+                {"name": "Ethernet_etherType_TYPE_IPv4", "size": 16, "value":"0x800"},
+                {"name": "Ethernet_etherType_TYPE_IPv6", "size": 16, "value":"34525"}
             ]
         },
         "IPv4": {
             "fields": [
-                {"name": "dstAddr", "size": 32},
-                {"name": "srcAddr", "size": 32},
                 {"name": "version", "size": 4},
                 {"name": "ihl", "size": 4},
                 {"name": "diffserv", "size": 8},
@@ -24,11 +23,29 @@
                 {"name": "fragOffset", "size": 13},
                 {"name": "ttl", "size": 8},
                 {"name": "protocol", "size": 8},
-                {"name": "hdrChecksum", "size": 16}
+                {"name": "hdrChecksum", "size": 16},
+                {"name": "srcAddr", "size": 32},
+                {"name": "dstAddr", "size": 32}
             ],
             "variables": [
                 {"name": "IPv4_protocol_TYPE_TCP", "size": 8, "value":"6"},
                 {"name": "IPv4_protocol_TYPE_UDP", "size": 8, "value":"17"}
+            ]
+        },
+        "IPv6": {
+            "fields": [
+                {"name": "version", "size": 4},
+                {"name": "trafficClass", "size": 8},
+                {"name": "flowLabel", "size": 20},
+                {"name": "length", "size": 16},
+                {"name": "nextHdr", "size": 8},
+                {"name": "hopLimit", "size": 8},
+                {"name": "srcAddr", "size": 128},
+                {"name": "dstAddr", "size": 128}
+            ],
+            "variables": [
+                {"name": "IPv6_nextHdr_TYPE_TCP", "size": 8, "value":"6"},
+                {"name": "IPv6_nextHdr_TYPE_UDP", "size": 8, "value":"17"}
             ]
         },
         "TCP": {
@@ -65,11 +82,15 @@
         ["Ethernet", "IPv4", "TCP"],
         ["Ethernet", "IPv4", "UDP"],
         ["Ethernet", "IPv4"],
+        ["Ethernet", "IPv6", "TCP"],
+        ["Ethernet", "IPv6", "UDP"],
+        ["Ethernet", "IPv6"],
         ["Ethernet"]
     ],
     "next_protocols_fields":{
-        "Ethernet": {"next_protocol_field":"etherType", "next_protocol_value": {"IPv4": "Ethernet_etherType_TYPE_IPv4"}},
+        "Ethernet": {"next_protocol_field":"etherType", "next_protocol_value": {"IPv4": "Ethernet_etherType_TYPE_IPv4", "IPv6": "Ethernet_etherType_TYPE_IPv6"}},
         "IPv4": {"next_protocol_field":"protocol", "next_protocol_value": {"TCP": "IPv4_protocol_TYPE_TCP", "UDP": "IPv4_protocol_TYPE_UDP"}},
+        "IPv6": {"next_protocol_field":"nextHdr", "next_protocol_value": {"TCP": "IPv6_nextHdr_TYPE_TCP", "UDP": "IPv6_nextHdr_TYPE_UDP"}},
         "TCP": {},
         "UDP": {}
     },

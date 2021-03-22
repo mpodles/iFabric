@@ -96,7 +96,7 @@ def prepare_parser():
         
         class Packet(object):
             def __getitem__(self, item):
-                return self.__getattribute__(item)
+                    return self.__getattribute__(item)
 
         def __init__(self, protocols_description_file_path):
             self.read_protocols(protocols_description_file_path)
@@ -159,10 +159,9 @@ def prepare_parser():
                 parsed_packet.__setattr__(protocol, Parser.Packet())
 
                 for field_name, field_size in self.fields[protocol]:
-                    # field_size /= 8
                     field_value = packet[0:field_size]
                     packet = packet[field_size:]
-                    parsed_packet.Ethernet.__setattr__(field_name, field_value)
+                    parsed_packet[protocol].__setattr__(field_name, field_value)
                 
                 still_parsing = False
                 next_field = self.next_protocols_fields[protocol].get("next_protocol_field", None)
@@ -202,13 +201,11 @@ def start_controller(topology, parser):
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
         payload = packetin.packet.payload
         metadata = packetin.packet.metadata 
-        for meta in metadata:
-            metadata_id = meta.metadata_id 
-            value = to_bits(meta.value)
+        # for meta in metadata:
+        #     metadata_id = meta.metadata_id 
+        #     value = to_bits(meta.value)
         payload = parser.parse_packet(payload)
-        print payload.Ethernet.dstAddr
-        # print value, to_bits(payload)
-
+        
 
 def get_args():
     parser = argparse.ArgumentParser()
