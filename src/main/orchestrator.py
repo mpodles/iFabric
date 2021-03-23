@@ -209,14 +209,23 @@ def start_controller(topology, parser):
     endpoint = topology.node("EP_1")
     endpoint.initiate_communicator()
     endpoint.OSNetCommunicator.take_action("Command", command = "ip link set dev lo up")
+    
+    switch.OSNetCommunicator.take_action(
+            "InsertTableEntry", 
+            table_name = "MyIngress.Flow_classifier",
+            match_fields = { "hdr.Ethernet.dstAddr": {"low": "a0:a1:a2:a3:a4:a5", "high":"a0:a1:a2:a3:a4:ff"} },
+            action_name = "MyIngress.append_iFabric_header",
+            action_params = {"flow_id" : 12, "node_id": 13},
+            priority = 12)
+    switch.OSNetCommunicator.get_state("TableEntries")
     while True:
         endpoint.OSNetCommunicator.take_action("Command", command = "python tester.py")
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
         payload = packetin.packet.payload
         metadata = packetin.packet.metadata 
-        # for meta in metadata:
-        #     metadata_id = meta.metadata_id 
-        #     value = to_bits(meta.value)
+        for meta in metadata:
+            metadata_id = meta.metadata_id 
+            value = to_bits(meta.value)
         payload = parser.parse_packet(payload)
         payload.describe()
             
