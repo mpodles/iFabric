@@ -8,6 +8,7 @@ import os
 class OSNetCommunicator(object):
     def __init__(self, device, **params):
         self.device = device
+        self.device_data = device.device_data
         self.OSN_States = {}
         self.OSN_Actions = {}
 

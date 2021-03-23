@@ -1,13 +1,7 @@
 import sys 
-sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton/Communicator')
-from OSNetCommunicator import OSNetCommunicator
+sys.path.append('/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Communicator')
+from MininetCommunicator import MininetCommunicator
 
-class HostCommunicator(OSNetCommunicator):
+class HostCommunicator(MininetCommunicator):
     def __init__(self, device, **params):
-        OSNetCommunicator.__init__(self, device, **params)
-        self.device = device
-        self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
-        self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
-
-    def run_command(self):
-        pass
+        MininetCommunicator.__init__(self, device, **params)

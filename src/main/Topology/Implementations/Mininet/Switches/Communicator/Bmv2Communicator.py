@@ -15,8 +15,6 @@ import os
 class Bmv2Communicator(OSNetCommunicator):
     def __init__(self, device, **params):
         OSNetCommunicator.__init__(self, device, **params)
-        self.device = device
-        self.device_data = device.device_data
         self.add_actions("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/Actions")
         self.add_states("/home/mpodles/iFabric/src/main/Topology/Implementations/Mininet/Switches/Communicator/States")
      

@@ -197,6 +197,10 @@ def start_controller(topology, parser):
     switch.initiate_communicator()
     switch.OSNetCommunicator.connect()
     switch.OSNetCommunicator.take_action("PrepareSwitch")
+
+    endpoint = topology.node("EP_1")
+    endpoint.initiate_communicator()
+    print endpoint.OSNetCommunicator.take_action("Command", command = "ip link")
     while True:
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
         payload = packetin.packet.payload
