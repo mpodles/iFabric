@@ -1,12 +1,12 @@
 def get_function():
     return perform_action
 
-def perform_action(self, **params):
-    mc_entry = self.p4info_helper.buildMulticastGroupEntry(params["multicast_group_id"], params['replicas'])
-    self.WritePREEntry(mc_entry)
+def perform_action(action, communicator, **params):
+    mc_entry = communicator.p4info_helper.buildMulticastGroupEntry(params["multicast_group_id"], params['replicas'])
+    WritePREEntry(communicator, mc_entry)
 def WritePREEntry(self, pre_entry, dry_run=False, modify=False):
     request = p4runtime_pb2.WriteRequest()
-    request.device_id = self.ID
+    request.device_id = communicator.device.OSN_ID
     request.election_id.low = 1
     update = request.updates.add()
     if modify:
@@ -18,4 +18,4 @@ def WritePREEntry(self, pre_entry, dry_run=False, modify=False):
         print "P4Runtime Write Multicast:", request
     else:
         # print "Writing entry", request
-        self.client_stub.Write(request)
+        communicator.client_stub.Write(request)
