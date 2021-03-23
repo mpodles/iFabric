@@ -1,12 +1,19 @@
-class Packet(object):
-    def __getitem__(self, item):
-        return self.__getattribute__(item)
+from scapy.all import Packet
+from scapy.fields import *
+from scapy.layers.inet import Ether, IP, UDP, TCP
+from scapy.all import sendp, send, get_if_list
 
-def parse_packet():
-    packet = Packet()
-    packet.__setattr__("tcp", 1)
-    return packet
 
-a = parse_packet()
-print a.tcp         
-print a["tcp"]
+class iFabric(Packet):
+    name = 'iFabric'
+    fields_desc = [
+        ByteField("protocol",1)
+    ]
+
+ifaces = get_if_list()
+fabric = iFabric()
+pkt =  Ether(src='45:45:45:45:45:47', dst='45:45:45:45:45:46')
+pkt =  pkt /IP(dst="1.1.1.1", src= "2.2.2.2") / TCP(dport=1234, sport=55123) 
+for iface in ifaces:
+    if iface != "lo":
+        sendp(pkt, iface=iface, verbose=False)

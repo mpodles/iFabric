@@ -95,8 +95,15 @@ def prepare_parser():
     class Parser(object):
         
         class Packet(object):
+
+            def __init__(self):
+                self.protocols = []
+
             def __getitem__(self, item):
-                    return self.__getattribute__(item)
+                return self.__getattribute__(item)
+
+            def describe(self):
+                print self.protocols
 
         def __init__(self, protocols_description_file_path):
             self.read_protocols(protocols_description_file_path)
@@ -156,6 +163,7 @@ def prepare_parser():
             still_parsing = True
             packet = to_bits(packet)
             while still_parsing:
+                parsed_packet.protocols.append(protocol)
                 parsed_packet.__setattr__(protocol, Parser.Packet())
 
                 for field_name, field_size in self.fields[protocol]:
@@ -200,8 +208,8 @@ def start_controller(topology, parser):
 
     endpoint = topology.node("EP_1")
     endpoint.initiate_communicator()
-    print endpoint.OSNetCommunicator.take_action("Command", command = "ip link")
     while True:
+        endpoint.OSNetCommunicator.take_action("Command", command = "python tester.py")
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
         payload = packetin.packet.payload
         metadata = packetin.packet.metadata 
@@ -209,6 +217,10 @@ def start_controller(topology, parser):
         #     metadata_id = meta.metadata_id 
         #     value = to_bits(meta.value)
         payload = parser.parse_packet(payload)
+        payload.describe()
+            
+        
+
         
 
 def get_args():
