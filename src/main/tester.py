@@ -11,9 +11,10 @@ class iFabric(Packet):
     ]
 
 ifaces = get_if_list()
+print ifaces
 fabric = iFabric()
-pkt =  Ether(src='45:45:45:45:45:47', dst='45:45:45:45:45:46')
-pkt =  pkt /IP(dst="1.1.1.1", src= "2.2.2.2") / TCP(dport=1234, sport=55123) 
+pkt =  Ether(src='45:45:45:45:45:47', dst='45:45:45:45:45:46') /IP(dst="1.1.1.1", src= "2.2.2.2") / TCP(dport=1234, sport=55123) 
 for iface in ifaces:
     if iface != "lo":
+        pkt.show2()
         sendp(pkt, iface=iface, verbose=False)

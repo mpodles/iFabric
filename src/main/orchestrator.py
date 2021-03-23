@@ -208,6 +208,7 @@ def start_controller(topology, parser):
 
     endpoint = topology.node("EP_1")
     endpoint.initiate_communicator()
+    endpoint.OSNetCommunicator.take_action("Command", command = "ip link set dev lo up")
     while True:
         endpoint.OSNetCommunicator.take_action("Command", command = "python tester.py")
         packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
