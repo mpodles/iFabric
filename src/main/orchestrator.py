@@ -118,7 +118,8 @@ def prepare_parser():
                 self.protocols_definition = protocols_file["protocols_definition"]
                 self.next_protocols_fields = protocols_file["next_protocols_fields"]
                 self.match_fields_used = protocols_file["match_fields_used"]
-                self.match_fields_to_learn = protocols_file["match_fields_to_learn"] 
+                self.match_fields_to_learn = protocols_file["match_fields_to_learn"]
+                self.lookup = protocols_file["lookup"]
 
         def load_variables_and_fields(self):
             self.variables = {}
@@ -159,7 +160,7 @@ def prepare_parser():
 
         def parse_packet(self, packet):
             parsed_packet = Parser.Packet()
-            protocol = "Ethernet"
+            protocol = self.lookup.get(packet[0:16], "Ethernet")
             still_parsing = True
             packet = to_bits(packet)
             while still_parsing:

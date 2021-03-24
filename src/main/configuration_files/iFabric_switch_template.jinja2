@@ -2,26 +2,13 @@
 #include <core.p4>
 #include <v1model.p4>
 
-const bit<16> TYPE_iFabric = 0x1212;
-const bit<16> TYPE_iFabric_flood = 0x1213;
-const bit<32> MAX_iFabric_ID = 1 << 15;
-const bit<16> iFabric_next_protocol_TYPE_ETHERNET = 0x0001;
+
 #define CPU_PORT 255
 
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
 *************************************************************************/
-
-header iFabric_t {
-    bit<16> header_type;
-    bit<16> header_subtype;
-    bit<16> next_protocol;
-    bit<16> flow_id;
-    bit<16> source_id;
-    bit<16> destination_id;
-    bit<128> reserved;
-}
 
 @controller_header("packet_in")
 header packet_in_t {
@@ -47,7 +34,6 @@ struct metadata {
 struct headers {
     packet_out_t     packet_out;
     packet_in_t      packet_in;
-    iFabric_t   iFabric;
     {% for protocol in protocols.keys() -%}
     {{protocol}}_t  {{protocol}};  
     {% endfor %}
@@ -69,14 +55,6 @@ parser MyParser(packet_in packet,
         }     
     }
 
-
-    state parse_iFabric {
-        packet.extract(hdr.iFabric);
-        transition select(hdr.iFabric.next_protocol) {
-            iFabric_next_protocol_TYPE_ETHERNET: parse_Ethernet;
-            default: accept;
-        }
-    }
 
     {% for protocol_name, protocol_data in next_protocols_fields.items() -%}
     state parse_{{protocol_name}} {
@@ -240,7 +218,6 @@ control MyDeparser(packet_out packet, in headers hdr) {
     apply {
         packet.emit(hdr.packet_out);
         packet.emit(hdr.packet_in);
-        packet.emit(hdr.iFabric);
         {% for protocol in protocols.keys() -%}
             packet.emit(hdr.{{protocol}});
         {% endfor %}

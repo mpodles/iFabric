@@ -1,6 +1,23 @@
 {
-    "protocols_used":["Ethernet", "IPv4", "TCP", "UDP", "IPv6"],
+    "protocols_used":["iFabric", "Ethernet", "IPv4", "TCP", "UDP", "IPv6"],
     "protocols_definition":{
+        "iFabric":{
+            "fields": [
+                {"name": "header_type", "size": 16},
+                {"name": "header_subtype", "size": 16},
+                {"name": "next_protocol", "size": 16},
+                {"name": "flow_id", "size": 16},
+                {"name": "source_id", "size": 16},
+                {"name": "destination_id", "size": 16},
+                {"name": "reserved", "size": 128}
+            ],
+            "variables": [
+                {"name": "TYPE_iFabric", "size": 16, "value":"0x1212"},
+                {"name": "iFabric_next_protocol_TYPE_ETHERNET", "size": 16, "value":"0x0001"},
+                {"name": "MAX_iFabric_ID", "size": 32, "value":"1 << 15"}
+
+            ]
+        },
         "Ethernet": {
             "fields": [
                 {"name": "dstAddr", "size": 48},
@@ -85,9 +102,20 @@
         ["Ethernet", "IPv6", "TCP"],
         ["Ethernet", "IPv6", "UDP"],
         ["Ethernet", "IPv6"],
-        ["Ethernet"]
+        ["Ethernet"],
+        ["iFabric", "Ethernet", "IPv4", "TCP"],
+        ["iFabric", "Ethernet", "IPv4", "UDP"],
+        ["iFabric", "Ethernet", "IPv4"],
+        ["iFabric", "Ethernet", "IPv6", "TCP"],
+        ["iFabric", "Ethernet", "IPv6", "UDP"],
+        ["iFabric", "Ethernet", "IPv6"],
+        ["iFabric", "Ethernet"]
     ],
+    "lookup": {
+        "0x1212" : "iFabric" 
+    },
     "next_protocols_fields":{
+        "iFabric": {"next_protocol_field":"next_protocol", "next_protocol_value": {"Ethernet": "Ethernet_etherType_TYPE_IPv4"}},
         "Ethernet": {"next_protocol_field":"etherType", "next_protocol_value": {"IPv4": "Ethernet_etherType_TYPE_IPv4", "IPv6": "Ethernet_etherType_TYPE_IPv6"}},
         "IPv4": {"next_protocol_field":"protocol", "next_protocol_value": {"TCP": "IPv4_protocol_TYPE_TCP", "UDP": "IPv4_protocol_TYPE_UDP"}},
         "IPv6": {"next_protocol_field":"nextHdr", "next_protocol_value": {"TCP": "IPv6_nextHdr_TYPE_TCP", "UDP": "IPv6_nextHdr_TYPE_UDP"}},
