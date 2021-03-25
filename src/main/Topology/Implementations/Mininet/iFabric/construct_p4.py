@@ -64,7 +64,8 @@ class P4Constructor():
 
         template=env.get_template(os.path.basename(template_file_path))
         output = template.render(match_fields_used=self.match_fields_used,
-                                protocols=self.protocols, 
+                                protocols=self.protocols,
+                                protocols_prioritized = self.protocols_used, 
                                 next_protocols_fields = self.next_protocols_fields,
                                 match_fields_to_learn = self.match_fields_to_learn)
 

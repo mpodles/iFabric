@@ -1,5 +1,5 @@
 {
-    "protocols_used":["iFabric", "Ethernet", "IPv4", "TCP", "UDP", "IPv6"],
+    "protocols_used":["iFabric", "Ethernet", "IPv4","IPv6", "TCP", "UDP"],
     "protocols_definition":{
         "iFabric":{
             "fields": [
