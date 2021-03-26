@@ -112,7 +112,7 @@
         ["iFabric", "Ethernet"]
     ],
     "lookup": {
-        "0x1212" : "iFabric" 
+        "size":16, "value" : "0x1212", "match": "iFabric", "default": "Ethernet"
     },
     "next_protocols_fields":{
         "iFabric": {"next_protocol_field":"next_protocol", "next_protocol_value": {"Ethernet": "Ethernet_etherType_TYPE_IPv4"}},

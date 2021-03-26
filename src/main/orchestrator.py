@@ -102,8 +102,12 @@ def prepare_parser():
             def __getitem__(self, item):
                 return self.__getattribute__(item)
 
-            def describe(self):
+            def protocols(self):
                 print self.protocols
+
+            def fields(self):
+                for item in self.protocols:
+                    print self.__getattribute__(item).__dict__
 
         def __init__(self, protocols_description_file_path):
             self.read_protocols(protocols_description_file_path)
@@ -135,10 +139,6 @@ def prepare_parser():
 
         def parse_variable(self,variable):
             try:
-                variable = int(variable)
-            except:
-                pass
-            try:
                 variable = int(variable, base = 2)
             except:
                 pass
@@ -146,7 +146,18 @@ def prepare_parser():
                 variable = int(variable, base = 16)
             except:
                 pass
+            try:
+                variable = int(variable)
+            except:
+                pass
             return variable
+
+        def to_bits(self, payload):
+            # payload_bytes = []
+            # for x in payload:
+            #     payload_bytes.append(ord(x))
+            # return payload_bytes
+            return ''.join(format(ord(x), '08b') for x in payload)
 
         def translate_next_protocols_fields(self):
             self.next_protocol = {}
@@ -160,9 +171,14 @@ def prepare_parser():
 
         def parse_packet(self, packet):
             parsed_packet = Parser.Packet()
-            protocol = self.lookup.get(packet[0:16], "Ethernet")
+            packet = self.to_bits(packet)
+
+            if self.parse_variable(self.lookup["value"]) == self.parse_variable(packet[0:self.lookup["size"]]):
+                protocol = self.lookup["match"]
+            else:
+                protocol = self.lookup["default"]
+
             still_parsing = True
-            packet = to_bits(packet)
             while still_parsing:
                 parsed_packet.protocols.append(protocol)
                 parsed_packet.__setattr__(protocol, Parser.Packet())
@@ -178,7 +194,8 @@ def prepare_parser():
                     still_parsing = True
                     next_field_value = parsed_packet[protocol][next_field]
                     try:
-                        protocol = self.next_protocol[next_field][int(next_field_value, 2)]
+                        print self.parse_variable(next_field_value)
+                        protocol = self.next_protocol[next_field][self.parse_variable(next_field_value)]
                     except:
                         still_parsing = False
                     
@@ -193,13 +210,6 @@ def start_mininet_network(topology):
     topology.start()
     return topology
     
-def to_bits(payload):
-    # payload_bytes = []
-    # for x in payload:
-    #     payload_bytes.append(ord(x))
-    # return payload_bytes
-    return ''.join(format(ord(x), '08b') for x in payload)
-
 
 def start_controller(topology, parser):
     switch = topology.node("sw")
@@ -226,9 +236,9 @@ def start_controller(topology, parser):
         metadata = packetin.packet.metadata 
         for meta in metadata:
             metadata_id = meta.metadata_id 
-            value = to_bits(meta.value)
+            value = parser.to_bits(meta.value)
         payload = parser.parse_packet(payload)
-        payload.describe()
+        payload.fields()
             
         
 
