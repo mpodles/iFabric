@@ -25,8 +25,6 @@ class iFabricControl(OSNetControl):
 
     def prepare_parser():     
         self.parser = HeaderParser()
-                
-
 class MainframeController(OSNetController):
     def __init__(self, OSNet_device):
         OSNetController.__init__(self, OSNet_device)

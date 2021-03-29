@@ -16,18 +16,35 @@ class OSNetControl(object):
 
     def initialize_controllers(self):
         pass
+
+    def connect_device(self, device):
+        self.controller_per_device[device].connect()
+
+    def connect_all(self):
+        for controller in self.controller_per_device.values():
+            controller.connect()
+
+    def start(self):
+        for controller in self.controller_per_device.values():
+            controller.start()
             
 
 class OSNetController(object):
     def __init__(self, OSNet_device):
         self.OSNet_device = OSNet_device
+        
 
     def connect(self):
         self.OSNet_device.initiate_communicator()
         self.OSNet_device.OSNetCommunicator.connect()
+        self.get_state = OSNet_device.OSNetCommunicator.get_state
+        self.take_action = OSNet_device.OSNetCommunicator.take_action
+
+    def start(self):
+        pass
         
     def get_state_data(self, state, **params):
-        self.OSNet_device.OSNetCommunicator.get_state(state, **params)
+        self.OSNetCommunicator.get_state(state, **params)
 
     def take_action(self, action, **params):
-        self.OSNet_device.OSNetCommunicator.take_action(action, **params)
+        self.OSNetCommunicator.take_action(action, **params)
