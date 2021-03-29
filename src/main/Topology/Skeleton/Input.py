@@ -4,6 +4,7 @@ from OSNetFlows import OSNetFlows as Flows
 
 class Input(object):
     #TODO: probably singleton
-    topology = Topology()
-    policy = Policy()
-    flows = Flows()
+    def __init__(self, topology = Topology(), policy = Policy(), flows = Flows())
+        self.topology = topology
+        self.policy = policy
+        self.flows = flows

@@ -10,7 +10,7 @@ class HeaderParser(object):
         def fields(self):
             for item in self.protocols:
                 print self.__getattribute__(item).__dict__
-    def __init__(self, protocols_description_file_path):
+    def __init__(self, protocols_description_file_path= "/home/mpodles/iFabric/src/main/configuration_files/topology_description_test.json"):
         self.read_protocols(protocols_description_file_path)
         self.load_variables_and_fields()
         self.translate_next_protocols_fields()

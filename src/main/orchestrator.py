@@ -103,34 +103,36 @@ def start_mininet_network(topology):
     return topology
     
 
-def start_controller(topology, parser):
-    switch = topology.node("sw")
-    switch.initiate_communicator()
-    switch.OSNetCommunicator.connect()
-    switch.OSNetCommunicator.take_action("PrepareSwitch")
+def start_control(topology):
+    control = iFabricControl()
 
-    endpoint = topology.node("EP_1")
-    endpoint.initiate_communicator()
-    endpoint.OSNetCommunicator.take_action("Command", command = "ip link set dev lo up")
+    # switch = topology.node("sw")
+    # switch.initiate_communicator()
+    # switch.OSNetCommunicator.connect()
+    # switch.OSNetCommunicator.take_action("PrepareSwitch")
+
+    # endpoint = topology.node("EP_1")
+    # endpoint.initiate_communicator()
+    # endpoint.OSNetCommunicator.take_action("Command", command = "ip link set dev lo up")
     
-    switch.OSNetCommunicator.take_action(
-            "InsertTableEntry", 
-            table_name = "MyIngress.Flow_classifier",
-            match_fields = { "hdr.Ethernet.dstAddr": {"low": "a0:a1:a2:a3:a4:a5", "high":"a0:a1:a2:a3:a4:ff"} },
-            action_name = "MyIngress.append_iFabric_header",
-            action_params = {"flow_id" : 12, "node_id": 13},
-            priority = 12)
-    switch.OSNetCommunicator.get_state("TableEntries")
-    while True:
-        endpoint.OSNetCommunicator.take_action("Command", command = "python tester.py")
-        packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
-        payload = packetin.packet.payload
-        metadata = packetin.packet.metadata 
-        for meta in metadata:
-            metadata_id = meta.metadata_id 
-            value = parser.to_bits(meta.value)
-        payload = parser.parse_packet(payload)
-        payload.fields()
+    # switch.OSNetCommunicator.take_action(
+    #         "InsertTableEntry", 
+    #         table_name = "MyIngress.Flow_classifier",
+    #         match_fields = { "hdr.Ethernet.dstAddr": {"low": "a0:a1:a2:a3:a4:a5", "high":"a0:a1:a2:a3:a4:ff"} },
+    #         action_name = "MyIngress.append_iFabric_header",
+    #         action_params = {"flow_id" : 12, "node_id": 13},
+    #         priority = 12)
+    # switch.OSNetCommunicator.get_state("TableEntries")
+    # while True:
+    #     endpoint.OSNetCommunicator.take_action("Command", command = "python tester.py")
+    #     packetin = switch.OSNetCommunicator.take_action("ReceivePacket")
+    #     payload = packetin.packet.payload
+    #     metadata = packetin.packet.metadata 
+    #     for meta in metadata:
+    #         metadata_id = meta.metadata_id 
+    #         value = parser.to_bits(meta.value)
+    #     payload = parser.parse_packet(payload)
+    #     payload.fields()
             
         
 
@@ -154,11 +156,10 @@ if __name__ == "__main__":
     try:
         prepare_folders()
         topo = prepare_topology()
-        parser = prepare_parser()
         # generate_flows()
         # generate_policy()
         started_topo = start_mininet_network(topo)
-        start_controller(started_topo, parser)
+        start_controller(started_topo)
     except Exception, err:
         print "Exception: ", err
         print 

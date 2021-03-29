@@ -8,3 +8,4 @@ class LinkData(object):
         self.node2 = node2
         self.int1 = int1
         self.int2 = int2
+        self.type = "link"

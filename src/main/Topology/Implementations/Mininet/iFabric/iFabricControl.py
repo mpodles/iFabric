@@ -11,13 +11,20 @@ from HeaderParser import HeaderParser
 class iFabricControl(OSNetControl):
     #TODO: probably singleton
 
-    def __init__(self, input=Input):
-        self.controller_per_device = {}
-        for device in Input.topology.OSN_nodes:
-            self.controller_per_device[device] = OSNetController(device)
+    def __init__(self, *args):
+        OSNetControl.__init__(self, *args)
+
+    def initialize_controllers(self):
+        for device in self.topology.OSN_nodes:
+            if device.device_data.type == 'switch':
+                self.controller_per_device[device] = SwitchController(device)
+            elif device.device_data.type == 'endpoint':
+                self.controller_per_device[device] = EndpointController(device)
+            elif device.device_data.type == 'mainframe':
+                self.controller_per_device[device] = MainframeController(device)
 
     def prepare_parser():     
-        self.parser = HeaderParser(protocols_description_file_path)
+        self.parser = HeaderParser()
                 
 
 class MainframeController(OSNetController):

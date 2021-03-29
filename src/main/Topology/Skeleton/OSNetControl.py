@@ -1,16 +1,21 @@
 import sys
 sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton')
-from Input import Input
-# sys.path.append('/home/mpodles/iFabric/src/main/Topology/Skeleton/Communicator')
-# from OSNetCommunicator import OSNetCommunicator
+from OSNetTopology import OSNetTopology as Topology
+from OSNetPolicy import OSNetPolicy as Policy
+from OSNetFlows import OSNetFlows as Flows
 
 class OSNetControl(object):
     #TODO: probably singleton
 
-    def __init__(self, input=Input):
+    def __init__(self, topology = Topology(), policy = Policy(), flows = Flows()):
+        self.topology = topology
+        self.policy = policy
+        self.flows = flows
         self.controller_per_device = {}
-        for device in Input.topology.OSN_nodes:
-            self.controller_per_device[device] = OSNetController(device)
+        self.initialize_controllers()
+
+    def initialize_controllers(self):
+        pass
             
 
 class OSNetController(object):
