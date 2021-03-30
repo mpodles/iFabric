@@ -13,25 +13,29 @@ class iFabricControl(OSNetControl):
 
     def __init__(self, *args, **kwargs):
         OSNetControl.__init__(self, *args, **kwargs)
+        self.prepare_parser()
 
     def initialize_controllers(self):
         for device in self.topology.OSN_nodes.values():
             if device.device_data.type == 'switch':
-                self.controller_per_device[device] = SwitchController(device)
+                self.controller_per_device[device] = SwitchController(device, self.parser)
             elif device.device_data.type == 'endpoint':
                 self.controller_per_device[device] = EndpointController(device)
             elif device.device_data.type == 'mainframe':
                 self.controller_per_device[device] = MainframeController(device)
 
-    def prepare_parser():     
+    def prepare_parser(self):     
         self.parser = HeaderParser()
+
+
 class MainframeController(OSNetController):
     def __init__(self, OSNet_device):
         OSNetController.__init__(self, OSNet_device)
 
 class SwitchController(OSNetController):
-    def __init__(self, OSNet_device):
+    def __init__(self, OSNet_device, parser):
         OSNetController.__init__(self, OSNet_device)
+        self.parser = parser
 
     def prepare_switch(self):
         self.take_action("PrepareSwitch")
@@ -49,16 +53,19 @@ class SwitchController(OSNetController):
         self.get_state("TableEntries")
 
     def start(self):
+        self.prepare_switch()
         while True:
-            self.take_action("ReceivePackets", interface = self.OSNet_device.device_data.interfaces_by_number[0])
+            # pkt = self.take_action("ReceivePackets", interface = self.OSNet_device.device_data.interfaces_by_number[0])
             packetin = self.take_action("ReceivePacket")
+            # print pkt
+            # print packetin
             payload = packetin.packet.payload
             metadata = packetin.packet.metadata 
             for meta in metadata:
                 metadata_id = meta.metadata_id 
-                value = parser.to_bits(meta.value)
+                value = self.parser.to_bits(meta.value)
             payload = self.parser.parse_packet(payload)
-            payload.fields()
+            print payload.fields()
 
 class EndpointController(OSNetController):
     def __init__(self, OSNet_device):

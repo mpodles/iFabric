@@ -1,16 +1,22 @@
+import json
+
+
+class Packet(object):
+    def __init__(self):
+        pass
+    def __getitem__(self, item):
+        return self.__getattribute__(item)
+
+    def fields(self):
+        # fields = []
+        # for item in self.protocols:
+        #     fields.append(self.__getattribute__(item).__dict__)
+        return self.__dict__
+
 class HeaderParser(object):
     
-    class Packet(object):
-        def __init__(self):
-            self.protocols = []
-        def __getitem__(self, item):
-            return self.__getattribute__(item)
-        def protocols(self):
-            print self.protocols
-        def fields(self):
-            for item in self.protocols:
-                print self.__getattribute__(item).__dict__
-    def __init__(self, protocols_description_file_path= "/home/mpodles/iFabric/src/main/configuration_files/topology_description_test.json"):
+    
+    def __init__(self, protocols_description_file_path= "/home/mpodles/iFabric/src/main/configuration_files/protocol_stack.json"):
         self.read_protocols(protocols_description_file_path)
         self.load_variables_and_fields()
         self.translate_next_protocols_fields()
@@ -31,7 +37,7 @@ class HeaderParser(object):
             for variable in definition.get("variables",[]):    
                 parsed_variable = self.parse_variable(variable["value"])
                 self.variables[variable["name"]] = parsed_variable
-                
+
             self.fields[protocol] = []
             for field in definition["fields"]:
                 self.fields[protocol].append((field["name"],field["size"]))
@@ -41,11 +47,11 @@ class HeaderParser(object):
         except:
             pass
         try:
-            variable = int(variable, base = 16)
+            variable = int(variable)
         except:
             pass
         try:
-            variable = int(variable)
+            variable = int(variable, base = 16)
         except:
             pass
         return variable
@@ -65,7 +71,7 @@ class HeaderParser(object):
                     value = self.variables.get(value, value)
                     self.next_protocol[next_field][value] = next_protocol
     def parse_packet(self, packet):
-        parsed_packet = Parser.Packet()
+        parsed_packet = Packet()
         packet = self.to_bits(packet)
         if self.parse_variable(self.lookup["value"]) == self.parse_variable(packet[0:self.lookup["size"]]):
             protocol = self.lookup["match"]
@@ -73,8 +79,7 @@ class HeaderParser(object):
             protocol = self.lookup["default"]
         still_parsing = True
         while still_parsing:
-            parsed_packet.protocols.append(protocol)
-            parsed_packet.__setattr__(protocol, Parser.Packet())
+            parsed_packet.__setattr__(protocol, Packet())
             for field_name, field_size in self.fields[protocol]:
                 field_value = packet[0:field_size]
                 packet = packet[field_size:]
@@ -86,7 +91,6 @@ class HeaderParser(object):
                 still_parsing = True
                 next_field_value = parsed_packet[protocol][next_field]
                 try:
-                    print self.parse_variable(next_field_value)
                     protocol = self.next_protocol[next_field][self.parse_variable(next_field_value)]
                 except:
                     still_parsing = False

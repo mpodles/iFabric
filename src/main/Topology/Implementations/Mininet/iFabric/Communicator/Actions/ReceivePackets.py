@@ -11,14 +11,14 @@ from scapy.layers.inet import _IPOption_HDR
 
 def handle_pkt(pkt):
     print "got a packet"
-    print pkt
     sys.stdout.flush()
+    return pkt
 
 def sniff_for_packet(communicator, interface):
     sys.stdout.flush()
     sniff(iface = interface,
           prn = lambda x: handle_pkt(x))
 def perform_action(action, communicator, **params):
-    sniff_for_packet(communicator, **params)
+    return sniff_for_packet(communicator, **params)
 def get_function():
     return perform_action
