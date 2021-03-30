@@ -73,6 +73,7 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
                 )
                 ip, mac = self.generate_ip_address() , self.generate_mac_address()
                 endpoint.interfaces[ep_int_name] = {"ip" : ip, "mac" : mac, "port": port}
+                endpoint.interfaces_by_number[port] = ep_int_name
                 
 
                 sw_int_name= "{sw_int}-{endpoint}_{ep_int}".format(
@@ -82,6 +83,8 @@ class SingleSwitchTopologyGenerator(iFabricTopologyGenerator):
                 )
                 ip, mac = self.generate_ip_address() , self.generate_mac_address()
                 switch.interfaces[sw_int_name] = {"ip" : ip, "mac" : mac, "port": current_switch_interface}
+                switch.interfaces_by_number[current_switch_interface] = sw_int_name
+
 
                 self.links[link_name] = LinkData(endpoint, switch, ep_int_name, sw_int_name, link_name, "1ms", "1000Mbs")
 

@@ -3,3 +3,4 @@ class SwitchData(object):
         self.name = name
         self.interfaces = {}
         self.type = "switch"
+        self.interfaces_by_number = {}

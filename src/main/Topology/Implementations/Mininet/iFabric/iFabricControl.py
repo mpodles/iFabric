@@ -50,6 +50,7 @@ class SwitchController(OSNetController):
 
     def start(self):
         while True:
+            self.take_action("ReceivePackets", interface = self.OSNet_device.device_data.interfaces_by_number[0])
             packetin = self.take_action("ReceivePacket")
             payload = packetin.packet.payload
             metadata = packetin.packet.metadata 
@@ -70,5 +71,4 @@ class EndpointController(OSNetController):
         self.take_action("Command", command = "python tester.py")
 
     def start(self):
-        while True:
-            self.send_packets()
+        self.send_packets()

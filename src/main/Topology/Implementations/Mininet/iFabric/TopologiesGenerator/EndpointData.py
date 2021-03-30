@@ -3,3 +3,4 @@ class EndpointData(object):
         self.name = name
         self.interfaces = {}
         self.type = "endpoint"
+        self.interfaces_by_number = {}
