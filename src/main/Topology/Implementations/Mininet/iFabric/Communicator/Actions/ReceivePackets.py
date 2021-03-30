@@ -11,7 +11,7 @@ from scapy.layers.inet import _IPOption_HDR
 
 def handle_pkt(pkt):
     print "got a packet"
-    pkt.show2()
+    print pkt
     sys.stdout.flush()
 
 def sniff_for_packet(communicator, interface):

@@ -11,11 +11,11 @@ from HeaderParser import HeaderParser
 class iFabricControl(OSNetControl):
     #TODO: probably singleton
 
-    def __init__(self, *args):
-        OSNetControl.__init__(self, *args)
+    def __init__(self, *args, **kwargs):
+        OSNetControl.__init__(self, *args, **kwargs)
 
     def initialize_controllers(self):
-        for device in self.topology.OSN_nodes:
+        for device in self.topology.OSN_nodes.values():
             if device.device_data.type == 'switch':
                 self.controller_per_device[device] = SwitchController(device)
             elif device.device_data.type == 'endpoint':
@@ -68,3 +68,7 @@ class EndpointController(OSNetController):
 
     def send_packets(self):
         self.take_action("Command", command = "python tester.py")
+
+    def start(self):
+        while True:
+            self.send_packets()

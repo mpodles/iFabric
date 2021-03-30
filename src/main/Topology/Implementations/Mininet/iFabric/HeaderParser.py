@@ -28,8 +28,10 @@ class HeaderParser(object):
         self.variables = {}
         self.fields = {}
         for protocol, definition in self.protocols_definition.items():
-            for variable in definition.get("variables",[]):
-                parsed_variable = self.parsereturne"]] = parsed_variable
+            for variable in definition.get("variables",[]):    
+                parsed_variable = self.parse_variable(variable["value"])
+                self.variables[variable["name"]] = parsed_variable
+                
             self.fields[protocol] = []
             for field in definition["fields"]:
                 self.fields[protocol].append((field["name"],field["size"]))

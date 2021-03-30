@@ -12,7 +12,6 @@ class OSNetControl(object):
         self.policy = policy
         self.flows = flows
         self.controller_per_device = {}
-        self.initialize_controllers()
 
     def initialize_controllers(self):
         pass
@@ -37,8 +36,8 @@ class OSNetController(object):
     def connect(self):
         self.OSNet_device.initiate_communicator()
         self.OSNet_device.OSNetCommunicator.connect()
-        self.get_state = OSNet_device.OSNetCommunicator.get_state
-        self.take_action = OSNet_device.OSNetCommunicator.take_action
+        self.get_state = self.OSNet_device.OSNetCommunicator.get_state
+        self.take_action = self.OSNet_device.OSNetCommunicator.take_action
 
     def start(self):
         pass

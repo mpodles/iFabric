@@ -104,7 +104,10 @@ def start_mininet_network(topology):
     
 
 def start_control(topology):
-    control = iFabricControl()
+    control = iFabricControl(topology = topology)
+    control.initialize_controllers()
+    control.connect_all()
+    control.start()
 
     # switch = topology.node("sw")
     # switch.initiate_communicator()
@@ -159,7 +162,7 @@ if __name__ == "__main__":
         # generate_flows()
         # generate_policy()
         started_topo = start_mininet_network(topo)
-        start_controller(started_topo)
+        start_control(started_topo)
     except Exception, err:
         print "Exception: ", err
         print 
