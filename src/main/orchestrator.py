@@ -104,6 +104,11 @@ def start_mininet_network(topology):
     
 
 def start_control(topology):
+    import netns
+    import subprocess
+
+    with netns.NetNS(nspid=2):
+        subprocess.call(['ip', 'a'])
     control = iFabricControl(topology = topology)
     control.initialize_controllers()
     control.connect_all()

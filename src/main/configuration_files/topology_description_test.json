@@ -1,6 +1,6 @@
 {
     "type": "SingleSwitch",
-    "endpoints" : 1, 
+    "endpoints" : 3, 
     "ports_per_endpoint" : 2,
     "avg_group_size" : 2,
     "ip_addressing" : "random",
